@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 require('source-map-support').install()
 import { readFileSync } from "fs";
 import * as fs from "fs";
@@ -304,14 +306,15 @@ function deleteFolderRecursive(path:string) {
     }
   };
 
+const _dirroot = __dirname+'/../../../'
 function getSdkFolderName(platform:Platform){
     return Platform[platform].replace('_','-');
 }
 function getSdkLibPath(platform:Platform){
-    return __dirname + '/../release/api/'+getSdkFolderName(platform)+'/src/lib'
+    return _dirroot + 'release/api/'+getSdkFolderName(platform)+'/src/lib'
 }
 function getSdkPath(platform:Platform){
-    return __dirname + '/../release/api/'+getSdkFolderName(platform)
+    return _dirroot + 'release/api/'+getSdkFolderName(platform)
 }
 
 // function clearOldBuild() {
@@ -352,7 +355,7 @@ function createSdk(dir:string[],exclude:string[]){
             let name = path.basename(file,'.ts')
             let sourceFile = ts.createSourceFile(
                 file,
-                readFileSync(__dirname + '/../src/cloud/'+file).toString(),
+                readFileSync(_dirroot + 'src/cloud/'+file).toString(),
                 ts.ScriptTarget.ES2015,
                 /*setParentNodes */ true
             );
@@ -429,7 +432,7 @@ import { platform } from "os";
 // console.log('clear last build....')
 // clearOldBuild()
 const exclude = ['cloud.ts', 'index.ts','base.ts']
-let dir = fs.readdirSync(__dirname + '/../src/cloud/')
+let dir = fs.readdirSync(_dirroot + 'src/cloud/')
 console.log('build typescript sdk....')
 createSdk(dir,exclude)
 

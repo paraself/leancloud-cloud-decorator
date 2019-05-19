@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 
 import { exec,spawn} from 'child_process'
 var targetPlatform = process.argv[2]

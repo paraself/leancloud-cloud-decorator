@@ -1,15 +1,17 @@
+#!/usr/bin/env node
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const child_process_1 = require("child_process");
 // let paths = Object.keys(config)
 let paths = ['weapp', 'web-admin', 'web-user'];
 var targetPlatform = process.argv[2];
+const _dirroot = __dirname + '/../../../';
 function compileAndPush() {
     let command = '';
     let sdkPath = '';
     for (let i = 0; i < paths.length; ++i) {
         if (!targetPlatform || targetPlatform == paths[i]) {
-            sdkPath = __dirname + '/api/' + paths[i];
+            sdkPath = _dirroot + 'release/api/' + paths[i];
             // let currentCommand = `npm version minor --prefix ${sdkPath} --no-git-tag-version && npx tsc -p ` + sdkPath
             let currentCommand = `npx tsc -p ${sdkPath} && npx lcc-dep ${targetPlatform} && cd ${sdkPath} && npm version minor -f`;
             if (command != '') {

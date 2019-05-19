@@ -23,20 +23,21 @@ function getPlatform(targetPlatform) {
     }
     throw new Error('Error targetPlatform ' + targetPlatform);
 }
+const _dirroot = __dirname + '/../../../';
 function getSdkFolderName(platform) {
     return base_1.Platform[platform].replace('_', '-');
 }
 function getSdkLibPath(platform) {
-    return __dirname + '/../release/api/' + getSdkFolderName(platform) + '/dist/lib';
+    return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/dist/lib';
 }
 function getSdkPackagePath(platform) {
-    return __dirname + '/../release/api/' + getSdkFolderName(platform) + '/package.json';
+    return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/package.json';
 }
 function getSdkInfoPath(platform) {
-    return __dirname + '/../release/api/' + getSdkFolderName(platform) + '/src/info.json';
+    return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/src/info.json';
 }
 function getSdkInfoDistPath(platform) {
-    return __dirname + '/../release/api/' + getSdkFolderName(platform) + '/dist/info.json';
+    return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/dist/info.json';
 }
 function getImport(sourceFile) {
     let importList = [];

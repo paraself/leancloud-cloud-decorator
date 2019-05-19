@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 "use strict";
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
@@ -300,14 +301,15 @@ function deleteFolderRecursive(path) {
     }
 }
 ;
+const _dirroot = __dirname + '/../../../';
 function getSdkFolderName(platform) {
     return base_1.Platform[platform].replace('_', '-');
 }
 function getSdkLibPath(platform) {
-    return __dirname + '/../release/api/' + getSdkFolderName(platform) + '/src/lib';
+    return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/src/lib';
 }
 function getSdkPath(platform) {
-    return __dirname + '/../release/api/' + getSdkFolderName(platform);
+    return _dirroot + 'release/api/' + getSdkFolderName(platform);
 }
 // function clearOldBuild() {
 //     for (let i = 0; i < Platform.count; ++i) {
@@ -341,7 +343,7 @@ function createSdk(dir, exclude) {
         if (path.extname(file) == '.ts' && exclude.indexOf(file) < 0) {
             console.log('read ' + file);
             let name = path.basename(file, '.ts');
-            let sourceFile = ts.createSourceFile(file, fs_1.readFileSync(__dirname + '/../src/cloud/' + file).toString(), ts.ScriptTarget.ES2015, 
+            let sourceFile = ts.createSourceFile(file, fs_1.readFileSync(_dirroot + 'src/cloud/' + file).toString(), ts.ScriptTarget.ES2015, 
             /*setParentNodes */ true);
             //   console.log(printNode(sourceFile))
             var sdks = createSdkFile(sourceFile);
@@ -400,7 +402,7 @@ var targetPlatform = process.argv[2];
 // console.log('clear last build....')
 // clearOldBuild()
 const exclude = ['cloud.ts', 'index.ts', 'base.ts'];
-let dir = fs.readdirSync(__dirname + '/../src/cloud/');
+let dir = fs.readdirSync(_dirroot + 'src/cloud/');
 console.log('build typescript sdk....');
 createSdk(dir, exclude);
 // console.log('compile....')
