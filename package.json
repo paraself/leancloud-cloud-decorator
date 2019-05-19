@@ -1,6 +1,6 @@
 {
   "name": "leancloud-cloud-decorator",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -31,9 +31,9 @@
     "typedoc": "^0.14.2"
   },
   "bin": {
-    "lcc-build": "dist/buildSdk.js",
-    "lcc-release": "dist/releaseSdk.js",
-    "lcc-dep": "dist/buildDevDependencies.js",
-    "lcc": "dist/lcc.js"
+    "lcc-build": "./dist/buildSdk.js",
+    "lcc-release": "./dist/releaseSdk.js",
+    "lcc-dep": "./dist/buildDevDependencies.js",
+    "lcc": "./dist/lcc.js"
   }
 }
