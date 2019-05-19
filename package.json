@@ -1,0 +1,38 @@
+{
+  "name": "leancloud-cloud-decorator",
+  "version": "1.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paraself/leancloud-cloud-decorator.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/paraself/leancloud-cloud-decorator/issues"
+  },
+  "homepage": "https://github.com/paraself/leancloud-cloud-decorator#readme",
+  "dependencies": {
+    "ioredis": "^4.9.3",
+    "joi": "^14.3.1",
+    "leancloud-storage": "^3.13.2",
+    "leanengine": "^3.3.3"
+  },
+  "devDependencies": {
+    "@types/ioredis": "^4.0.10",
+    "@types/joi": "^14.3.3",
+    "@types/lodash": "^4.14.129",
+    "@types/node": "^12.0.2",
+    "typedoc": "^0.14.2"
+  },
+  "bin": {
+    "lcc-build": "dist/buildSdk.js",
+    "lcc-release": "dist/releaseSdk.js",
+    "lcc-dep": "dist/buildDevDependencies.js",
+    "lcc": "dist/lcc.js"
+  }
+}
