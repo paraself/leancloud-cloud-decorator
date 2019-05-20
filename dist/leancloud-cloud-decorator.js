@@ -10,8 +10,10 @@ const lodash_1 = __importDefault(require("lodash"));
 const base_1 = require("./base");
 exports.Platform = base_1.Platform;
 let redis;
-function SetCache(cache) {
-    redis = cache;
+let cachePrefix = 'pteppp';
+function SetCache(params) {
+    redis = params.cache;
+    cachePrefix = params.cachePrefix || 'pteppp';
 }
 exports.SetCache = SetCache;
 function getRoleNames(avUser) {
@@ -254,7 +256,7 @@ function CreateCloudCacheFunction(info) {
             cacheKeyConfig['currentUser'] = request.currentUser;
         }
         cacheKeyConfig['timeUnit'] = cache.timeUnit;
-        let cacheKey = `pteppp:cloud:${functionName}:` + getCacheKey(cacheKeyConfig);
+        let cacheKey = `${cachePrefix}:cloud:${functionName}:` + getCacheKey(cacheKeyConfig);
         // console.log(functionName + ' CloudImplement Cache')
         //尝试获取缓存
         let textResult = await redis.get(cacheKey);

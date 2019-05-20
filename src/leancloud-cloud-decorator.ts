@@ -8,9 +8,11 @@ export { Platform }
 
 import {Redis} from 'ioredis'
 let redis: Redis
+let cachePrefix = 'pteppp'
 
-export function SetCache(cache: Redis) {
-  redis = cache
+export function SetCache(params: {cache: Redis,cachePrefix?:string}) {
+  redis = params.cache
+  cachePrefix = params.cachePrefix||'pteppp'
 }
 
 
@@ -339,7 +341,7 @@ function CreateCloudCacheFunction<T>(info: {
       cacheKeyConfig['currentUser'] = request.currentUser
     }
     cacheKeyConfig['timeUnit'] = cache.timeUnit
-    let cacheKey = `pteppp:cloud:${functionName}:` + getCacheKey(cacheKeyConfig)
+    let cacheKey = `${cachePrefix}:cloud:${functionName}:` + getCacheKey(cacheKeyConfig)
 
     // console.log(functionName + ' CloudImplement Cache')
     //尝试获取缓存

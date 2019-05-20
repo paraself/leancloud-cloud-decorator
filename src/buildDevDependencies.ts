@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 require('source-map-support').install()
 import { readFileSync,writeFileSync } from 'fs'
 import * as fs from 'fs'
@@ -27,13 +28,9 @@ function getSdkLibPath(platform: Platform) {
 function getSdkPackagePath(platform: Platform) {
   return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/package.json'
 }
-
-function getSdkInfoPath(platform: Platform) {
-  return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/src/info.json'
-}
-function getSdkInfoDistPath(platform: Platform) {
-  return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/dist/info.json'
-}
+// function getSdkInfoDistPath(platform: Platform) {
+//   return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/dist/info.js'
+// }
 
 function getImport(sourceFile: ts.SourceFile) {
 
@@ -92,18 +89,10 @@ function createDevDependencies(imports:string[]) {
   return map
 }
 
-function setDevDependencies(devDependencies: any,dir:string,infoDir:string,infoDistDir:string) {
+function setDevDependencies(devDependencies: any,dir:string) {
   let packageJson = JSON.parse(readFileSync(dir, 'utf-8'))
   packageJson.devDependencies = devDependencies
   writeFileSync(dir, JSON.stringify(packageJson, null, 2), 'utf-8')
-  try {
-    let infoJson = JSON.parse(readFileSync(infoDir, 'utf-8'))
-    infoJson.api = packageJson.version
-    writeFileSync(infoDir, JSON.stringify(infoJson, null, 2), 'utf-8')
-    writeFileSync(infoDistDir, JSON.stringify(infoJson, null, 2), 'utf-8')
-  } catch (error) {
-    
-  }
 }
 
 let platform = getPlatform(targetPlatform)
@@ -114,8 +103,6 @@ let imports = getImports(dir, libPath)
 let devDependencies = createDevDependencies(imports)
 // console.log(devDependencies)
 let packageJsonPath = getSdkPackagePath(platform)
-let infoJsonPath = getSdkInfoPath(platform)
-let infoJsonDistPath = getSdkInfoDistPath(platform)
+// let infoJsonDistPath = getSdkInfoDistPath(platform)
 console.log('write ' + packageJsonPath)
-console.log('write ' + infoJsonPath)
-setDevDependencies(devDependencies, packageJsonPath,infoJsonPath,infoJsonDistPath)
+setDevDependencies(devDependencies, packageJsonPath)

@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 "use strict";
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
@@ -33,12 +34,9 @@ function getSdkLibPath(platform) {
 function getSdkPackagePath(platform) {
     return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/package.json';
 }
-function getSdkInfoPath(platform) {
-    return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/src/info.json';
-}
-function getSdkInfoDistPath(platform) {
-    return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/dist/info.json';
-}
+// function getSdkInfoDistPath(platform: Platform) {
+//   return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/dist/info.js'
+// }
 function getImport(sourceFile) {
     let importList = [];
     function scanNode(node) {
@@ -86,18 +84,10 @@ function createDevDependencies(imports) {
     });
     return map;
 }
-function setDevDependencies(devDependencies, dir, infoDir, infoDistDir) {
+function setDevDependencies(devDependencies, dir) {
     let packageJson = JSON.parse(fs_1.readFileSync(dir, 'utf-8'));
     packageJson.devDependencies = devDependencies;
     fs_1.writeFileSync(dir, JSON.stringify(packageJson, null, 2), 'utf-8');
-    try {
-        let infoJson = JSON.parse(fs_1.readFileSync(infoDir, 'utf-8'));
-        infoJson.api = packageJson.version;
-        fs_1.writeFileSync(infoDir, JSON.stringify(infoJson, null, 2), 'utf-8');
-        fs_1.writeFileSync(infoDistDir, JSON.stringify(infoJson, null, 2), 'utf-8');
-    }
-    catch (error) {
-    }
 }
 let platform = getPlatform(targetPlatform);
 let libPath = getSdkLibPath(platform);
@@ -107,9 +97,7 @@ let imports = getImports(dir, libPath);
 let devDependencies = createDevDependencies(imports);
 // console.log(devDependencies)
 let packageJsonPath = getSdkPackagePath(platform);
-let infoJsonPath = getSdkInfoPath(platform);
-let infoJsonDistPath = getSdkInfoDistPath(platform);
+// let infoJsonDistPath = getSdkInfoDistPath(platform)
 console.log('write ' + packageJsonPath);
-console.log('write ' + infoJsonPath);
-setDevDependencies(devDependencies, packageJsonPath, infoJsonPath, infoJsonDistPath);
+setDevDependencies(devDependencies, packageJsonPath);
 //# sourceMappingURL=buildDevDependencies.js.map

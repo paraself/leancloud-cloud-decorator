@@ -3,7 +3,10 @@ import Joi from 'joi';
 import { Platform } from './base';
 export { Platform };
 import { Redis } from 'ioredis';
-export declare function SetCache(cache: Redis): void;
+export declare function SetCache(params: {
+    cache: Redis;
+    cachePrefix?: string;
+}): void;
 declare type EqualToConditionsType = {
     [key: string]: string | number | AV.Object | boolean | Date;
 };

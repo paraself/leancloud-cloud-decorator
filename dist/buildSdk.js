@@ -153,7 +153,7 @@ function createSdkFile(sourceFile) {
                     let moduleName = importDeclaration.moduleSpecifier.getText();
                     // console.log(moduleName.substring(1, moduleName.length - 1))
                     moduleName = moduleName.substring(1, moduleName.length - 1);
-                    if (moduleName[0] != '.' && moduleName != 'bluebird') {
+                    if (moduleName[0] != '.' && moduleName != 'bluebird' && moduleName != 'leancloud-cloud-decorator') {
                         let text = node.getText();
                         if (moduleName == 'leanengine') {
                             text = text.replace('leanengine', 'leancloud-storage');
