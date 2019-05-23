@@ -87,6 +87,28 @@ function getCacheKey(equalToConditions, cacheKey = '', symbol = '=') {
 }
 exports.getCacheKey = getCacheKey;
 const NODE_ENV = process.env.NODE_ENV;
+// // Schema 测试
+// interface IKeyChoices {
+//   [key: string]: string[]
+// }
+// interface Test extends CloudParams {
+//   s:string
+//   n:number
+//   c?:boolean
+//   a:number[]
+//   o:{a:string,b:string[]}
+//   i:IKeyChoices
+// }
+// let test:CloudOptions<Test> = {
+//   schema:{
+//     s:Joi.boolean(),
+//     n:Joi.number(),
+//     c:Joi.boolean(),
+//     a: Joi.array(),
+//     o:Joi.object(),
+//     i:Joi.object()
+//   }
+// }
 async function RateLimitCheck(functionName, objectId, rateLimit) {
     if (rateLimit.length == 0)
         return;
@@ -173,18 +195,9 @@ async function CheckPermission(currentUser, noUser, roles) {
     }
 }
 function CheckSchema(schema, params) {
-    let params2 = Object.assign({}, params);
-    delete params2.noCache;
-    delete params2.adminId;
-    //@ts-ignore
-    delete params2.api;
-    //@ts-ignore
-    delete params2.platform;
-    //@ts-ignore
-    delete params2.version;
     // console.log(params)
     // console.log('schema')
-    const { error, value } = joi_1.default.validate(params2, schema);
+    const { error, value } = joi_1.default.validate(params, schema);
     // console.log(error)
     // console.log(value)
     if (error) {
@@ -202,8 +215,17 @@ function CreateCloudCacheFunction(info) {
         let roles = cloudOptions.roles || null;
         await CheckPermission(request.currentUser, cloudOptions.noUser, roles);
         roles = null;
+        let params2 = Object.assign({}, params);
+        delete params2.noCache;
+        delete params2.adminId;
+        //@ts-ignore
+        delete params2.api;
+        //@ts-ignore
+        delete params2.platform;
+        //@ts-ignore
+        delete params2.version;
         if (schema) {
-            CheckSchema(schema, params);
+            CheckSchema(schema, params2);
             schema = null;
         }
         if (rateLimit && request.currentUser) {
@@ -215,9 +237,6 @@ function CreateCloudCacheFunction(info) {
         if (cacheParamsList) {
             //判断是否符合缓存条件
             let cacheParams = null;
-            let params2 = Object.assign({}, params);
-            delete params2.noCache;
-            delete params2.adminId;
             let paramsKeys = Object.keys(params2);
             for (let i = 0; i < cacheParamsList.length; ++i) {
                 let _cacheParams = cacheParamsList[i];

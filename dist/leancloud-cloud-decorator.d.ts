@@ -27,6 +27,7 @@ interface RateLimitOptions {
     timeUnit: 'day' | 'hour' | 'minute' | 'second' | 'month';
 }
 declare type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+declare type TypedSchemaLike<T> = T extends string ? Joi.StringSchema : T extends Array<infer U> ? Joi.ArraySchema : T extends number ? Joi.NumberSchema : T extends Date ? Joi.DateSchema : T extends boolean ? Joi.BooleanSchema : T extends Buffer ? Joi.BinarySchema : T extends Object ? Joi.ObjectSchema : Joi.AnySchema;
 /**
  * T为云函数的参数类型
  */
@@ -37,7 +38,7 @@ interface CloudOptions<T extends CloudParams> {
     cache?: CacheOptions<T>;
     optionalName?: string;
     schema: {
-        [key in keyof Omit<T, keyof CloudParams>]-?: Joi.Schema;
+        [key in keyof Omit<T, keyof CloudParams>]-?: TypedSchemaLike<T[key]>;
     };
     schemaCb?: (schema: Joi.ObjectSchema) => Joi.ObjectSchema;
     noUser?: true;
