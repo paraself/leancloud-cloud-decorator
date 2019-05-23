@@ -1,10 +1,11 @@
 {
   "name": "leancloud-cloud-decorator",
-  "version": "1.19.0",
+  "version": "1.20.0",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "ts": "npx tsc -p . "
   },
   "repository": {
     "type": "git",
