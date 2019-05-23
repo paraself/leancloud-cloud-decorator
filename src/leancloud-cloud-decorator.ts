@@ -291,12 +291,29 @@ async function CheckPermission(currentUser?:AV.User, noUser?:true|null,roles?:st
 function CheckSchema(schema: Joi.ObjectSchema, params: CloudParams) {
   // console.log(params)
   // console.log('schema')
-  const { error, value } = Joi.validate(params, schema)
+  const { error, value } = Joi.validate(ClearInternalParams(params), schema)
   // console.log(error)
   // console.log(value)
   if (error) {
     throw new AV.Cloud.Error('schema error:' + error, { code: 400 })
   }
+}
+
+/**
+ * 用于检测schema和判断是否需要缓存
+ * @param params 
+ */
+function ClearInternalParams(params){
+  let params2 = Object.assign({}, params)
+  delete params2.noCache
+  delete params2.adminId
+  //@ts-ignore
+  delete params2.api
+  //@ts-ignore
+  delete params2.platform
+  //@ts-ignore
+  delete params2.version
+  return params2
 }
 
 function CreateCloudCacheFunction<T>(info: {
@@ -318,18 +335,8 @@ function CreateCloudCacheFunction<T>(info: {
     await CheckPermission(request.currentUser, cloudOptions.noUser, roles)
     roles = null
 
-    //用于检测schema和判断是否需要缓存
-    let params2 = Object.assign({}, params)
-    delete params2.noCache
-    delete params2.adminId
-    //@ts-ignore
-    delete params2.api
-    //@ts-ignore
-    delete params2.platform
-    //@ts-ignore
-    delete params2.version
     if (schema) {
-      CheckSchema(schema, params2)
+      CheckSchema(schema, params)
       schema = null
     }
     if (rateLimit && request.currentUser) {
@@ -341,7 +348,7 @@ function CreateCloudCacheFunction<T>(info: {
     if (cacheParamsList) {
       //判断是否符合缓存条件
       let cacheParams: string[] | null = null
-      let paramsKeys = Object.keys(params2)
+      let paramsKeys = Object.keys(ClearInternalParams(params))
       for (let i = 0; i < cacheParamsList.length; ++i) {
         let _cacheParams = cacheParamsList[i]
         if (
