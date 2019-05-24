@@ -2,90 +2,30 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const leanengine_1 = __importDefault(require("leanengine"));
 const joi_1 = __importDefault(require("joi"));
 const moment_1 = __importDefault(require("moment"));
-const lodash_1 = __importDefault(require("lodash"));
 const base_1 = require("./base");
-exports.Platform = base_1.Platform;
-let redis;
-let cachePrefix = 'pteppp';
-function SetCache(params) {
-    redis = params.cache;
-    cachePrefix = params.cachePrefix || 'pteppp';
-}
-exports.SetCache = SetCache;
-function getRoleNames(avUser) {
-    return avUser.getRoles()
-        .then(roles => {
-        return Promise.resolve(roles.map(e => e.getName()));
-    });
-}
-/**
- * 输入一个用户，和权限的名字，测试这个用户是否具有该权限
- * @function isRole
- * @param  {AV.User} avUser 输入一个LC的用户
- * @param  {string} roleName 输入一个LC的用户
- * @return {Promise<boolean>} 返回这个用户是否具有该权限
- */
-async function isRole(avUser, roleName) {
-    try {
-        var names = await getRoleNames(avUser);
-        if (names.indexOf(roleName) !== -1)
-            return Promise.resolve(true);
-        else
-            return Promise.resolve(false);
-    }
-    catch (error) {
-        console.error(error);
-        return Promise.resolve(false);
-    }
-}
-function isRoles(avUser, roleArray) {
-    return getRoleNames(avUser)
-        .then(roleNames => {
-        let diffArray = lodash_1.default.difference(roleArray, roleNames);
-        let isContained = diffArray.length === 0;
-        return Promise.resolve(isContained);
-    });
-}
-function getQueryValueForCache(value) {
-    switch (typeof value) {
-        case 'string':
-            return encodeURIComponent(value);
-        case 'number':
-        case 'boolean':
-            return '' + value;
-        case 'object': {
-            if (value instanceof leanengine_1.default.Object) {
-                return value.get('objectId');
-            }
-            if (value instanceof Date) {
-                return value.getTime().toString();
-            }
-            throw new Error('unsupported query cache value object ' + JSON.stringify(value));
-        }
-        case 'undefined':
-            return '';
-        default: {
-            throw new Error('unsupported query cache value type ' + typeof value);
-        }
-    }
-}
-function getCacheKey(equalToConditions, cacheKey = '', symbol = '=') {
-    let keys = Object.keys(equalToConditions);
-    keys.sort((x, y) => x.localeCompare(y));
-    for (let i = 0; i < keys.length; ++i) {
-        let key = keys[i];
-        let value = key + symbol + getQueryValueForCache(equalToConditions[key]);
-        if (cacheKey)
-            cacheKey += '&';
-        cacheKey += value;
-    }
-    return cacheKey;
-}
-exports.getCacheKey = getCacheKey;
+const base_2 = require("./base");
+exports.Platform = base_2.Platform;
+exports.getCacheKey = base_2.getCacheKey;
+const redisSetting = __importStar(require("./redis"));
+const redis_1 = require("./redis");
+exports.SetCache = redis_1.SetCache;
+let redis = redisSetting.redis;
+let prefix = redisSetting.cachePrefix;
+redisSetting.AddCacheUpdateCallback((params) => {
+    redis = redisSetting.redis;
+    prefix = redisSetting.cachePrefix;
+});
 const NODE_ENV = process.env.NODE_ENV;
 // // Schema 测试
 // interface IKeyChoices {
@@ -118,7 +58,7 @@ async function RateLimitCheck(functionName, objectId, rateLimit) {
         let timeUnit = limit.timeUnit;
         let { startTimestamp, expires } = getCacheTime(limit.timeUnit);
         let date = startTimestamp.valueOf();
-        let cacheKey = `pteppp:rate:${timeUnit}-${date}:${functionName}:${objectId}`;
+        let cacheKey = `${prefix}:rate:${timeUnit}-${date}:${functionName}:${objectId}`;
         pipeline.incr(cacheKey).expire(cacheKey, expires);
     }
     let result = await pipeline.exec();
@@ -155,7 +95,7 @@ async function CloudImplement(cloudImplementOptions) {
     //是否执行非缓存的调试版本
     if (params.noCache) {
         if (params.adminId &&
-            (await isRole(leanengine_1.default.Object.createWithoutData('_User', params.adminId), 'Dev'))) {
+            (await base_1.isRole(leanengine_1.default.Object.createWithoutData('_User', params.adminId), 'Dev'))) {
         }
         else {
             throw new leanengine_1.default.Cloud.Error('non-administrators in noCache', { code: 400 });
@@ -184,7 +124,7 @@ async function CheckPermission(currentUser, noUser, roles) {
         let havePermission = false;
         for (let i = 0; i < roles.length; ++i) {
             let role = roles[i];
-            if (await isRoles(currentUser, role)) {
+            if (await base_1.isRoles(currentUser, role)) {
                 havePermission = true;
                 break;
             }
@@ -282,7 +222,7 @@ function CreateCloudCacheFunction(info) {
             cacheKeyConfig['currentUser'] = request.currentUser;
         }
         cacheKeyConfig['timeUnit'] = cache.timeUnit;
-        let cacheKey = `${cachePrefix}:cloud:${functionName}:` + getCacheKey(cacheKeyConfig);
+        let cacheKey = `${redisSetting.cachePrefix}:cloud:${functionName}:` + base_2.getCacheKey(cacheKeyConfig);
         // console.log(functionName + ' CloudImplement Cache')
         //尝试获取缓存
         let textResult = await redis.get(cacheKey);

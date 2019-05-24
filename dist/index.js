@@ -6,4 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __export(require("./leancloud-cloud-decorator"));
 __export(require("./base"));
 __export(require("./cloudMetaData"));
+__export(require("./cloudHandler"));
+__export(require("./cloudStats"));
+__export(require("./errorInfo"));
 //# sourceMappingURL=index.js.map

@@ -1,16 +1,9 @@
 import AV from 'leanengine';
 import Joi from 'joi';
-import { Platform } from './base';
-export { Platform };
-import { Redis } from 'ioredis';
-export declare function SetCache(params: {
-    cache: Redis;
-    cachePrefix?: string;
-}): void;
-declare type EqualToConditionsType = {
-    [key: string]: string | number | AV.Object | boolean | Date;
-};
-export declare function getCacheKey(equalToConditions: EqualToConditionsType, cacheKey?: string, symbol?: string): string;
+import { Platform, getCacheKey } from './base';
+export { Platform, getCacheKey };
+import { SetCache } from './redis';
+export { SetCache };
 declare type Environment = 'production' | 'staging' | string;
 interface CacheOptions<T> {
     params: Array<Array<keyof T>>;

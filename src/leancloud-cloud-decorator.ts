@@ -1,101 +1,23 @@
 import AV, { request } from 'leanengine'
 import Joi from 'joi'
 import moment from 'moment'
-import _ from 'lodash'
+import {isRole,isRoles} from './base'
 
-import { Platform } from './base'
-export { Platform }
+import { Platform,getCacheKey } from './base'
+export { Platform,getCacheKey }
 
-import {Redis} from 'ioredis'
-let redis: Redis
-let cachePrefix = 'pteppp'
+import * as redisSetting  from './redis'
+import {SetCache} from './redis'
 
-export function SetCache(params: {cache: Redis,cachePrefix?:string}) {
-  redis = params.cache
-  cachePrefix = params.cachePrefix||'pteppp'
-}
+export {SetCache}
 
+let redis = redisSetting.redis
+let prefix = redisSetting.cachePrefix
 
-function getRoleNames (avUser:AV.User) {
-  return avUser.getRoles()
-    .then(roles => {
-      return Promise.resolve(roles.map(e => e.getName()))
-    })
-}
-/**
- * 输入一个用户，和权限的名字，测试这个用户是否具有该权限
- * @function isRole
- * @param  {AV.User} avUser 输入一个LC的用户
- * @param  {string} roleName 输入一个LC的用户
- * @return {Promise<boolean>} 返回这个用户是否具有该权限
- */
-async function isRole(avUser: AV.User, roleName:string) {
-  try {
-    var names = await getRoleNames(avUser)
-    if (names.indexOf(roleName) !== -1) return Promise.resolve(true)
-    else return Promise.resolve(false)
-  } catch (error) {
-    console.error(error)
-    return Promise.resolve(false)
-  }
-}
-
-function isRoles (avUser: AV.User, roleArray:string[]) {
-  return getRoleNames(avUser)
-    .then(roleNames => {
-      let diffArray = _.difference(roleArray, roleNames)
-      let isContained = diffArray.length === 0
-      return Promise.resolve(isContained)
-    })
-}
-
-function getQueryValueForCache(
-  value: string | number | AV.Object | boolean | Date
-): string {
-  switch (typeof value) {
-    case 'string':
-      return encodeURIComponent(value)
-    case 'number':
-    case 'boolean':
-      return '' + value
-    case 'object': {
-      if (value instanceof AV.Object) {
-        return value.get('objectId')
-      }
-      if (value instanceof Date) {
-        return value.getTime().toString()
-      }
-      throw new Error(
-        'unsupported query cache value object ' + JSON.stringify(value)
-      )
-    }
-    case 'undefined':
-      return ''
-    default: {
-      throw new Error('unsupported query cache value type ' + typeof value)
-    }
-  }
-}
-
-type EqualToConditionsType = {
-  [key: string]: string | number | AV.Object | boolean | Date
-}
-
-export function getCacheKey(
-  equalToConditions: EqualToConditionsType,
-  cacheKey = '',
-  symbol = '='
-) {
-  let keys = Object.keys(equalToConditions)
-  keys.sort((x, y) => x.localeCompare(y))
-  for (let i = 0; i < keys.length; ++i) {
-    let key = keys[i]
-    let value = key + symbol + getQueryValueForCache(equalToConditions[key])
-    if (cacheKey) cacheKey += '&'
-    cacheKey += value
-  }
-  return cacheKey
-}
+redisSetting.AddCacheUpdateCallback((params)=>{
+  redis = redisSetting.redis
+  prefix = redisSetting.cachePrefix
+})
 
 type Environment = 'production' | 'staging' | string
 
@@ -189,7 +111,7 @@ async function RateLimitCheck(functionName: string, objectId: string, rateLimit:
     let timeUnit = limit.timeUnit
     let { startTimestamp, expires } = getCacheTime(limit.timeUnit)
     let date = startTimestamp.valueOf()
-    let cacheKey = `pteppp:rate:${timeUnit}-${date}:${functionName}:${objectId}`
+    let cacheKey = `${prefix}:rate:${timeUnit}-${date}:${functionName}:${objectId}`
     pipeline.incr(cacheKey).expire(cacheKey, expires)
   }
   let result = await pipeline.exec()
@@ -388,7 +310,7 @@ function CreateCloudCacheFunction<T>(info: {
       cacheKeyConfig['currentUser'] = request.currentUser
     }
     cacheKeyConfig['timeUnit'] = cache.timeUnit
-    let cacheKey = `${cachePrefix}:cloud:${functionName}:` + getCacheKey(cacheKeyConfig)
+    let cacheKey = `${redisSetting.cachePrefix}:cloud:${functionName}:` + getCacheKey(cacheKeyConfig)
 
     // console.log(functionName + ' CloudImplement Cache')
     //尝试获取缓存
