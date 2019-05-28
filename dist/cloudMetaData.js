@@ -181,6 +181,7 @@ function CreateDecoratorMetaData(datas) {
                 cache: params2
             };
         }
+        return {};
     }
     return null;
 }

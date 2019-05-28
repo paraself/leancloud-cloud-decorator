@@ -66,12 +66,28 @@ function getKey(info: cloudInfo) {
   return key
   // return `${prefix}:${func}:${time}:version=${version}&platform=${platform}&api=${api}`
 }
+
+/**
+ * 云函数缓存调用统计加1
+ */
 export function IncrCall(info: cloudInfo) {
   // console.log(info)
   let key = getKey(info)
   return redis.pipeline().hincrby(key, 'call', 1).expire(key, expire).exec()
 }
 
+/**
+ * 云函数缓存调用统计加1
+ */
+export function IncrCache(info: cloudInfo) {
+  // console.log(info)
+  let key = getKey(info)
+  return redis.pipeline().hincrby(key, 'cache', 1).expire(key, expire).exec()
+}
+
+/**
+ * 云函数错误统计加1
+ */
 export function IncrError(info: cloudInfo) {
   let key:string
   try {
@@ -128,6 +144,10 @@ export interface GetStatsReturn {
    * 出错的次数
    */
   errorCount: number
+  /**
+   * 使用缓存的次数
+   */
+  cacheCount: number
 }
 
 function decodeParams(paramsString: string) {
@@ -217,6 +237,10 @@ export async function GetStats(): Promise<GetStatsReturn[]> {
           if (result.error) {
             result.errorCount = parseInt(result.error)
             delete result.error
+          }
+          if (result.cache) {
+            result.cacheCount = parseInt(result.cache)
+            delete result.cache
           }
           stats.push(Object.assign(info, result))
         }

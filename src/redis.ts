@@ -6,7 +6,18 @@ export let redis: Redis
 export let cachePrefix = 'pteppp'
 let lockPrefix = `${cachePrefix}:lock:`
 
-export function SetCache(params: {cache: Redis,cachePrefix?:string}) {
+/**
+ * 设置redis缓存
+ */
+export function SetCache(params: {
+  /**
+   * redis连接实例
+   */
+  cache: Redis,
+  /**
+   * 缓存前缀
+   */
+  cachePrefix?:string}) {
     redis = params.cache
     cachePrefix = params.cachePrefix||'pteppp'
     lockPrefix = `${cachePrefix}:lock:`

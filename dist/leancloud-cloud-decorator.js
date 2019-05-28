@@ -14,6 +14,7 @@ const leanengine_1 = __importDefault(require("leanengine"));
 const joi_1 = __importDefault(require("joi"));
 const moment_1 = __importDefault(require("moment"));
 const base_1 = require("./base");
+const cloudStats_1 = require("./cloudStats");
 const base_2 = require("./base");
 exports.Platform = base_2.Platform;
 exports.getCacheKey = base_2.getCacheKey;
@@ -228,6 +229,15 @@ function CreateCloudCacheFunction(info) {
         let textResult = await redis.get(cacheKey);
         if (textResult) {
             try {
+                cloudStats_1.IncrCache({
+                    function: functionName,
+                    //@ts-ignore
+                    platform: params.platform,
+                    //@ts-ignore
+                    api: params.api,
+                    //@ts-ignore
+                    version: params.version,
+                });
                 return JSON.parse(textResult);
             }
             catch (error) {
@@ -267,6 +277,9 @@ function CreateCloudCacheFunction(info) {
         return Promise.resolve(results);
     };
 }
+/**
+ * 将函数加入云函数中,云函数名为 ``类名.函数名``
+ */
 function Cloud(params) {
     return function (target, propertyKey, descriptor) {
         const handle = descriptor.value;
@@ -323,10 +336,14 @@ function Cloud(params) {
                 console.log('internal function ' + functionName);
             }
             else {
-                leanengine_1.default.Cloud.define(functionName, cloudFunction);
+                let options = {};
+                if (params && params.noUser) {
+                    options.fetchUser = false;
+                }
+                leanengine_1.default.Cloud.define(functionName, options, cloudFunction);
                 //创建别名函数
                 if (params && params.optionalName) {
-                    leanengine_1.default.Cloud.define(params.optionalName, cloudFunction);
+                    leanengine_1.default.Cloud.define(params.optionalName, options, cloudFunction);
                 }
             }
             descriptor.value = (params) => {
@@ -335,7 +352,7 @@ function Cloud(params) {
                 delete params2.lock;
                 delete params2.currentUser;
                 delete params2.request;
-                return cloudFunction({ currentUser: params.currentUser, params: params2 });
+                return cloudFunction({ currentUser, params: params2 });
             };
         }
         // console.log(target.name)

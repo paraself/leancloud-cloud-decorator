@@ -1,8 +1,17 @@
 import { Redis } from 'ioredis';
 export declare let redis: Redis;
 export declare let cachePrefix: string;
+/**
+ * 设置redis缓存
+ */
 export declare function SetCache(params: {
+    /**
+     * redis连接实例
+     */
     cache: Redis;
+    /**
+     * 缓存前缀
+     */
     cachePrefix?: string;
 }): void;
 declare type CacheUpdateCallback = (params: {

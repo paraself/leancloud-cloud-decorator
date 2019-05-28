@@ -347,6 +347,7 @@ function CreateDecoratorMetaData(datas: Decorator[]): {
         cache: params2
       }
     }
+    return {}
   }
   return null
 }

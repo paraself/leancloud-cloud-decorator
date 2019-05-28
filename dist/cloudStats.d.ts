@@ -15,7 +15,17 @@ interface cloudInfo {
      */
     version?: string;
 }
+/**
+ * 云函数缓存调用统计加1
+ */
 export declare function IncrCall(info: cloudInfo): Promise<any>;
+/**
+ * 云函数缓存调用统计加1
+ */
+export declare function IncrCache(info: cloudInfo): Promise<any>;
+/**
+ * 云函数错误统计加1
+ */
 export declare function IncrError(info: cloudInfo): Promise<any> | undefined;
 export interface GetStatsReturn {
     /**
@@ -62,6 +72,10 @@ export interface GetStatsReturn {
      * 出错的次数
      */
     errorCount: number;
+    /**
+     * 使用缓存的次数
+     */
+    cacheCount: number;
 }
 export declare function GetStats(): Promise<GetStatsReturn[]>;
 export {};

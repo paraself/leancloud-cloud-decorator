@@ -2,6 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cachePrefix = 'pteppp';
 let lockPrefix = `${exports.cachePrefix}:lock:`;
+/**
+ * 设置redis缓存
+ */
 function SetCache(params) {
     exports.redis = params.cache;
     exports.cachePrefix = params.cachePrefix || 'pteppp';
