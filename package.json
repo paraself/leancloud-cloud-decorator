@@ -1,11 +1,12 @@
 {
   "name": "leancloud-cloud-decorator",
-  "version": "1.33.0",
+  "version": "1.34.0",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "ts": "npx tsc -p . "
+    "ts": "npx tsc -p . ",
+    "postinstall": "./dist/copyConfig.js"
   },
   "repository": {
     "type": "git",
@@ -32,10 +33,16 @@
     "@types/node": "^12.0.2",
     "typedoc": "^0.14.2"
   },
+  "peerDependencies": {
+    "joi": "^14.3.1",
+    "leancloud-storage": "^3.13.2",
+    "leanengine": "^3.3.3"
+  },
   "bin": {
     "lcc-build": "./dist/buildSdk.js",
     "lcc-release": "./dist/releaseSdk.js",
     "lcc-dep": "./dist/buildDevDependencies.js",
-    "lcc": "./dist/lcc.js"
+    "lcc": "./dist/lcc.js",
+    "lcc-config": "./dist/copyConfig.js"
   }
 }
