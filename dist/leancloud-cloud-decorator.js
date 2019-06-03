@@ -16,7 +16,6 @@ const moment_1 = __importDefault(require("moment"));
 const base_1 = require("./base");
 const cloudStats_1 = require("./cloudStats");
 const base_2 = require("./base");
-exports.Platform = base_2.Platform;
 exports.getCacheKey = base_2.getCacheKey;
 const redisSetting = __importStar(require("./redis"));
 const redis_1 = require("./redis");

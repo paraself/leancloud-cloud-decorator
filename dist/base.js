@@ -12,13 +12,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const AV = __importStar(require("leanengine"));
 const lodash_1 = __importDefault(require("lodash"));
-var Platform;
-(function (Platform) {
-    Platform["web_user"] = "web_user";
-    Platform["web_admin"] = "web_admin";
-    Platform["weapp"] = "weapp";
-    Platform["app_dart"] = "app_dart";
-})(Platform = exports.Platform || (exports.Platform = {}));
+const config_json_1 = __importDefault(require("./config.json"));
+const child_process_1 = require("child_process");
+const platforms = config_json_1.default.platforms;
+exports.platforms = platforms;
+function CheckPlatform(platform) {
+    if (platforms[platform]) {
+        return platform;
+    }
+    throw new Error('Error platform ' + platform);
+}
+exports.CheckPlatform = CheckPlatform;
+// export enum Platform {
+//   web_user = "web_user",
+//   web_admin  = "web_admin",
+//   weapp = "weapp",
+//   app_dart = "app_dart"
+// }
 function getRoleNames(avUser) {
     return avUser.getRoles()
         .then(roles => {
@@ -91,4 +101,22 @@ function getCacheKey(equalToConditions, cacheKey = '', symbol = '=') {
     return cacheKey;
 }
 exports.getCacheKey = getCacheKey;
+function promiseExec(command) {
+    return new Promise((resolve, reject) => {
+        child_process_1.exec(command, { maxBuffer: 1024 * 800 }, (err, stdout, stderr) => {
+            if (stdout)
+                console.log(stdout);
+            if (stderr)
+                console.error(stderr);
+            if (err) {
+                console.log(command);
+                console.error(err);
+                reject(err);
+                return;
+            }
+            // resolve()
+        }).on('close', (code, signal) => resolve(code));
+    });
+}
+exports.promiseExec = promiseExec;
 //# sourceMappingURL=base.js.map

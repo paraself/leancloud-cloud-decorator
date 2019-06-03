@@ -119,9 +119,14 @@ interface ArrayTypeData {
   type: 'array'
   elementType: TypeData
 }
+interface CommentTag{
+  tag:'deprecated',
+  text:string,
+}
 interface Comment {
-  shortText: string
-  returns: string
+  shortText?: string
+  returns?: string
+  tags?:CommentTag[]
 }
 interface Signature extends TypedocData {
   kindString: 'Call signature'
@@ -235,21 +240,16 @@ function CreateReturnMetaDatas(file: { [key: number]: IMetaDataParams }, data: T
     return GetTypeData(file, 'return', data)
   }
 }
-enum Platform {
-  web_user,
-  web_admin,
-  weapp,
-  count
-}
+
 export function PlatformString(text: string) :string|null {
   let value = GetJsonValueString(text, 'platforms')
   if (!value) {
     return null
   }
-  for (let i = 0; i < Platform.count; ++i) {
-    let s = Platform[i]
-    value = value.replace('Platform.' + s, '"' + s.replace('_', '-') + '"')
-  }
+  // for (let i = 0; i < Platform.count; ++i) {
+  //   let s = Platform[i]
+  //   value = value.replace('Platform.' + s, '"' + s.replace('_', '-') + '"')
+  // }
   return value
 }
 export function GetJsonValueString(text: string, key: string) {
@@ -365,7 +365,10 @@ function CreateMethodMetaData(file: { [key: number]: IMetaDataParams }, classNam
      * 返回值类型
      */
     value: CreateReturnMetaDatas(file, signatures.type),//,
-    comment: signatures.comment && signatures.comment.shortText,
+    comment: signatures.comment && (signatures.comment.shortText && [signatures.comment.shortText] ||[])
+      .concat(
+        (signatures.comment.tags && (signatures.comment.tags.map(e=>e.tag+': '+e.text)))
+        ||[]).join('\n'),
     valueComment: signatures.comment && signatures.comment.returns,
     //   /**
     //    * 如果是一个可以被缓存的接口，则返回可缓存的key的组合

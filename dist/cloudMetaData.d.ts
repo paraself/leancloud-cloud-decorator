@@ -109,9 +109,14 @@ interface TypeData {
     elementType?: TypeData;
     typeArguments: TypeData[];
 }
+interface CommentTag {
+    tag: 'deprecated';
+    text: string;
+}
 interface Comment {
-    shortText: string;
-    returns: string;
+    shortText?: string;
+    returns?: string;
+    tags?: CommentTag[];
 }
 interface IndexSignature extends TypedocData {
     kindString: "Index signature";

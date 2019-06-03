@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
 import { exec,spawn} from 'child_process'
-var targetPlatform = process.argv[2]
+import {CheckPlatform} from './base'
+var targetPlatform = CheckPlatform(process.argv[2])
 
 const command = `npx lcc-build ${targetPlatform} && lcc-release ${targetPlatform}`
 exec(command, { maxBuffer: 1024 * 800 }, (err, stdout, stderr) => {
     console.log(stdout)
     if (err) {
+      console.log(command)
       console.error(err)
       console.error(stderr)
               return;

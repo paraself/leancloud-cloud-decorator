@@ -1,0 +1,7 @@
+{
+    "platforms": {
+        "web_test": {
+            "package": "@test"
+        }
+    }
+}

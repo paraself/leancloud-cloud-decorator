@@ -3,30 +3,25 @@ require('source-map-support').install()
 import { readFileSync,writeFileSync } from 'fs'
 import * as fs from 'fs'
 import * as ts from 'typescript'
-import { Platform } from './base'
+import { Platform,CheckPlatform } from './base'
 import { PlatformString } from './cloudMetaData'
 import * as path from 'path'
 // import { devDependencies, dependencies} from '../package.json'
 
-var targetPlatform = process.argv[2]
+var targetPlatform = CheckPlatform(process.argv[2])
 
-function getPlatform(targetPlatform: string): Platform {
-  for (let i in Platform) {
-    if (targetPlatform == getSdkFolderName(i as Platform)) {
-      return i as Platform
-    }
-  }
-  throw new Error('Error targetPlatform ' + targetPlatform)
-}
+// function getPlatform(targetPlatform: string): Platform {
+//   return targetPlatform.replace('-','_') as Platform
+// }
 const _dirroot = __dirname+'/../../../'
-function getSdkFolderName(platform: Platform) {
-  return Platform[platform].replace('_', '-');
-}
+// function getSdkFolderName(platform: Platform) {
+//   return platform.replace('_', '-');
+// }
 function getSdkLibPath(platform: Platform) {
-  return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/dist/lib'
+  return _dirroot + 'release/api/' + platform + '/dist/lib'
 }
 function getSdkPackagePath(platform: Platform) {
-  return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/package.json'
+  return _dirroot + 'release/api/' + platform + '/package.json'
 }
 // function getSdkInfoDistPath(platform: Platform) {
 //   return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/dist/info.js'
@@ -95,14 +90,14 @@ function setDevDependencies(devDependencies: any,dir:string) {
   writeFileSync(dir, JSON.stringify(packageJson, null, 2), 'utf-8')
 }
 
-let platform = getPlatform(targetPlatform)
-let libPath = getSdkLibPath(platform)
+// let platform = getPlatform(targetPlatform)
+let libPath = getSdkLibPath(targetPlatform)
 let dir = fs.readdirSync(libPath)
 console.log('build devDependencies....')
 let imports = getImports(dir, libPath)
 let devDependencies = createDevDependencies(imports)
 // console.log(devDependencies)
-let packageJsonPath = getSdkPackagePath(platform)
+let packageJsonPath = getSdkPackagePath(targetPlatform)
 // let infoJsonDistPath = getSdkInfoDistPath(platform)
 console.log('write ' + packageJsonPath)
 setDevDependencies(devDependencies, packageJsonPath)

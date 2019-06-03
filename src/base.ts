@@ -1,13 +1,26 @@
 import * as AV from 'leanengine'
 import _ from 'lodash'
+import Config from './config.json'
+import { exec,spawn} from 'child_process'
 
+const platforms = Config.platforms
+export {platforms}
 
-export enum Platform {
-  web_user = "web_user",
-  web_admin  = "web_admin",
-  weapp = "weapp",
-  app_dart = "app_dart"
+export type Platform = keyof typeof platforms
+
+export function CheckPlatform(platform:string):Platform{
+  if(platforms[platform]){
+    return platform as Platform
+  }
+  throw new Error('Error platform '+platform)
 }
+
+// export enum Platform {
+//   web_user = "web_user",
+//   web_admin  = "web_admin",
+//   weapp = "weapp",
+//   app_dart = "app_dart"
+// }
 
 
 function getRoleNames (avUser:AV.User) {
@@ -91,4 +104,22 @@ export function getCacheKey(
     cacheKey += value
   }
   return cacheKey
+}
+
+
+
+export function promiseExec(command:string){
+  return new Promise((resolve,reject)=>{
+      exec(command, { maxBuffer: 1024 * 800 }, (err, stdout, stderr) => {
+          if(stdout) console.log(stdout)
+          if(stderr) console.error(stderr)
+          if (err) {
+              console.log(command)
+              console.error(err)
+              reject(err)
+              return
+          }
+          // resolve()
+      }).on('close', (code, signal) => resolve(code))
+  })
 }

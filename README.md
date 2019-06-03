@@ -8,7 +8,7 @@ $ npm install leancloud-cloud-decorator
 
 ## 定义云函数
 
-```javascript
+```typescript
 //云引擎部分
 import { Cloud, CloudParams } from 'leancloud-cloud-decorator'
 
@@ -26,13 +26,13 @@ class User {
 }
 ```
 
-```javascript
+```typescript
 //客户端部分
     AV.Cloud.run('User.GetUserInfo').then(r=>console.log(r))
 ```
 
 ## 云函数参数
-```javascript
+```typescript
 //云引擎部分
 import { Cloud, CloudParams } from 'leancloud-cloud-decorator'
 import Joi from 'joi'
@@ -64,7 +64,7 @@ class User {
 ## 缓存设置
 加上cache字段,将会缓存云函数的返回内容,缓存期间请求云函数,不会真正执行云函数,会直接返回之前的缓存内容,直到缓存过期之后,请求云函数才会再次执行一次
 
-```javascript
+```typescript
 //云引擎部分
 import { Cloud, CloudParams } from 'leancloud-cloud-decorator'
 
@@ -104,7 +104,7 @@ user.GetTime()
 
 ## 限流
 有时需要限制每个用户调用某个接口的频率, 以防止非正常的用户请求
-```javascript
+```typescript
 //云引擎部分
 import { Cloud, CloudParams } from 'leancloud-cloud-decorator'
 
@@ -133,8 +133,21 @@ class User {
 ```
 
 ## 自动生成前端SDK
-通过platforms字段限定此云函数的目标平台, 只在此平台的sdk中生成对应API
-```javascript
+通过项目根目录下的 lcc-config.json 配置文件, 配置需要生成的前端SDK平台
+```json
+{
+    "platforms": {
+        "web_user": {
+            "package": "@namespace/web-user"
+        },
+        "weapp": {
+            "package": "@namespace/weapp"
+        }
+    }
+}
+```
+安装模块时会通过 lcc-config.json 中的platforms字段生成模块中的平台的语法提示
+```typescript
 //云引擎部分
 import { Cloud, CloudParams,Platform } from 'leancloud-cloud-decorator'
 
@@ -143,7 +156,7 @@ class User {
     @Cloud<>({
         schema:{}
         //只生成 web_user 平台的API
-        platforms: [Platform.web_user]
+        platforms: ['web_user']
     })
     async GetTime() : Promise<string>{
         return new Date().toString()
@@ -151,31 +164,29 @@ class User {
 }
 
 ```
+也可手动通过 lcc-config 应用配置
+```shell
+$ npx lcc-config
+```
 生成SDK的命令为
 ```shell
-$ npm run lcc 平台名
+$ npx lcc 平台名
 ```
+平台必须存在于 lcc-config.json 配置文件中, platforms字段中
 
-目前支持的平台有
 ```shell
-$ npm run lcc web-user
-$ npm run lcc web-admin
-$ npm run lcc weapp
+$ npx lcc web_user
 ```
-分别在 
+会在 
 
-release/api/web-user/src/lib
-
-release/api/web-admin/src/lib
-
-release/api/web-weapp/src/lib
+release/api/web_user/src/lib
 
 生成sdk代码
 目前需要预先设置好项目,ts环境和index.ts代码
 
 index.ts代码为
-```javascript
-// src/index.ts
+```typescript
+// release/api/web_user/src/index.ts
 import AV from 'leancloud-storage'
 import sdkInfo from './info'
 
@@ -211,17 +222,4 @@ export function init(av: {
 }
 
 export * from './lib';  
-```
-
-创建 src/info.ts 文件,用于存储模块信息, 便于ts获取
-```javascript
-// src/info.ts
-export default {
-   //平台名
-  "platform": "web_user",
-  //api版本, 会和package.json中的模块版本同步
-  "api": "1.69.0",
-  //默认前端版本
-  "version": "0.0.0"
-}
 ```

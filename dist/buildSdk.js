@@ -107,11 +107,11 @@ function createSdkFile(sourceFile) {
     let results = [];
     let lastPositions = [];
     let exportText = '';
-    for (let i = 0; i < Object.keys(base_1.Platform).length; ++i) {
-        results.push("import * as API from '..'\n"
-            + "export interface CloudParams{ noCache?: boolean; \n adminId ?: string; }\n");
-        lastPositions.push(0);
-    }
+    // for(let i=0;i<Object.keys(Platform).length;++i){
+    results.push("import * as API from '..'\n"
+        + "export interface CloudParams{ noCache?: boolean; \n adminId ?: string; }\n");
+    lastPositions.push(0);
+    // }
     // let resultText = ''
     let sourceText = sourceFile.text;
     function skipNode(nodeStart, nodeEnd, platform) {
@@ -122,9 +122,10 @@ function createSdkFile(sourceFile) {
         // skipText(nodeStart.getFullStart(), (nodeEnd||nodeStart).getEnd())
     }
     function skipAllText(start, end) {
-        for (let i = 0; i < Object.keys(base_1.Platform).length; ++i) {
-            skipText(start, end, i);
-        }
+        let i = 0;
+        // for(let i=0;i<Object.keys(Platform).length;++i){
+        skipText(start, end, i);
+        // }
     }
     function skipText(start, end, platform) {
         let text = sourceText.substring(lastPositions[platform], start);
@@ -158,7 +159,9 @@ function createSdkFile(sourceFile) {
                         if (moduleName == 'leanengine') {
                             text = text.replace('leanengine', 'leancloud-storage');
                         }
-                        for (let i = 0; i < Object.keys(base_1.Platform).length; ++i) {
+                        // for (let i = 0; i < Object.keys(Platform).length; ++i) 
+                        {
+                            let i = 0;
                             appendText(text + '\n', i);
                         }
                     }
@@ -191,7 +194,9 @@ function createSdkFile(sourceFile) {
                         }
                     }
                     if (needExport) {
-                        for (let i = 0; i < Object.keys(base_1.Platform).length; ++i) {
+                        // for(let i=0;i<Object.keys(Platform).length;++i)
+                        {
+                            let i = 0;
                             skipText(interfaceNode.getStart(), interfaceNode.getStart(), i);
                             appendText('export ', i);
                         }
@@ -208,7 +213,9 @@ function createSdkFile(sourceFile) {
                         }
                     }
                     if (needExport) {
-                        for (let i = 0; i < Object.keys(base_1.Platform).length; ++i) {
+                        // for(let i=0;i<Object.keys(Platform).length;++i)
+                        {
+                            let i = 0;
                             skipText(classNode.getStart(), classNode.getStart(), i);
                             appendText('export ', i);
                         }
@@ -253,10 +260,12 @@ function createSdkFile(sourceFile) {
                                 needSkip = false;
                                 // let parameters = sandbox.result || {}
                                 // let platforms:string[] = parameters.platforms
-                                let keys = Object.keys(base_1.Platform);
-                                for (let i = 0; i < keys.length; ++i) {
-                                    let s = keys[i].replace('_', '-');
-                                    if (!internal && platforms && !platforms.includes(s)) {
+                                // let keys = Object.keys(Platform)
+                                // for (let i = 0; i < keys.length; ++i) 
+                                {
+                                    // let s = keys[i].replace('_', '-')
+                                    // let s = targetPlatform.replace('_', '-')
+                                    if (!internal && platforms && !platforms.includes(os_1.platform)) {
                                         skipNode(node, node, i);
                                     }
                                     else if (methodNode.body) {
@@ -280,10 +289,11 @@ function createSdkFile(sourceFile) {
     ts.forEachChild(sourceFile, scanNode);
     if (!exportText)
         return null;
-    for (let i = 0; i < Object.keys(base_1.Platform).length; ++i) {
-        appendText(exportText, i);
-        results[i] += sourceText.substring(lastPositions[i], sourceFile.getEnd());
-    }
+    // for(let i=0;i<Object.keys(Platform).length;++i){
+    let i = 0;
+    appendText(exportText, i);
+    results[i] += sourceText.substring(lastPositions[i], sourceFile.getEnd());
+    // }
     return results;
 }
 function deleteFolderRecursive(path) {
@@ -302,14 +312,11 @@ function deleteFolderRecursive(path) {
 }
 ;
 const _dirroot = __dirname + '/../../../';
-function getSdkFolderName(platform) {
-    return base_1.Platform[platform].replace('_', '-');
-}
 function getSdkLibPath(platform) {
-    return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/src/lib';
+    return _dirroot + 'release/api/' + platform + '/src/lib';
 }
 function getSdkPath(platform) {
-    return _dirroot + 'release/api/' + getSdkFolderName(platform);
+    return _dirroot + 'release/api/' + platform;
 }
 // function clearOldBuild() {
 //     for (let i = 0; i < Platform.count; ++i) {
@@ -327,16 +334,18 @@ function createSdk(dir, exclude) {
     //     }
     // }
     // for (let i = 0; i < Platform.count; ++i) {
-    for (let i in base_1.Platform) {
-        if (!targetPlatform || targetPlatform == getSdkFolderName(i)) {
-            let libPath = getSdkLibPath(i);
-            if (fs.existsSync(libPath)) {
-                console.log('remove old files ' + libPath);
-                deleteFolderRecursive(libPath);
-            }
-            fs.mkdirSync(libPath);
+    // for(let i in Platform){
+    let i = 0;
+    // if (!targetPlatform || targetPlatform == getSdkFolderName(targetPlatform)) 
+    {
+        let libPath = getSdkLibPath(targetPlatform);
+        if (fs.existsSync(libPath)) {
+            console.log('remove old files ' + libPath);
+            deleteFolderRecursive(libPath);
         }
+        fs.mkdirSync(libPath);
     }
+    // }
     let indexFileText = '';
     for (let d = 0; d < dir.length; ++d) {
         let file = dir[d];
@@ -349,12 +358,15 @@ function createSdk(dir, exclude) {
             var sdks = createSdkFile(sourceFile);
             if (sdks) {
                 // for (let i = 0; i < Platform.count; ++i) {
-                let keys = Object.keys(base_1.Platform);
+                // let keys = Object.keys(Platform)
                 // for(let i in Platform){
-                for (let i = 0; i < keys.length; ++i) {
-                    if (!targetPlatform || targetPlatform == getSdkFolderName(keys[i])) {
-                        if (fs.existsSync(getSdkLibPath(keys[i]))) {
-                            let libPath = getSdkLibPath(keys[i]) + '/' + file;
+                // for (let i = 0; i < keys.length; ++i) 
+                {
+                    let i = 0;
+                    // if (!targetPlatform || targetPlatform == getSdkFolderName(keys[i] as Platform)) 
+                    {
+                        if (fs.existsSync(getSdkLibPath(targetPlatform))) {
+                            let libPath = getSdkLibPath(targetPlatform) + '/' + file;
                             console.log('write ' + libPath);
                             fs.writeFileSync(libPath, sdks[i]);
                         }
@@ -369,10 +381,12 @@ function createSdk(dir, exclude) {
         }
     }
     // for (let i = 0; i < Platform.count; ++i) {
-    for (let i in base_1.Platform) {
-        if (!targetPlatform || targetPlatform == getSdkFolderName(i)) {
-            if (fs.existsSync(getSdkLibPath(i))) {
-                let libPath = getSdkLibPath(i) + '/index.ts';
+    // for(let i in Platform)
+    {
+        // if (!targetPlatform || targetPlatform == getSdkFolderName(targetPlatform)) 
+        {
+            if (fs.existsSync(getSdkLibPath(targetPlatform))) {
+                let libPath = getSdkLibPath(targetPlatform) + '/index.ts';
                 console.log('write ' + libPath);
                 fs.writeFileSync(libPath, indexFileText);
             }
@@ -398,7 +412,8 @@ function compile(fileNames, options) {
     let exitCode = emitResult.emitSkipped ? 1 : 0;
     console.log(`Process exiting with code '${exitCode}'.`);
 }
-var targetPlatform = process.argv[2];
+let targetPlatform = base_1.CheckPlatform(process.argv[2]);
+const os_1 = require("os");
 // console.log('clear last build....')
 // clearOldBuild()
 const exclude = ['cloud.ts', 'index.ts', 'base.ts'];

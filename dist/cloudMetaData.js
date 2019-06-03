@@ -68,22 +68,15 @@ function CreateReturnMetaDatas(file, data) {
         return GetTypeData(file, 'return', data);
     }
 }
-var Platform;
-(function (Platform) {
-    Platform[Platform["web_user"] = 0] = "web_user";
-    Platform[Platform["web_admin"] = 1] = "web_admin";
-    Platform[Platform["weapp"] = 2] = "weapp";
-    Platform[Platform["count"] = 3] = "count";
-})(Platform || (Platform = {}));
 function PlatformString(text) {
     let value = GetJsonValueString(text, 'platforms');
     if (!value) {
         return null;
     }
-    for (let i = 0; i < Platform.count; ++i) {
-        let s = Platform[i];
-        value = value.replace('Platform.' + s, '"' + s.replace('_', '-') + '"');
-    }
+    // for (let i = 0; i < Platform.count; ++i) {
+    //   let s = Platform[i]
+    //   value = value.replace('Platform.' + s, '"' + s.replace('_', '-') + '"')
+    // }
     return value;
 }
 exports.PlatformString = PlatformString;
@@ -199,7 +192,9 @@ function CreateMethodMetaData(file, className, data) {
          * 返回值类型
          */
         value: CreateReturnMetaDatas(file, signatures.type),
-        comment: signatures.comment && signatures.comment.shortText,
+        comment: signatures.comment && (signatures.comment.shortText && [signatures.comment.shortText] || [])
+            .concat((signatures.comment.tags && (signatures.comment.tags.map(e => e.tag + ': ' + e.text)))
+            || []).join('\n'),
         valueComment: signatures.comment && signatures.comment.returns,
     });
 }

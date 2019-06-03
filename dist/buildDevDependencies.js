@@ -15,24 +15,19 @@ const ts = __importStar(require("typescript"));
 const base_1 = require("./base");
 const path = __importStar(require("path"));
 // import { devDependencies, dependencies} from '../package.json'
-var targetPlatform = process.argv[2];
-function getPlatform(targetPlatform) {
-    for (let i in base_1.Platform) {
-        if (targetPlatform == getSdkFolderName(i)) {
-            return i;
-        }
-    }
-    throw new Error('Error targetPlatform ' + targetPlatform);
-}
+var targetPlatform = base_1.CheckPlatform(process.argv[2]);
+// function getPlatform(targetPlatform: string): Platform {
+//   return targetPlatform.replace('-','_') as Platform
+// }
 const _dirroot = __dirname + '/../../../';
-function getSdkFolderName(platform) {
-    return base_1.Platform[platform].replace('_', '-');
-}
+// function getSdkFolderName(platform: Platform) {
+//   return platform.replace('_', '-');
+// }
 function getSdkLibPath(platform) {
-    return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/dist/lib';
+    return _dirroot + 'release/api/' + platform + '/dist/lib';
 }
 function getSdkPackagePath(platform) {
-    return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/package.json';
+    return _dirroot + 'release/api/' + platform + '/package.json';
 }
 // function getSdkInfoDistPath(platform: Platform) {
 //   return _dirroot + 'release/api/' + getSdkFolderName(platform) + '/dist/info.js'
@@ -89,14 +84,14 @@ function setDevDependencies(devDependencies, dir) {
     packageJson.devDependencies = devDependencies;
     fs_1.writeFileSync(dir, JSON.stringify(packageJson, null, 2), 'utf-8');
 }
-let platform = getPlatform(targetPlatform);
-let libPath = getSdkLibPath(platform);
+// let platform = getPlatform(targetPlatform)
+let libPath = getSdkLibPath(targetPlatform);
 let dir = fs.readdirSync(libPath);
 console.log('build devDependencies....');
 let imports = getImports(dir, libPath);
 let devDependencies = createDevDependencies(imports);
 // console.log(devDependencies)
-let packageJsonPath = getSdkPackagePath(platform);
+let packageJsonPath = getSdkPackagePath(targetPlatform);
 // let infoJsonDistPath = getSdkInfoDistPath(platform)
 console.log('write ' + packageJsonPath);
 setDevDependencies(devDependencies, packageJsonPath);
