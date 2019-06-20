@@ -1,6 +1,6 @@
 {
   "name": "leancloud-cloud-decorator",
-  "version": "1.36.15",
+  "version": "1.37.0",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -20,9 +20,6 @@
   "homepage": "https://github.com/paraself/leancloud-cloud-decorator#readme",
   "dependencies": {
     "ioredis": "^4.9.3",
-    "joi": "^14.3.1",
-    "leancloud-storage": "^3.13.2",
-    "leanengine": "^3.3.3",
     "moment": "^2.24.0"
   },
   "devDependencies": {
