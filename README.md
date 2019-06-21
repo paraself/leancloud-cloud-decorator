@@ -1,7 +1,7 @@
 # leancloud cloud decorator
 通过装饰器自动加函数加入到leancloud的云函数定义中, 并加入缓存, 权限验证, 参数验证, 自动生成前端接口sdk等功能。
 
-**注意：装饰器必须在TS环境中使用, 如果你不知道如何在LC中配置TS环境，请看[LC云引擎TS实例项目](https://github.com/paraself/leancloud-node-ts)**
+**注意：装饰器必须在TS环境中使用, 如果你不知道如何在LC中配置TS环境，请看[LC云引擎TS示例项目](https://github.com/paraself/leancloud-node-ts)**
 
 ## 安装方法
 ```shell
