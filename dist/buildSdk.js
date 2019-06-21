@@ -265,7 +265,7 @@ function createSdkFile(sourceFile) {
                                 {
                                     // let s = keys[i].replace('_', '-')
                                     // let s = targetPlatform.replace('_', '-')
-                                    if (!internal && platforms && !platforms.includes(os_1.platform)) {
+                                    if (internal || (platforms && !platforms.includes(targetPlatform))) {
                                         skipNode(node, node, i);
                                     }
                                     else if (methodNode.body) {
@@ -413,7 +413,6 @@ function compile(fileNames, options) {
     console.log(`Process exiting with code '${exitCode}'.`);
 }
 let targetPlatform = base_1.CheckPlatform(process.argv[2]);
-const os_1 = require("os");
 // console.log('clear last build....')
 // clearOldBuild()
 const exclude = ['cloud.ts', 'index.ts', 'base.ts'];

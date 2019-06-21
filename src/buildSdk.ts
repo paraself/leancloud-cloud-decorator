@@ -271,7 +271,7 @@ function createSdkFile(sourceFile: ts.SourceFile){
                             {
                                 // let s = keys[i].replace('_', '-')
                                 // let s = targetPlatform.replace('_', '-')
-                                if (!internal && platforms && !platforms.includes(platform)){
+                                if (internal || (platforms && !platforms.includes(targetPlatform))){
                                     skipNode(node,node,i)
                                 }else if(methodNode.body){
                                     skipText(decorators[0].getStart(),decorators[decorators.length-1].getEnd(),i)
@@ -442,7 +442,6 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
   
 let targetPlatform = CheckPlatform( process.argv[2] )
 import { exec ,spawn} from 'child_process';
-import { platform } from "os";
 // console.log('clear last build....')
 // clearOldBuild()
 const exclude = ['cloud.ts', 'index.ts','base.ts']

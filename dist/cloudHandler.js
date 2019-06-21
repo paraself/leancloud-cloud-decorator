@@ -117,7 +117,9 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
             //   request.expressReq && request.expressReq.headers['user-agent']
             // ip = request.expressReq && requestIp.getClientIp(request.expressReq)
             // LogInfo(request.currentUser, ip, userAgent, name)
-            cloudInvokeCallback(name, request);
+            if (cloudInvokeCallback) {
+                cloudInvokeCallback(name, request);
+            }
         }
         catch (error) {
             console.error(error);
