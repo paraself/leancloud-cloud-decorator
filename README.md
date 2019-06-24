@@ -14,7 +14,7 @@ $ npm install leancloud-cloud-decorator
 在每个云函数文件中，需要导出一个云函数模块的实例，写法如下：
 
 ```typescript
-//云引擎部分
+// 云引擎部分：src/cloud/user.ts 将用户相关的云函数定义写在这个文件里
 import { Cloud, CloudParams } from 'leancloud-cloud-decorator'
 
 class User {
@@ -31,6 +31,10 @@ class User {
 }
 let user = new User()
 export default user
+
+// 项目入口：src/app.ts 在这里记得导入一次上面的模块, 即可加载上面的定义为实际的云函数
+import './cloud/user.ts'
+
 ```
 这样实际上是定义了一个名字叫做 ``User.GetUserInfo``的云函数。直接在客户端可以用LC的``AC.Cloud.run``方法来直接调用云函数。除了LC的这种方法之外，我们也可以从后端自动发布前端的接口api模块给前端用。这样做的好处是，接口参数，类型等信息，直接集成在api模块里了。这个我们后面会讲到。
 ```typescript
