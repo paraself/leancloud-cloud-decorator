@@ -1,5 +1,7 @@
 # leancloud cloud decorator
-通过装饰器自动加函数加入到leancloud的云函数定义中, 并加入缓存, 权限验证, 参数验证等功能
+通过装饰器自动加函数加入到leancloud的云函数定义中, 并加入缓存, 权限验证, 参数验证, 自动生成前端接口sdk等功能。
+
+**注意：装饰器必须在TS环境中使用, 如果你不知道如何在LC中配置TS环境，请看[LC云引擎TS示例项目](https://github.com/paraself/leancloud-node-ts)**
 
 ## 安装方法
 ```shell
@@ -28,8 +30,11 @@ init({
 
 ## 定义云函数
 
+这里我们约定，所有的云函数文件，必须放在``src/cloud/xxxx.ts``里。一般一个ts文件，是一个云函数命名空间。例如``user.ts``, ``payment.ts``等。
+在每个云函数文件中，需要导出一个云函数模块的实例，写法如下：
+
 ```typescript
-//云引擎部分
+// 云引擎部分：src/cloud/user.ts 将用户相关的云函数定义写在这个文件里
 import { Cloud, CloudParams } from 'leancloud-cloud-decorator'
 
 class User {
@@ -44,22 +49,33 @@ class User {
     }
 
 }
-```
+let user = new User()
+export default user
 
+// 项目入口：src/app.ts 在这里记得导入一次上面的模块, 即可加载上面的定义为实际的云函数
+import './cloud/user.ts'
+
+```
+这样实际上是定义了一个名字叫做 ``User.GetUserInfo``的云函数。直接在客户端可以用LC的``AC.Cloud.run``方法来直接调用云函数。除了LC的这种方法之外，我们也可以从后端自动发布前端的接口api模块给前端用。这样做的好处是，接口参数，类型等信息，直接集成在api模块里了。这个我们后面会讲到。
 ```typescript
 //客户端部分
-    AV.Cloud.run('User.GetUserInfo').then(r=>console.log(r))
+// 1. LC的云函数调用方法
+AV.Cloud.run('User.GetUserInfo').then(r=>console.log(r))
+// 2. 如果使用了本装饰器的云函数前端api发布功能，则可以在前端这么使用
+let user = await User.GetUserInfo(xxxx)
 ```
 
 ## 云函数参数
+通过TS里的interface，我们可以在前后端统一参数的类型。后端定义接口的参数类型，这个类型能够随着api发布，发布到前端进行静态的类型检查，避免前后端经常对于接口参数不明确的问题。
 ```typescript
-//云引擎部分
+// 云引擎部分
 import { Cloud, CloudParams } from 'leancloud-cloud-decorator'
 import Joi from 'joi'
 
-//云函数参数接口必须继承CloudParams
+// 云函数参数接口必须继承CloudParams
 interface GetUserInfoByIdParams extends CloudParams{
   userId: string
+  isAnonymous?: boolean // 可选参数
 }
 
 class User {
@@ -70,19 +86,18 @@ class User {
         schema: {
           //userId 只能为长度为24位的字符串,且为必填,不符合条件的参数会进程reject处理
           userId: Joi.string().length(24).required(),
-        },
-        // 只有 admin 权限的用户,才能调用此函数
-        roles:[['admin']]
+          isAnonymous: Joi.boolean().optional()
+        }
     })
     async GetUserInfoById(params:GetUserInfoByIdParams) : Promise<any>{
-        // 直接返回内置字段 currentUser ,当前用户信息. 默认只有登入的用户才能调用此云函数
+        // 直接返回内置字段 currentUser。默认所有的云函数都必须检验用户的信息，并拿到currentUser。如果你不需要currentUser的话，则可以设置：``noUser: true`` 进行关闭。
         return params.currentUser
     }
 }
 ```
 
 ## 缓存设置
-加上cache字段,将会缓存云函数的返回内容,缓存期间请求云函数,不会真正执行云函数,会直接返回之前的缓存内容,直到缓存过期之后,请求云函数才会再次执行一次
+云函数设置里，加上cache字段，将会缓存云函数的返回内容，缓存期间请求云函数，不会真正执行云函数，会直接返回之前的缓存内容，直到缓存过期之后，请求云函数才会再次执行一次。
 
 ```typescript
 //云引擎部分
@@ -102,15 +117,15 @@ class User {
           id: Joi.string().optional(),
         }
         cache: {
-            //参数有id字段,或者为'id','name' 字段组合时,才会使用缓存
+            //参数有id字段,或者为'id','name' 字段组合时,才会使用缓存，只有name的话，不会开启缓存
             params: [['id'],['id','name']],
             //按小时缓存
             timeUnit: 'hour'
-            //如果加上此设置,将会为每个用户单独创建一份缓存,每个用户将会返回不一样的时间信息
-            //currentUser:true
-        },
-        //如果加上internal ,则不会注册leancloud云函数,只能在云引擎内部,通过代码引用方式调用此带缓存的函数
-        //internal:true
+            //如果加上此设置,将会为每个用户单独创建一份缓存,适用于每个用户返回的内容不一样的场景
+            currentUser:true,
+            // 过期时间基于时间单位还是请求时间. 默认request. timeUnit为某个时间单位的整点开始即时,request为请求的时候开始计时
+            expireBy: 'request'
+        }
     })
     async GetTime() : Promise<string>{
         return new Date().toString()
@@ -118,7 +133,8 @@ class User {
 }
 
 let user = new User()
-// 可以在其他地方,直接调用带缓存的函数
+export default user
+// 也可以后端代码的其他位置，直接import这个模块，调用里面的云函数
 user.GetTime()
 ```
 
@@ -129,9 +145,9 @@ user.GetTime()
 import { Cloud, CloudParams } from 'leancloud-cloud-decorator'
 
 class User {
-    //定义一个,每过一小时,刷新一次时间信息的云函数
     @Cloud<>({
         schema:{}
+        // 限流配置数组里的每一个条件，必须同时满足
         rateLimit: [
             {
                 //每个用户每秒最多只能请求2次此云函数
@@ -153,12 +169,12 @@ class User {
 ```
 
 ## 自动生成前端SDK
-通过项目根目录下的 lcc-config.json 配置文件, 配置需要生成的前端SDK平台
+通过项目根目录下的 lcc-config.json 配置文件, 配置需要生成的前端SDK平台。目前暂时不支持配置registry。模块都会发布到npm官方的registry下。如需要私有模块的话，考虑先使用npm的付费版。
 ```json
 {
     "platforms": {
         "web_user": {
-            "package": "@namespace/web-user"
+            "package": "@namespace/web-user" // 配置web_user平台对应的npm包名称
         },
         "weapp": {
             "package": "@namespace/weapp"
@@ -228,9 +244,6 @@ export function rpc(name: string, data?: any, options?: AV.AuthOptions): Promise
  * @param av - AV空间对象, 调用sdk.init(AV) 即可
  */
 export function init(av: {
-  /**
-   * 程序版,用于记录日志
-   */
   version:string,
   Cloud: {
     run: CloudFunc,
