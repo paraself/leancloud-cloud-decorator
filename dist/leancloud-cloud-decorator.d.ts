@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import AV from 'leanengine';
 import Joi from 'joi';
 import { Platform, getCacheKey } from './base';

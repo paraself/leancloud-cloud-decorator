@@ -8,6 +8,7 @@ let lockPrefix = `${cachePrefix}:lock:`
 
 /**
  * 设置redis缓存
+ * @deprecated please use init
  */
 export function SetCache(params: {
   /**

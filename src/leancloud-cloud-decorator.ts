@@ -199,11 +199,11 @@ function getCacheTime(timeUnit?: 'day' | 'hour' | 'minute' | 'second' | 'month',
 
 type CloudHandler = (params: CloudParams) => Promise<any>
 
-async function CloudImplement(cloudImplementOptions: {
+async function CloudImplement<T extends CloudParams>(cloudImplementOptions: {
   functionName: string
-  request: AV.Cloud.CloudFunctionRequest
+  request: AV.Cloud.CloudFunctionRequest & {noUser?:true}
   handle: CloudHandler
-  cloudOptions: CloudOptions<any> | null
+  cloudOptions: CloudOptions<T> | null
   schema: Joi.ObjectSchema | null
   rateLimit: RateLimitOptions[] | null
   roles:string[][]|null
@@ -225,7 +225,9 @@ async function CloudImplement(cloudImplementOptions: {
       throw new AV.Cloud.Error('non-administrators in noCache', { code: 400 })
     }
   }
-  await CheckPermission(request.currentUser,cloudOptions&&cloudOptions.noUser,roles)
+  if(!request.noUser){
+    await CheckPermission(request.currentUser,cloudOptions&&cloudOptions.noUser,roles)
+  }
   if (schema) {
     CheckSchema(schema, params)
   }
@@ -289,14 +291,14 @@ function ClearInternalParams(params){
   return params2
 }
 
-function CreateCloudCacheFunction<T>(info: {
+function CreateCloudCacheFunction<T extends CloudParams>(info: {
   cache: CacheOptions<T>
   handle: CloudHandler
   functionName: string,
-  cloudOptions: CloudOptions<any>,
+  cloudOptions: CloudOptions<T>,
   schema?: Joi.ObjectSchema
 }) {
-  return async (request: AV.Cloud.CloudFunctionRequest) => {
+  return async (request: AV.Cloud.CloudFunctionRequest & {noUser?:true}) => {
 
     let { cache, handle, cloudOptions, functionName } = info
     let schema = info.schema || null
@@ -305,7 +307,9 @@ function CreateCloudCacheFunction<T>(info: {
     //@ts-ignore
     let params: CloudParams = request.params || {}
     let roles = cloudOptions.roles || null
-    await CheckPermission(request.currentUser, cloudOptions.noUser, roles)
+    if(!request.noUser){
+      await CheckPermission(request.currentUser, cloudOptions.noUser, roles)
+    }
     roles = null
 
     if (schema) {
@@ -468,7 +472,7 @@ export function Cloud<T extends CloudParams>(params?: CloudOptions<T>) {
       } else {
         // console.log(functionName + ' normal cloud function')
         //无缓存版本
-        cloudFunction = (request) => CloudImplement({ functionName, request, handle, cloudOptions: params as CloudOptions<any>, schema: schema || null, rateLimit,roles })
+        cloudFunction = (request) => CloudImplement({ functionName, request, handle, cloudOptions: params! , schema: schema || null, rateLimit,roles })
       }
       if (params && params.internal) {
         console.log('internal function '+functionName)
@@ -489,7 +493,7 @@ export function Cloud<T extends CloudParams>(params?: CloudOptions<T>) {
         delete params2.lock
         delete params2.currentUser
         delete params2.request
-        return cloudFunction({ currentUser, params:params2 })
+        return cloudFunction({ currentUser, params:params2, noUser:true })
       }
     }
 

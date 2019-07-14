@@ -20,7 +20,7 @@ function CheckPlatform(platform) {
     if (platforms[platform]) {
         return platform;
     }
-    throw new Error('Error platform ' + platform);
+    throw new Error('不存在平台 ' + platform + ' 更改 lcc-config.json 后请执行 lcc-config 更新平台配置');
 }
 exports.CheckPlatform = CheckPlatform;
 // export enum Platform {

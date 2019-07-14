@@ -3,6 +3,7 @@ export declare let redis: Redis;
 export declare let cachePrefix: string;
 /**
  * 设置redis缓存
+ * @deprecated please use init
  */
 export declare function SetCache(params: {
     /**

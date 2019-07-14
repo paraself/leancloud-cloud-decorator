@@ -6,6 +6,26 @@
 $ npm install leancloud-cloud-decorator
 ```
 
+## 初始化
+```typescript
+import { init } from 'leancloud-cloud-decorator'
+init({
+   // redis地址
+  redisUrl: 'your redis url',
+   // redis保存前缀
+  redisPrefix: 'prefax',
+  //错误回调,可选参数,用于搜集错误
+  errorCallback:errorInfo => {
+    console.error(errorInfo)
+    return errorInfo.error
+  },
+  //云函数被调用回调,可选参数,用于搜集云函数调用信息
+  cloudInvokeCallback:(name, request) => {
+    console.log(request.expressReq)
+  }
+})
+```
+
 ## 定义云函数
 
 ```typescript
@@ -164,7 +184,9 @@ class User {
 }
 
 ```
-也可手动通过 lcc-config 应用配置
+也可手动通过 lcc-config 应用配置.
+
+当lcc-config.json 的设置改变时候,必须手工执行 lcc-config 以应用配置
 ```shell
 $ npx lcc-config
 ```

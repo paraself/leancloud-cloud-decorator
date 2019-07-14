@@ -20,4 +20,4 @@ declare type EqualToConditionsType = {
     [key: string]: string | number | AV.Object | boolean | Date;
 };
 export declare function getCacheKey(equalToConditions: EqualToConditionsType, cacheKey?: string, symbol?: string): string;
-export declare function promiseExec(command: string): Promise<{}>;
+export declare function promiseExec(command: string): Promise<unknown>;

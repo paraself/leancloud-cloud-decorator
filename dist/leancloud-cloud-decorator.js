@@ -101,7 +101,9 @@ async function CloudImplement(cloudImplementOptions) {
             throw new leanengine_1.default.Cloud.Error('non-administrators in noCache', { code: 400 });
         }
     }
-    await CheckPermission(request.currentUser, cloudOptions && cloudOptions.noUser, roles);
+    if (!request.noUser) {
+        await CheckPermission(request.currentUser, cloudOptions && cloudOptions.noUser, roles);
+    }
     if (schema) {
         CheckSchema(schema, params);
     }
@@ -169,7 +171,9 @@ function CreateCloudCacheFunction(info) {
         //@ts-ignore
         let params = request.params || {};
         let roles = cloudOptions.roles || null;
-        await CheckPermission(request.currentUser, cloudOptions.noUser, roles);
+        if (!request.noUser) {
+            await CheckPermission(request.currentUser, cloudOptions.noUser, roles);
+        }
         roles = null;
         if (schema) {
             CheckSchema(schema, params);
@@ -351,7 +355,7 @@ function Cloud(params) {
                 delete params2.lock;
                 delete params2.currentUser;
                 delete params2.request;
-                return cloudFunction({ currentUser, params: params2 });
+                return cloudFunction({ currentUser, params: params2, noUser: true });
             };
         }
         // console.log(target.name)

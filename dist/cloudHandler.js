@@ -15,6 +15,7 @@ const redisSetting = __importStar(require("./redis"));
 const base_1 = require("./base");
 const cloudStats_1 = require("./cloudStats");
 const lodash_1 = __importDefault(require("lodash"));
+const redis_1 = require("./redis");
 const _define = leanengine_1.default.Cloud.define;
 const _beforeDelete = leanengine_1.default.Cloud.beforeDelete;
 const _beforeSave = leanengine_1.default.Cloud.beforeSave;
@@ -24,7 +25,6 @@ const _afterSave = leanengine_1.default.Cloud.afterSave;
 const _afterUpdate = leanengine_1.default.Cloud.afterUpdate;
 const LOG_CLOUD_FILTER = (process.env.LOG_CLOUD_FILTER && JSON.parse(process.env.LOG_CLOUD_FILTER)) ||
     [];
-const redis_1 = require("./redis");
 let redis = redisSetting.redis;
 let prefix = redisSetting.cachePrefix;
 redisSetting.AddCacheUpdateCallback((params) => {
@@ -36,12 +36,18 @@ let cloudErrorCallback = (error) => {
     if (typeof error === 'string') {
         return error;
     }
-    return { message: error.message, code: error.code };
+    return error.error;
 };
+/**
+ *  @deprecated please use init
+ */
 function SetCloudInvokeCallback(callback) {
     cloudInvokeCallback = callback;
 }
 exports.SetCloudInvokeCallback = SetCloudInvokeCallback;
+/**
+ * @deprecated please use init
+ */
 function SetCloudErrorCallback(callback) {
     cloudErrorCallback = callback;
 }
@@ -115,7 +121,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
         try {
             // var userAgent =
             //   request.expressReq && request.expressReq.headers['user-agent']
-            // ip = request.expressReq && requestIp.getClientIp(request.expressReq)
+            ip = request.meta.remoteAddress;
             // LogInfo(request.currentUser, ip, userAgent, name)
             if (cloudInvokeCallback) {
                 cloudInvokeCallback(name, request);
@@ -131,6 +137,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
         params.api = params.api || UNKNOW_STATS;
         params.version = params.version || UNKNOW_STATS;
         try {
+            //@ts-ignore
             request.lock = lock;
             cloudStats_1.IncrCall({
                 function: name,

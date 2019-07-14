@@ -1,3 +1,9 @@
 import AV from 'leanengine';
-export declare function SetCloudInvokeCallback(callback: (name: string, request: AV.Cloud.ClassHookRequest) => void): void;
+/**
+ *  @deprecated please use init
+ */
+export declare function SetCloudInvokeCallback(callback: (name: string, request: AV.Cloud.CloudFunctionRequest) => void): void;
+/**
+ * @deprecated please use init
+ */
 export declare function SetCloudErrorCallback(callback: (error: any) => any): void;

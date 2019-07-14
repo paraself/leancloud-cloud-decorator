@@ -4,6 +4,7 @@ import {isRole,isRoles,getCacheKey} from './base'
 
 import { IncrCall, IncrError, GetStats } from './cloudStats'
 import _ from 'lodash'
+import { Lock } from './redis'
 
 const _define = AV.Cloud.define
 const _beforeDelete = AV.Cloud.beforeDelete
@@ -17,7 +18,6 @@ const LOG_CLOUD_FILTER =
   (process.env.LOG_CLOUD_FILTER && JSON.parse(process.env.LOG_CLOUD_FILTER)) ||
   []
 
-import { Lock } from './redis'
 
 let redis = redisSetting.redis
 let prefix = redisSetting.cachePrefix
@@ -27,18 +27,24 @@ redisSetting.AddCacheUpdateCallback((params)=>{
   prefix = redisSetting.cachePrefix
 })
 
-let cloudInvokeCallback: (name: string, request: AV.Cloud.ClassHookRequest) => any
+let cloudInvokeCallback: (name: string, request: AV.Cloud.CloudFunctionRequest) => any
 let cloudErrorCallback = (error: any) => {
   if (typeof error === 'string'){
     return error
   }
-  return { message: error.message, code: error.code }
+  return error.error
 }
 
-export function SetCloudInvokeCallback(callback: (name: string, request: AV.Cloud.ClassHookRequest)=>void) {
+/**
+ *  @deprecated please use init
+ */
+export function SetCloudInvokeCallback(callback: (name: string, request: AV.Cloud.CloudFunctionRequest)=>void) {
   cloudInvokeCallback = callback
 }
 
+/**
+ * @deprecated please use init
+ */
 export function SetCloudErrorCallback(callback: (error: any) => any) {
   cloudErrorCallback = callback
 }
@@ -112,12 +118,12 @@ AV.Cloud.define = function(
    *
    * @param {CloudFunction} request
    */
-  var CloudHandler = function(request) {
+  var CloudHandler = function(request:AV.Cloud.CloudFunctionRequest) {
     let ip
     try {
       // var userAgent =
       //   request.expressReq && request.expressReq.headers['user-agent']
-      // ip = request.expressReq && requestIp.getClientIp(request.expressReq)
+      ip = request.meta.remoteAddress
       // LogInfo(request.currentUser, ip, userAgent, name)
       if(cloudInvokeCallback){
         cloudInvokeCallback(name,request)
@@ -128,11 +134,12 @@ AV.Cloud.define = function(
     // return callback(request)
 
     var lock = new Lock(name + ':')
-    let params = request.params || {}
+    let params:any = request.params || {}
     params.platform = params.platform || UNKNOW_STATS
     params.api = params.api || UNKNOW_STATS
     params.version = params.version || UNKNOW_STATS
     try {
+      //@ts-ignore
       request.lock = lock
       IncrCall({
         function: name,

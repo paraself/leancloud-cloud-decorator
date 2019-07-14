@@ -4,6 +4,7 @@ exports.cachePrefix = 'pteppp';
 let lockPrefix = `${exports.cachePrefix}:lock:`;
 /**
  * 设置redis缓存
+ * @deprecated please use init
  */
 function SetCache(params) {
     exports.redis = params.cache;

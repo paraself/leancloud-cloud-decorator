@@ -142,11 +142,29 @@ function createSdkFile(sourceFile) {
     function scanNode(node) {
         switch (node.kind) {
             case ts.SyntaxKind.FunctionDeclaration:
+                {
+                    let functionDeclaration = node;
+                    if (functionDeclaration.modifiers && functionDeclaration.modifiers.find(e => e.kind == ts.SyntaxKind.ExportKeyword)) {
+                    }
+                    else {
+                        skipAllNode(node);
+                    }
+                }
+                break;
             case ts.SyntaxKind.ExpressionStatement:
             case ts.SyntaxKind.IfStatement:
-            case ts.SyntaxKind.VariableStatement:
             case ts.SyntaxKind.ExportAssignment:
                 skipAllNode(node);
+                break;
+            case ts.SyntaxKind.VariableStatement:
+                {
+                    let variableStatement = node;
+                    if (variableStatement.modifiers && variableStatement.modifiers.find(e => e.kind == ts.SyntaxKind.ExportKeyword)) {
+                    }
+                    else {
+                        skipAllNode(node);
+                    }
+                }
                 break;
             case ts.SyntaxKind.ImportDeclaration:
                 {
@@ -170,7 +188,12 @@ function createSdkFile(sourceFile) {
                 break;
             case ts.SyntaxKind.ImportEqualsDeclaration:
                 {
-                    // let importEqualsDeclaration = <ts.ImportEqualsDeclaration>node
+                    let importEqualsDeclaration = node;
+                    if (importEqualsDeclaration.moduleReference.kind == ts.SyntaxKind.QualifiedName) {
+                    }
+                    else {
+                        skipAllNode(node);
+                    }
                     // let moduleName = (<ts.ExternalModuleReference>importEqualsDeclaration.moduleReference).expression.getText()
                     // let importName = importEqualsDeclaration.name.getText()
                     // // console.log(moduleName)
@@ -181,12 +204,12 @@ function createSdkFile(sourceFile) {
                     //         appendText(importText + '\n', i)
                     //     }
                     // }
-                    skipAllNode(node);
                 }
                 break;
             case ts.SyntaxKind.InterfaceDeclaration:
                 {
                     let interfaceNode = node;
+                    //是否需要增加 export
                     let needExport = true;
                     if (interfaceNode.modifiers) {
                         if (interfaceNode.modifiers.find(x => x.kind == ts.SyntaxKind.ExportKeyword)) {
@@ -198,6 +221,7 @@ function createSdkFile(sourceFile) {
                         {
                             let i = 0;
                             skipText(interfaceNode.getStart(), interfaceNode.getStart(), i);
+                            //增加 export 标示
                             appendText('export ', i);
                         }
                     }
