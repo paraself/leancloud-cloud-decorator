@@ -169,11 +169,16 @@ function createSdkFile(sourceFile: ts.SourceFile){
             break
             case ts.SyntaxKind.ImportDeclaration:
                 {
+                    const skipModuleNames = [
+                        './cloud', './index','./base','bluebird' ,'leancloud-cloud-decorator'
+                    ]
                     let importDeclaration = <ts.ImportDeclaration>node
                     let moduleName = importDeclaration.moduleSpecifier.getText()
                     // console.log(moduleName.substring(1, moduleName.length - 1))
                     moduleName = moduleName.substring(1, moduleName.length - 1)
-                    if (moduleName[0] != '.' && moduleName!= 'bluebird' && moduleName!='leancloud-cloud-decorator') {
+                    if (!moduleName.includes('..')
+                    && !moduleName.includes('.json') 
+                    && !skipModuleNames.includes(moduleName)) {
                         let text = node.getText()
                         if (moduleName == 'leanengine') {
                             text = text.replace('leanengine','leancloud-storage')

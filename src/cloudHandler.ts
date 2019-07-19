@@ -64,7 +64,8 @@ async function CloudHookHandler(request: AV.Cloud.ClassHookRequest, handler: AV.
       user: request.currentUser,
       module: className,
       action: actionName,
-      params: request.object && request.object.updatedKeys && _.pick(request.object.toJSON(), request.object.updatedKeys)
+      params: request.object && request.object.updatedKeys && _.pick(request.object.toJSON(), request.object.updatedKeys),
+      target: request.object
     }
     // if (error instanceof IkkError) {
     //   ikkError = error

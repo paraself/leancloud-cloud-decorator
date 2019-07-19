@@ -350,7 +350,7 @@ function Cloud(params) {
                 }
             }
             descriptor.value = (params) => {
-                let currentUser = params.currentUser;
+                let currentUser = params && params.currentUser;
                 let params2 = Object.assign({}, params);
                 delete params2.lock;
                 delete params2.currentUser;

@@ -487,8 +487,8 @@ export function Cloud<T extends CloudParams>(params?: CloudOptions<T>) {
           AV.Cloud.define(params.optionalName,options, cloudFunction)
         }
       }
-      descriptor.value = (params: CloudParams) => {
-        let currentUser = params.currentUser
+      descriptor.value = (params: CloudParams | undefined) => {
+        let currentUser = params && params.currentUser
         let params2 = Object.assign({}, params)
         delete params2.lock
         delete params2.currentUser
