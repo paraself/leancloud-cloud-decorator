@@ -71,6 +71,9 @@ function getImports(dir, parentDir) {
     }
     return devDependencies;
 }
+/**
+ * 只使用主项目里存在的依赖
+ */
 function createDevDependencies(imports) {
     let map = {};
     let { devDependencies, dependencies } = JSON.parse(fs_1.readFileSync('package.json', 'utf-8'));
@@ -79,9 +82,10 @@ function createDevDependencies(imports) {
     });
     return map;
 }
-function setDevDependencies(devDependencies, dir) {
+function setDevDependencies(devDependencies, peerDependencies, dir) {
     let packageJson = JSON.parse(fs_1.readFileSync(dir, 'utf-8'));
     packageJson.devDependencies = devDependencies;
+    packageJson.peerDependencies = peerDependencies;
     fs_1.writeFileSync(dir, JSON.stringify(packageJson, null, 2), 'utf-8');
 }
 // let platform = getPlatform(targetPlatform)
@@ -94,5 +98,5 @@ let devDependencies = createDevDependencies(imports);
 let packageJsonPath = getSdkPackagePath(targetPlatform);
 // let infoJsonDistPath = getSdkInfoDistPath(platform)
 console.log('write ' + packageJsonPath);
-setDevDependencies(devDependencies, packageJsonPath);
+setDevDependencies(devDependencies, { "leancloud-storage": "^3.13.2" }, packageJsonPath);
 //# sourceMappingURL=buildDevDependencies.js.map

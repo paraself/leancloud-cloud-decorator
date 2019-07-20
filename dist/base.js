@@ -23,6 +23,10 @@ function CheckPlatform(platform) {
     throw new Error('不存在平台 ' + platform + ' 更改 lcc-config.json 后请执行 lcc-config 更新平台配置');
 }
 exports.CheckPlatform = CheckPlatform;
+function GetModuleMap(platform) {
+    return platforms[platform].module || {};
+}
+exports.GetModuleMap = GetModuleMap;
 // export enum Platform {
 //   web_user = "web_user",
 //   web_admin  = "web_admin",

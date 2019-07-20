@@ -1,12 +1,18 @@
 import * as AV from 'leanengine';
 declare const platforms: {
-    "web_test": {
-        "package": string;
+    [key: string]: {
+        package: string;
+        module?: {
+            [key: string]: string;
+        };
     };
 };
 export { platforms };
 export declare type Platform = keyof typeof platforms;
 export declare function CheckPlatform(platform: string): Platform;
+export declare function GetModuleMap(platform: Platform): {
+    [key: string]: string;
+};
 /**
  * 输入一个用户，和权限的名字，测试这个用户是否具有该权限
  * @function isRole

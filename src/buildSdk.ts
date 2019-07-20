@@ -5,7 +5,7 @@ import { readFileSync } from "fs";
 import * as fs from "fs";
 import * as ts from "typescript";
 import * as path from 'path'
-import { Platform,CheckPlatform } from './base'
+import { Platform,CheckPlatform, GetModuleMap } from './base'
 import { PlatformString,GetJsonValueString } from './cloudMetaData'
 // import * as vm from 'vm'
 // require('./cloud/index')
@@ -180,8 +180,8 @@ function createSdkFile(sourceFile: ts.SourceFile){
                     && !moduleName.includes('.json') 
                     && !skipModuleNames.includes(moduleName)) {
                         let text = node.getText()
-                        if (moduleName == 'leanengine') {
-                            text = text.replace('leanengine','leancloud-storage')
+                        if(moduleMap[moduleName]) {
+                            text = text.replace(moduleName,moduleMap[moduleName])
                         }
                         // for (let i = 0; i < Object.keys(Platform).length; ++i) 
                         {
@@ -255,7 +255,7 @@ function createSdkFile(sourceFile: ts.SourceFile){
                 if(classNode.name){
                     let className:string = classNode.name.getText()
                     let instance = className[0].toLowerCase()+className.substr(1)
-                    exportText = `\nlet ${instance} = new ${className}()\nexport {${instance}}`
+                    exportText = `\nlet ${instance} = new ${className}()\nexport default ${instance}`
                 }
             }
             break
@@ -416,7 +416,7 @@ function createSdk(dir:string[],exclude:string[]){
                     }
                 }
                 let moduleName = name.charAt(0).toUpperCase() + name.slice(1)
-                indexFileText += `import {${name}} from './${name}'\n`
+                indexFileText += `import ${name} from './${name}'\n`
                 indexFileText += `export { ${name} as ${moduleName} }\n`
                 indexFileText += `import * as ${moduleName}__ from './${name}'\n`
                 indexFileText += `export { ${moduleName}__  }\n`
@@ -470,6 +470,8 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
   }
   
 let targetPlatform = CheckPlatform( process.argv[2] )
+let moduleMap = GetModuleMap(targetPlatform)
+moduleMap['leanengine'] = moduleMap['leanengine'] || moduleMap['leancloud-storage'] || 'leancloud-storage'
 import { exec ,spawn} from 'child_process';
 // console.log('clear last build....')
 // clearOldBuild()

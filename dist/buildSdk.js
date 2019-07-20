@@ -179,8 +179,8 @@ function createSdkFile(sourceFile) {
                         && !moduleName.includes('.json')
                         && !skipModuleNames.includes(moduleName)) {
                         let text = node.getText();
-                        if (moduleName == 'leanengine') {
-                            text = text.replace('leanengine', 'leancloud-storage');
+                        if (moduleMap[moduleName]) {
+                            text = text.replace(moduleName, moduleMap[moduleName]);
                         }
                         // for (let i = 0; i < Object.keys(Platform).length; ++i) 
                         {
@@ -253,7 +253,7 @@ function createSdkFile(sourceFile) {
                     if (classNode.name) {
                         let className = classNode.name.getText();
                         let instance = className[0].toLowerCase() + className.substr(1);
-                        exportText = `\nlet ${instance} = new ${className}()\nexport {${instance}}`;
+                        exportText = `\nlet ${instance} = new ${className}()\nexport default ${instance}`;
                     }
                 }
                 break;
@@ -402,7 +402,7 @@ function createSdk(dir, exclude) {
                     }
                 }
                 let moduleName = name.charAt(0).toUpperCase() + name.slice(1);
-                indexFileText += `import {${name}} from './${name}'\n`;
+                indexFileText += `import ${name} from './${name}'\n`;
                 indexFileText += `export { ${name} as ${moduleName} }\n`;
                 indexFileText += `import * as ${moduleName}__ from './${name}'\n`;
                 indexFileText += `export { ${moduleName}__  }\n`;
@@ -442,6 +442,8 @@ function compile(fileNames, options) {
     console.log(`Process exiting with code '${exitCode}'.`);
 }
 let targetPlatform = base_1.CheckPlatform(process.argv[2]);
+let moduleMap = base_1.GetModuleMap(targetPlatform);
+moduleMap['leanengine'] = moduleMap['leanengine'] || moduleMap['leancloud-storage'] || 'leancloud-storage';
 // console.log('clear last build....')
 // clearOldBuild()
 const exclude = ['cloud.ts', 'index.ts', 'base.ts'];

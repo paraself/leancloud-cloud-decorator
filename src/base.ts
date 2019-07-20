@@ -2,8 +2,9 @@ import * as AV from 'leanengine'
 import _ from 'lodash'
 import Config from './config.json'
 import { exec,spawn} from 'child_process'
+import { string } from 'joi';
 
-const platforms = Config.platforms
+const platforms :{[key:string]:{package:string,module?:{[key:string]:string}}}= Config.platforms
 export {platforms}
 
 export type Platform = keyof typeof platforms
@@ -13,6 +14,10 @@ export function CheckPlatform(platform:string):Platform{
     return platform as Platform
   }
   throw new Error('不存在平台 '+platform+' 更改 lcc-config.json 后请执行 lcc-config 更新平台配置')
+}
+
+export function GetModuleMap(platform:Platform):{[key : string]:string}{
+  return platforms[platform].module || {}
 }
 
 // export enum Platform {
