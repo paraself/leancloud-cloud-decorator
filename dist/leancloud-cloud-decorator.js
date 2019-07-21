@@ -164,7 +164,7 @@ function ClearInternalParams(params) {
 }
 function CreateCloudCacheFunction(info) {
     return async (request) => {
-        let { cache, handle, cloudOptions, functionName } = info;
+        let { cache, handle, cloudOptions, functionName, rpc } = info;
         let schema = info.schema || null;
         let rateLimit = cloudOptions.rateLimit || null;
         // console.log(functionName)
@@ -241,6 +241,9 @@ function CreateCloudCacheFunction(info) {
                     //@ts-ignore
                     version: params.version,
                 });
+                if (rpc) {
+                    return leanengine_1.default.parseJSON(JSON.parse(textResult));
+                }
                 return JSON.parse(textResult);
             }
             catch (error) {
@@ -268,6 +271,9 @@ function CreateCloudCacheFunction(info) {
         }
         if (typeof results === 'object') {
             results.timestamp = startTimestamp.valueOf();
+            if (rpc && results instanceof leanengine_1.default.Object) {
+                results = results.toFullJSON();
+            }
         }
         let cacheValue;
         if (typeof results === 'string') {
@@ -322,12 +328,14 @@ function Cloud(params) {
                 //缓存版本
                 const cache = params.cache;
                 console.log(functionName + ' cache cloud function');
+                const rpc = params.rpc;
                 cloudFunction = CreateCloudCacheFunction({
                     cache,
                     handle,
                     functionName,
                     cloudOptions: params,
-                    schema
+                    schema,
+                    rpc
                 });
             }
             else {

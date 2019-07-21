@@ -6,11 +6,14 @@ var targetPlatform = CheckPlatform(process.argv[2])
 
 const command = `npx lcc-build ${targetPlatform} && lcc-release ${targetPlatform}`
 exec(command, { maxBuffer: 1024 * 800 }, (err, stdout, stderr) => {
-    console.log(stdout)
     if (err) {
       console.log(command)
-      console.error(err)
-      console.error(stderr)
-              return;
+      console.log('\x1b[31m')
+      console.log(stdout)
+      console.log( err)
+      console.log(stderr)
+      console.log('\x1b[0m')
+      return;
     }
+    console.log(stdout)
 }).on('close', (code, signal) => console.log(code + ' ' + signal))

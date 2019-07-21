@@ -108,16 +108,20 @@ exports.getCacheKey = getCacheKey;
 function promiseExec(command) {
     return new Promise((resolve, reject) => {
         child_process_1.exec(command, { maxBuffer: 1024 * 800 }, (err, stdout, stderr) => {
-            if (stdout)
-                console.log(stdout);
-            if (stderr)
-                console.error(stderr);
             if (err) {
                 console.log(command);
-                console.error(err);
+                console.log('\x1b[31m');
+                if (stdout)
+                    console.log(stdout);
+                if (stderr)
+                    console.log(stderr);
+                console.log(err);
+                console.log('\x1b[0m');
                 reject(err);
                 return;
             }
+            if (stdout)
+                console.log(stdout);
             // resolve()
         }).on('close', (code, signal) => resolve(code));
     });

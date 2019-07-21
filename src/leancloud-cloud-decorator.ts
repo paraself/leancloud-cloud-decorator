@@ -296,11 +296,12 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
   handle: CloudHandler
   functionName: string,
   cloudOptions: CloudOptions<T>,
-  schema?: Joi.ObjectSchema
+  schema?: Joi.ObjectSchema,
+  rpc?:boolean
 }) {
   return async (request: AV.Cloud.CloudFunctionRequest & {noUser?:true}) => {
 
-    let { cache, handle, cloudOptions, functionName } = info
+    let { cache, handle, cloudOptions, functionName, rpc } = info
     let schema = info.schema || null
     let rateLimit = cloudOptions.rateLimit || null
     // console.log(functionName)
@@ -381,6 +382,9 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
           //@ts-ignore
           version: params.version ,
         })
+        if(rpc){
+          return AV.parseJSON(JSON.parse( textResult ) )
+        }
         return JSON.parse(textResult)
       } catch (error) {
         return textResult
@@ -407,6 +411,9 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
     
     if (typeof results === 'object') {
       results.timestamp = startTimestamp.valueOf()
+      if(rpc && results instanceof AV.Object) {
+        results = results.toFullJSON()
+      }
     }
     let cacheValue: string
     if (typeof results === 'string') {
@@ -462,12 +469,14 @@ export function Cloud<T extends CloudParams>(params?: CloudOptions<T>) {
         //缓存版本
         const cache = params.cache
         console.log(functionName+' cache cloud function')
+        const rpc = params.rpc
         cloudFunction = CreateCloudCacheFunction({
           cache,
           handle,
           functionName,
           cloudOptions: params,
-          schema
+          schema,
+          rpc
         })
       } else {
         // console.log(functionName + ' normal cloud function')
