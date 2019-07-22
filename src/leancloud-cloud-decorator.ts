@@ -382,9 +382,9 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
           //@ts-ignore
           version: params.version ,
         })
-        if(rpc){
-          return AV.parseJSON(JSON.parse( textResult ) )
-        }
+        // if(rpc){
+        //   return AV.parseJSON(JSON.parse( textResult ) )
+        // }
         return JSON.parse(textResult)
       } catch (error) {
         return textResult
@@ -411,8 +411,12 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
     
     if (typeof results === 'object') {
       results.timestamp = startTimestamp.valueOf()
-      if(rpc && results instanceof AV.Object) {
-        results = results.toFullJSON()
+      if(rpc) {
+        if(results instanceof AV.Object){
+          results = results.toFullJSON()
+        }else if(Array.isArray(results)){
+          results = results.map(e=> (e instanceof AV.Object&&e.toFullJSON())|| e)
+        }
       }
     }
     let cacheValue: string

@@ -241,9 +241,9 @@ function CreateCloudCacheFunction(info) {
                     //@ts-ignore
                     version: params.version,
                 });
-                if (rpc) {
-                    return leanengine_1.default.parseJSON(JSON.parse(textResult));
-                }
+                // if(rpc){
+                //   return AV.parseJSON(JSON.parse( textResult ) )
+                // }
                 return JSON.parse(textResult);
             }
             catch (error) {
@@ -271,8 +271,13 @@ function CreateCloudCacheFunction(info) {
         }
         if (typeof results === 'object') {
             results.timestamp = startTimestamp.valueOf();
-            if (rpc && results instanceof leanengine_1.default.Object) {
-                results = results.toFullJSON();
+            if (rpc) {
+                if (results instanceof leanengine_1.default.Object) {
+                    results = results.toFullJSON();
+                }
+                else if (Array.isArray(results)) {
+                    results = results.map(e => (e instanceof leanengine_1.default.Object && e.toFullJSON()) || e);
+                }
             }
         }
         let cacheValue;
