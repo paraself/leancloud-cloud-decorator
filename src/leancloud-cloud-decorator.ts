@@ -1,4 +1,5 @@
 import AV, { request } from 'leanengine'
+import AV2 from 'leancloud-storage'
 import Joi from 'joi'
 import moment from 'moment'
 import {isRole,isRoles} from './base'
@@ -396,7 +397,8 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
         // if(rpc){
         //   return AV.parseJSON(JSON.parse( textResult ) )
         // }
-        return JSON.parse(textResult)
+        //@ts-ignore
+        return AV2.parse(textResult)
       } catch (error) {
         return textResult
       }
@@ -423,18 +425,20 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
     if (typeof results === 'object') {
       results.timestamp = startTimestamp.valueOf()
       if(rpc) {
-        if(results instanceof AV.Object){
-          results = results.toFullJSON()
-        }else if(Array.isArray(results)){
-          results = results.map(e=> (e instanceof AV.Object&&e.toFullJSON())|| e)
-        }
+        // if(results instanceof AV.Object){
+        //   results = results.toFullJSON()
+        // }else if(Array.isArray(results)){
+        //   results = results.map(e=> (e instanceof AV.Object&&e.toFullJSON())|| e)
+        // }
       }
     }
     let cacheValue: string
     if (typeof results === 'string') {
       cacheValue = results
     } else {
-      cacheValue = JSON.stringify(results)
+      // cacheValue = JSON.stringify(results)
+      //@ts-ignore
+      cacheValue = AV2.stringify(results)
     }
     redis2.setex(cacheKey, expires, cacheValue)
     return Promise.resolve(results)

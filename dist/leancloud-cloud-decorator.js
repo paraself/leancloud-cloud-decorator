@@ -11,6 +11,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const leanengine_1 = __importDefault(require("leanengine"));
+const leancloud_storage_1 = __importDefault(require("leancloud-storage"));
 const joi_1 = __importDefault(require("joi"));
 const moment_1 = __importDefault(require("moment"));
 const base_1 = require("./base");
@@ -247,7 +248,8 @@ function CreateCloudCacheFunction(info) {
                 // if(rpc){
                 //   return AV.parseJSON(JSON.parse( textResult ) )
                 // }
-                return JSON.parse(textResult);
+                //@ts-ignore
+                return leancloud_storage_1.default.parse(textResult);
             }
             catch (error) {
                 return textResult;
@@ -275,12 +277,11 @@ function CreateCloudCacheFunction(info) {
         if (typeof results === 'object') {
             results.timestamp = startTimestamp.valueOf();
             if (rpc) {
-                if (results instanceof leanengine_1.default.Object) {
-                    results = results.toFullJSON();
-                }
-                else if (Array.isArray(results)) {
-                    results = results.map(e => (e instanceof leanengine_1.default.Object && e.toFullJSON()) || e);
-                }
+                // if(results instanceof AV.Object){
+                //   results = results.toFullJSON()
+                // }else if(Array.isArray(results)){
+                //   results = results.map(e=> (e instanceof AV.Object&&e.toFullJSON())|| e)
+                // }
             }
         }
         let cacheValue;
@@ -288,7 +289,9 @@ function CreateCloudCacheFunction(info) {
             cacheValue = results;
         }
         else {
-            cacheValue = JSON.stringify(results);
+            // cacheValue = JSON.stringify(results)
+            //@ts-ignore
+            cacheValue = leancloud_storage_1.default.stringify(results);
         }
         redis2.setex(cacheKey, expires, cacheValue);
         return Promise.resolve(results);
