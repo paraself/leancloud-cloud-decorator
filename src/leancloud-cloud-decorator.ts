@@ -11,6 +11,7 @@ import * as redisSetting  from './redis'
 import {SetCache} from './redis'
 
 export {SetCache}
+import Redis from 'ioredis'
 
 let redis = redisSetting.redis
 let prefix = redisSetting.cachePrefix
@@ -30,7 +31,7 @@ interface CacheOptions<T> {
   /**
    * 存储的时间长度单位
    */
-  timeUnit?: 'day' | 'hour' | 'minute' | 'month'
+  timeUnit?: 'day' | 'hour' | 'minute' | 'month' | 'second'
   /**
    * 缓存时长,单位为timeUnit,默认为1
    */
@@ -44,6 +45,10 @@ interface CacheOptions<T> {
    * 过期时间基于时间单位还是请求时间. 默认request. timeUnit为某个时间单位的整点开始即时,request为请求的时候开始计时
    */
   expireBy?: 'timeUnit' | 'request' 
+  /**
+   * redis 地址, 不填则使用默认redis
+   */
+  redisUrl?:string
 }
 
 interface RateLimitOptions {
@@ -127,6 +132,10 @@ interface CloudOptions<T extends CloudParams> {
    * 内部函数,不注册云函数,但是会应用缓存的功能,以供内部调用
    */
   internal?:true
+  /**
+   * noUser为true的时, 默认不fetch User数据, 加上此设置,强制fetch User数据
+   */
+  fetchUser?:true
 }
 const NODE_ENV = process.env.NODE_ENV as string
 
@@ -176,7 +185,7 @@ async function RateLimitCheck(functionName: string, objectId: string, rateLimit:
   }
 }
 
-function getTimeLength(timeUnit?: 'day' | 'hour' | 'minute' | 'month',count=1) {
+function getTimeLength(timeUnit?: 'day' | 'hour' | 'minute' | 'month'| 'second',count=1) {
   return moment.duration(count,timeUnit||'minute').asSeconds()
 }
 
@@ -299,9 +308,10 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
   schema?: Joi.ObjectSchema,
   rpc?:boolean
 }) {
+  let { cache, handle, cloudOptions, functionName, rpc } = info
+  let _redis = cache.redisUrl && new Redis(cache.redisUrl, {maxRetriesPerRequest: null})
   return async (request: AV.Cloud.CloudFunctionRequest & {noUser?:true}) => {
 
-    let { cache, handle, cloudOptions, functionName, rpc } = info
     let schema = info.schema || null
     let rateLimit = cloudOptions.rateLimit || null
     // console.log(functionName)
@@ -370,7 +380,8 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
 
     // console.log(functionName + ' CloudImplement Cache')
     //尝试获取缓存
-    let textResult = await redis.get(cacheKey)
+    let redis2 = _redis || redis
+    let textResult = await redis2.get(cacheKey)
     if (textResult) {
       try {
         IncrCache({
@@ -425,7 +436,7 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
     } else {
       cacheValue = JSON.stringify(results)
     }
-    redis.setex(cacheKey, expires, cacheValue)
+    redis2.setex(cacheKey, expires, cacheValue)
     return Promise.resolve(results)
   }
 }
@@ -491,7 +502,7 @@ export function Cloud<T extends CloudParams>(params?: CloudOptions<T>) {
         console.log('internal function '+functionName)
       } else {
         let options:AV.Cloud.DefineOptions = {}
-        if(params && params.noUser){
+        if(params && params.noUser && !params.fetchUser){
           options.fetchUser = false
         }
         AV.Cloud.define(functionName,options, cloudFunction)

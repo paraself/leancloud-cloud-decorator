@@ -14,7 +14,7 @@ interface CacheOptions<T> {
     /**
      * 存储的时间长度单位
      */
-    timeUnit?: 'day' | 'hour' | 'minute' | 'month';
+    timeUnit?: 'day' | 'hour' | 'minute' | 'month' | 'second';
     /**
      * 缓存时长,单位为timeUnit,默认为1
      */
@@ -27,6 +27,10 @@ interface CacheOptions<T> {
      * 过期时间基于时间单位还是请求时间. 默认request. timeUnit为某个时间单位的整点开始即时,request为请求的时候开始计时
      */
     expireBy?: 'timeUnit' | 'request';
+    /**
+     * redis 地址, 不填则使用默认redis
+     */
+    redisUrl?: string;
 }
 interface RateLimitOptions {
     /**
@@ -90,6 +94,10 @@ interface CloudOptions<T extends CloudParams> {
      * 内部函数,不注册云函数,但是会应用缓存的功能,以供内部调用
      */
     internal?: true;
+    /**
+     * noUser为true的时, 默认不fetch User数据, 加上此设置,强制fetch User数据
+     */
+    fetchUser?: true;
 }
 /**
  * 将函数加入云函数中,云函数名为 ``类名.函数名``

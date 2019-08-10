@@ -289,24 +289,28 @@ leanengine_1.default.Cloud.define('Cloud.GetStats', async (request) => {
         throw new leanengine_1.default.Cloud.Error('non-administrators', { code: 400 });
     }
 });
+function DeleteCloudCache(params) {
+    let cacheKeyConfig = params.params;
+    if (params.userId) {
+        cacheKeyConfig['currentUser'] = params.userId;
+    }
+    let functionName = params.module + '.' + params.function;
+    let timeUnitList = ['day', 'hour', 'minute', 'second', 'month'];
+    let pipeline = redis.pipeline();
+    for (let i = 0; i < timeUnitList.length; ++i) {
+        cacheKeyConfig['timeUnit'] = timeUnitList[i];
+        let cacheKey = `${prefix}:cloud:${functionName}:` + base_1.getCacheKey(cacheKeyConfig);
+        pipeline.del(cacheKey);
+    }
+    return pipeline.exec();
+}
+exports.DeleteCloudCache = DeleteCloudCache;
 //@ts-ignore
 leanengine_1.default.Cloud.define('Cloud.DeleteCache', async (request) => {
     if (request.currentUser && (await base_1.isRole(request.currentUser, 'Dev'))) {
         //@ts-ignore
         let params = request.params;
-        let cacheKeyConfig = params.params;
-        if (params.userId) {
-            cacheKeyConfig['currentUser'] = params.userId;
-        }
-        let functionName = params.module + '.' + params.function;
-        let timeUnitList = ['day', 'hour', 'minute', 'second', 'month'];
-        let pipeline = redis.pipeline();
-        for (let i = 0; i < timeUnitList.length; ++i) {
-            cacheKeyConfig['timeUnit'] = timeUnitList[i];
-            let cacheKey = `${prefix}:cloud:${functionName}:` + base_1.getCacheKey(cacheKeyConfig);
-            pipeline.del(cacheKey);
-        }
-        return pipeline.exec();
+        return DeleteCloudCache(params);
     }
     else {
         throw new leanengine_1.default.Cloud.Error('non-administrators', { code: 400 });

@@ -20,6 +20,7 @@ exports.getCacheKey = base_2.getCacheKey;
 const redisSetting = __importStar(require("./redis"));
 const redis_1 = require("./redis");
 exports.SetCache = redis_1.SetCache;
+const ioredis_1 = __importDefault(require("ioredis"));
 let redis = redisSetting.redis;
 let prefix = redisSetting.cachePrefix;
 redisSetting.AddCacheUpdateCallback((params) => {
@@ -163,8 +164,9 @@ function ClearInternalParams(params) {
     return params2;
 }
 function CreateCloudCacheFunction(info) {
+    let { cache, handle, cloudOptions, functionName, rpc } = info;
+    let _redis = cache.redisUrl && new ioredis_1.default(cache.redisUrl, { maxRetriesPerRequest: null });
     return async (request) => {
-        let { cache, handle, cloudOptions, functionName, rpc } = info;
         let schema = info.schema || null;
         let rateLimit = cloudOptions.rateLimit || null;
         // console.log(functionName)
@@ -229,7 +231,8 @@ function CreateCloudCacheFunction(info) {
         let cacheKey = `${redisSetting.cachePrefix}:cloud:${functionName}:` + base_2.getCacheKey(cacheKeyConfig);
         // console.log(functionName + ' CloudImplement Cache')
         //尝试获取缓存
-        let textResult = await redis.get(cacheKey);
+        let redis2 = _redis || redis;
+        let textResult = await redis2.get(cacheKey);
         if (textResult) {
             try {
                 cloudStats_1.IncrCache({
@@ -287,7 +290,7 @@ function CreateCloudCacheFunction(info) {
         else {
             cacheValue = JSON.stringify(results);
         }
-        redis.setex(cacheKey, expires, cacheValue);
+        redis2.setex(cacheKey, expires, cacheValue);
         return Promise.resolve(results);
     };
 }
@@ -353,7 +356,7 @@ function Cloud(params) {
             }
             else {
                 let options = {};
-                if (params && params.noUser) {
+                if (params && params.noUser && !params.fetchUser) {
                     options.fetchUser = false;
                 }
                 leanengine_1.default.Cloud.define(functionName, options, cloudFunction);

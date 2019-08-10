@@ -297,24 +297,28 @@ interface DeleteCacheParams {
   function:string,
   params: {[key:string]:any}
 }
+
+export function DeleteCloudCache(params:DeleteCacheParams){
+  let cacheKeyConfig = params.params
+  if (params.userId) {
+    cacheKeyConfig['currentUser'] = params.userId
+  }
+  let functionName = params.module+'.'+params.function
+  let timeUnitList = ['day', 'hour', 'minute', 'second', 'month']
+  let pipeline = redis.pipeline()
+  for (let i = 0; i < timeUnitList.length; ++i){
+    cacheKeyConfig['timeUnit'] = timeUnitList[i]
+    let cacheKey = `${prefix}:cloud:${functionName}:` + getCacheKey(cacheKeyConfig)
+    pipeline.del(cacheKey)
+  }
+  return pipeline.exec()
+}
 //@ts-ignore
 AV.Cloud.define('Cloud.DeleteCache', async request => {
   if (request.currentUser && (await isRole(request.currentUser, 'Dev'))) {
     //@ts-ignore
     let params = request.params as DeleteCacheParams
-    let cacheKeyConfig = params.params
-    if (params.userId) {
-      cacheKeyConfig['currentUser'] = params.userId
-    }
-    let functionName = params.module+'.'+params.function
-    let timeUnitList = ['day', 'hour', 'minute', 'second', 'month']
-    let pipeline = redis.pipeline()
-    for (let i = 0; i < timeUnitList.length; ++i){
-      cacheKeyConfig['timeUnit'] = timeUnitList[i]
-      let cacheKey = `${prefix}:cloud:${functionName}:` + getCacheKey(cacheKeyConfig)
-      pipeline.del(cacheKey)
-    }
-    return pipeline.exec()
+    return DeleteCloudCache(params)
   } else {
     throw new AV.Cloud.Error('non-administrators', { code: 400 })
   }
