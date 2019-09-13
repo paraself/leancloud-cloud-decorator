@@ -1,4 +1,9 @@
 import AV from 'leanengine';
+export interface SDKVersion {
+    platform: string;
+    api: string;
+    version: string;
+}
 /**
  *  @deprecated please use init
  */

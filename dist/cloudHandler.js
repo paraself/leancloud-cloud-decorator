@@ -163,14 +163,19 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                     .catch(info => {
                     lock.clearLock();
                     // let ikkError
+                    let params = request.params || {};
+                    let api = params._api;
                     var errorInfo = {
                         user: request.currentUser,
                         function: name,
                         params: request.params,
                         ip,
-                        platform: params.platform,
-                        api: params.api,
-                        version: params.version,
+                        //@ts-ignore
+                        platform: (api && api.platform) || params.platform,
+                        //@ts-ignore
+                        api: (api && api.api) || params.api,
+                        //@ts-ignore
+                        version: (api && api.version) || params.version,
                     };
                     // if (info instanceof IkkError) {
                     //   ikkError = info

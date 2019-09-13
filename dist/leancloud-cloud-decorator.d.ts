@@ -1,14 +1,45 @@
 /// <reference types="node" />
 import AV from 'leanengine';
 import Joi from 'joi';
+import { SDKVersion } from './cloudHandler';
 import { Platform, getCacheKey } from './base';
 export { Platform, getCacheKey };
 import { SetCache } from './redis';
 export { SetCache };
+export declare type CloudInvokeBefore<T> = (params: {
+    functionName: string;
+    request: AV.Cloud.CloudFunctionRequest & {
+        noUser?: true;
+        internal?: true;
+    } & {
+        internalData?: T;
+    } & {
+        params: {
+            _api?: SDKVersion;
+        };
+    };
+    data?: any;
+    cloudOptions?: CloudOptions<any>;
+}) => Promise<any>;
+export declare type CloudInvoke<T> = (params: {
+    functionName: string;
+    request: AV.Cloud.CloudFunctionRequest & {
+        noUser?: true;
+        internal?: true;
+    } & {
+        internalData?: T;
+    };
+    data?: any;
+    cloudOptions?: CloudOptions<any>;
+}) => Promise<any>;
+export declare function SetInvokeCallback<T>(params: {
+    beforeInvoke?: CloudInvokeBefore<T>;
+    afterInvoke?: CloudInvoke<T>;
+}): void;
 declare type Environment = 'production' | 'staging' | string;
 interface CacheOptions<T> {
     /**
-     * 需要缓存的参数条件,请求参数完全符合其中某个数组中的参数组合时,才调用缓存
+     * 需要缓存的参数条件,请求参数完全符合其中某个数组中的参数组合时,才调用缓存. _开头为内部参数,不会被判断
      */
     params: Array<Array<keyof T>>;
     /**
@@ -47,7 +78,7 @@ declare type TypedSchemaLike<T> = T extends string ? Joi.StringSchema : T extend
 /**
  * T为云函数的参数类型
  */
-interface CloudOptions<T extends CloudParams> {
+interface CloudOptions<T extends CloudParams, A = any> {
     /**
      * 自动生成SDK的平台
      */
@@ -69,7 +100,7 @@ interface CloudOptions<T extends CloudParams> {
      */
     optionalName?: string;
     /**
-     * 参数的schema, 必填参数记得加上 .required()
+     * 参数的schema, 必填参数记得加上 .required() . _开头为内部参数,不会被判断
      */
     schema: {
         [key in keyof Omit<T, keyof CloudParams>]-?: TypedSchemaLike<T[key]>;
@@ -87,7 +118,7 @@ interface CloudOptions<T extends CloudParams> {
      */
     roles?: string[][];
     /**
-     * 每个用户调用此云函数的频率设置
+     * 每个用户调用此云函数的频率设置, 没有用户情况下, 使用ip限流
      */
     rateLimit?: RateLimitOptions[];
     /**
@@ -98,6 +129,14 @@ interface CloudOptions<T extends CloudParams> {
      * noUser为true的时, 默认不fetch User数据, 加上此设置,强制fetch User数据
      */
     fetchUser?: true;
+    /**
+     * 云函数调用前的回调, 可用于修改数据. 在全局beforeInvoke之后执行
+     */
+    beforeInvoke?: CloudInvoke<A>;
+    /**
+     * 云函数调用后的回调, 可用于修改数据, 在全局afterInvoke之前执行
+     */
+    afterInvoke?: CloudInvoke<A>;
 }
 /**
  * 将函数加入云函数中,云函数名为 ``类名.函数名``
@@ -124,11 +163,11 @@ export interface CloudParams {
     /**
      * 操作锁,用于避免不同请求中,同时对某个数据进行操作
      */
-    lock: Lock;
+    lock?: Lock;
     /**
      * 原始的leancloud 的request内容
      */
-    request: AV.Cloud.CloudFunctionRequest;
+    request?: AV.Cloud.CloudFunctionRequest;
     /**
      * 此请求强制不使用缓存
      */

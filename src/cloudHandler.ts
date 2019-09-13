@@ -6,6 +6,12 @@ import { IncrCall, IncrError, GetStats } from './cloudStats'
 import _ from 'lodash'
 import { Lock } from './redis'
 
+export interface SDKVersion{
+  platform: string ,
+  api: string,
+  version: string,
+}
+
 const _define = AV.Cloud.define
 const _beforeDelete = AV.Cloud.beforeDelete
 const _beforeSave = AV.Cloud.beforeSave
@@ -119,7 +125,7 @@ AV.Cloud.define = function(
    *
    * @param {CloudFunction} request
    */
-  var CloudHandler = function(request:AV.Cloud.CloudFunctionRequest) {
+  var CloudHandler = function(request:AV.Cloud.CloudFunctionRequest & {params:{_api?:SDKVersion}}) {
     let ip
     try {
       // var userAgent =
@@ -165,14 +171,19 @@ AV.Cloud.define = function(
           .catch(info => {
             lock.clearLock()
             // let ikkError
+            let params = request.params || {}
+            let api = params._api
             var errorInfo: any = {
               user: request.currentUser,
               function: name,
               params: request.params,
               ip,
-              platform: params.platform ,
-              api: params.api,
-              version: params.version,
+              //@ts-ignore
+              platform: (api && api.platform)|| params.platform,
+              //@ts-ignore
+              api: (api && api.api)||params.api,
+              //@ts-ignore
+              version: (api && api.version)||params.version,
             }
             // if (info instanceof IkkError) {
             //   ikkError = info

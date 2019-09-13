@@ -22,6 +22,7 @@ function init(params) {
         cache: new ioredis_1.default(params.redisUrl, { maxRetriesPerRequest: null }),
         cachePrefix: params.redisPrefix
     });
+    leancloud_cloud_decorator_1.SetInvokeCallback(params);
     params.errorCallback && cloudHandler_1.SetCloudErrorCallback(params.errorCallback);
     params.cloudInvokeCallback && cloudHandler_1.SetCloudInvokeCallback(params.cloudInvokeCallback);
 }

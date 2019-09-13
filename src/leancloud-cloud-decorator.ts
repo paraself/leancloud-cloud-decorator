@@ -1,9 +1,10 @@
 import AV, { request } from 'leanengine'
 import AV2 from 'leancloud-storage'
-import Joi from 'joi'
+import Joi, { any } from 'joi'
 import moment from 'moment'
 import {isRole,isRoles} from './base'
 import { IncrCache } from './cloudStats'
+import {SDKVersion} from './cloudHandler'
 
 import { Platform,getCacheKey } from './base'
 export { Platform,getCacheKey }
@@ -22,11 +23,37 @@ redisSetting.AddCacheUpdateCallback((params)=>{
   prefix = redisSetting.cachePrefix
 })
 
+
+export type CloudInvokeBefore<T> = (params:{
+  functionName:string
+  request:AV.Cloud.CloudFunctionRequest & {noUser?:true, internal?:true} &{internalData?:T} & {params:{_api?:SDKVersion}}
+  data?:any
+  cloudOptions?:CloudOptions<any>
+})=>Promise<any>
+
+export type CloudInvoke<T> = (params:{
+  functionName:string
+  request:AV.Cloud.CloudFunctionRequest & {noUser?:true, internal?:true} &{internalData?:T}
+  data?:any
+  cloudOptions?:CloudOptions<any>
+})=>Promise<any>
+
+let beforeInvoke:CloudInvoke<any>|undefined
+let afterInvoke:CloudInvoke<any>|undefined
+
+export function SetInvokeCallback<T>(params:{
+  beforeInvoke?:CloudInvokeBefore<T>,
+  afterInvoke?:CloudInvoke<T>
+}){
+  beforeInvoke = params.beforeInvoke
+  afterInvoke = params.afterInvoke
+}
+
 type Environment = 'production' | 'staging' | string
 
 interface CacheOptions<T> {
   /**
-   * 需要缓存的参数条件,请求参数完全符合其中某个数组中的参数组合时,才调用缓存
+   * 需要缓存的参数条件,请求参数完全符合其中某个数组中的参数组合时,才调用缓存. _开头为内部参数,不会被判断
    */
   params: Array<Array<keyof T>>
   /**
@@ -88,7 +115,7 @@ type TypedObjectSchema<T> = { [key in keyof T]-?: TypedSchemaLike<T[key]> }
 /**
  * T为云函数的参数类型
  */
-interface CloudOptions<T extends CloudParams> {
+interface CloudOptions<T extends CloudParams,A=any> {
   /**
    * 自动生成SDK的平台
    */
@@ -110,7 +137,7 @@ interface CloudOptions<T extends CloudParams> {
    */
   optionalName?: string,
   /**
-   * 参数的schema, 必填参数记得加上 .required()
+   * 参数的schema, 必填参数记得加上 .required() . _开头为内部参数,不会被判断
    */
   schema: { [key in keyof Omit<T, keyof CloudParams>]-?: TypedSchemaLike<T[key]> },
   /**
@@ -126,7 +153,7 @@ interface CloudOptions<T extends CloudParams> {
    */
   roles?: string[][]
   /**
-   * 每个用户调用此云函数的频率设置
+   * 每个用户调用此云函数的频率设置, 没有用户情况下, 使用ip限流
    */
   rateLimit?: RateLimitOptions[]
   /**
@@ -137,6 +164,20 @@ interface CloudOptions<T extends CloudParams> {
    * noUser为true的时, 默认不fetch User数据, 加上此设置,强制fetch User数据
    */
   fetchUser?:true
+  /**
+   * 云函数调用前的回调, 可用于修改数据. 在全局beforeInvoke之后执行
+   */
+  beforeInvoke?:CloudInvoke<A>,
+  /**
+   * 云函数调用后的回调, 可用于修改数据, 在全局afterInvoke之前执行
+   */
+  afterInvoke?:CloudInvoke<A>
+}
+let test : CloudOptions<{a:string} & CloudParams,number> = {
+  schema:{ a:Joi.string()},
+  beforeInvoke:async (params)=>{
+    params.request.internalData
+  }
 }
 const NODE_ENV = process.env.NODE_ENV as string
 
@@ -164,24 +205,26 @@ const NODE_ENV = process.env.NODE_ENV as string
 //   }
 // }
 
-async function RateLimitCheck(functionName: string, objectId: string, rateLimit: RateLimitOptions[]) {
+async function RateLimitCheck(functionName: string, objectId: string, ip:string, rateLimit: RateLimitOptions[]) {
   if(rateLimit.length==0) return
   let pipeline = redis.pipeline()
   for (let i = 0; i < rateLimit.length; ++i){
     let limit = rateLimit[i]
     let timeUnit = limit.timeUnit
+    let user = objectId||ip
     let { startTimestamp, expires } = getCacheTime(limit.timeUnit)
     let date = startTimestamp.valueOf()
-    let cacheKey = `${prefix}:rate:${timeUnit}-${date}:${functionName}:${objectId}`
+    let cacheKey = `${prefix}:rate:${timeUnit}-${date}:${functionName}:${user}`
     pipeline.incr(cacheKey).expire(cacheKey, expires)
   }
   let result = await pipeline.exec()
   
   for (let i = 0; i < rateLimit.length; ++i) {
     let limit = rateLimit[i]
+    let user =  objectId||ip
     let count = result[i*2+0][1]
     if (count > limit.limit) {
-      throw new AV.Cloud.Error(functionName + ' userId ' + objectId + ' run ' + count + ' over limit ' + limit.limit + ' in ' + limit.timeUnit, { code: 401 })
+      throw new AV.Cloud.Error(functionName + ' user ' + user + ' run ' + count + ' over limit ' + limit.limit + ' in ' + limit.timeUnit, { code: 401 })
     }
   }
 }
@@ -209,46 +252,103 @@ function getCacheTime(timeUnit?: 'day' | 'hour' | 'minute' | 'second' | 'month',
 
 type CloudHandler = (params: CloudParams) => Promise<any>
 
-async function CloudImplement<T extends CloudParams>(cloudImplementOptions: {
+async function CloudImplementBefore<T extends CloudParams>(cloudImplementOptions: {
   functionName: string
-  request: AV.Cloud.CloudFunctionRequest & {noUser?:true}
-  handle: CloudHandler
-  cloudOptions: CloudOptions<T> | null
+  request: AV.Cloud.CloudFunctionRequest & {noUser?:true, internal?:true}
+  cloudOptions: CloudOptions<T> | undefined
   schema: Joi.ObjectSchema | null
   rateLimit: RateLimitOptions[] | null
   roles:string[][]|null
-}) {
-  let { functionName, request, handle, cloudOptions, schema, rateLimit,roles } = cloudImplementOptions
+}){
+  let { functionName, request, cloudOptions, schema, rateLimit,roles } = cloudImplementOptions
+
+  let cloudOptions2 = cloudOptions as (CloudOptions<any> | undefined)
+
+  beforeInvoke && await beforeInvoke({
+    functionName,
+    cloudOptions: cloudOptions2,
+    request
+  })
+  
+  cloudOptions && cloudOptions.beforeInvoke && await cloudOptions.beforeInvoke({
+    functionName,
+    cloudOptions: cloudOptions2,
+    request
+  })
+
+  //内部调用, 跳过检测
+  if(request.internal) return
   //@ts-ignore
   let params: CloudParams = request.params || {}
-
-  //是否执行非缓存的调试版本
-  if (params.noCache) {
-    if (
-      params.adminId &&
-      (await isRole(
-        AV.Object.createWithoutData('_User', params.adminId) as AV.User,
-        'Dev'
-      ))
-    ) {
-    } else {
-      throw new AV.Cloud.Error('non-administrators in noCache', { code: 400 })
-    }
-  }
   if(!request.noUser){
     await CheckPermission(request.currentUser,cloudOptions&&cloudOptions.noUser,roles)
   }
   if (schema) {
     CheckSchema(schema, params)
   }
-  if (rateLimit && request.currentUser) {
-    await RateLimitCheck(functionName, request.currentUser.get('objectId'), rateLimit)
+  if (rateLimit) {
+    await RateLimitCheck(functionName, request.currentUser && request.currentUser.get('objectId'),request.meta.remoteAddress, rateLimit)
   }
+}
+async function CloudImplementAfter<T extends CloudParams>(cloudImplementOptions: {
+  functionName: string
+  request: AV.Cloud.CloudFunctionRequest & {noUser?:true, internal?:true}
+  cloudOptions: CloudOptions<T> | undefined
+  data?:any
+}){
+  let { functionName, request, cloudOptions,data } = cloudImplementOptions
+
+  let cloudOptions2 = cloudOptions as (CloudOptions<any> | undefined)
+  if(cloudOptions && cloudOptions.afterInvoke){
+    data = await cloudOptions.afterInvoke({
+      functionName,
+      cloudOptions: cloudOptions2,
+      request,
+      data
+    }) || data
+  }
+  if(afterInvoke){
+    data = await afterInvoke({
+      functionName,
+      cloudOptions: cloudOptions2,
+      request,
+      data
+    }) || data
+  }
+  return data
+}
+
+async function CloudImplement<T extends CloudParams>(cloudImplementOptions: {
+  functionName: string
+  request: AV.Cloud.CloudFunctionRequest & {noUser?:true,internal?:true}
+  handle: CloudHandler
+  cloudOptions: CloudOptions<T> | undefined
+  schema: Joi.ObjectSchema | null
+  rateLimit: RateLimitOptions[] | null
+  roles:string[][]|null,
+  disableCheck?:true
+}) {
+  let { functionName, request, handle, cloudOptions, schema, rateLimit,roles,disableCheck } = cloudImplementOptions
+  if(!disableCheck){
+    await CloudImplementBefore(cloudImplementOptions)
+  }
+  //@ts-ignore
+  let params: CloudParams = request.params || {}
 
   params.currentUser = request.currentUser
   //@ts-ignore
   params.lock = request.lock
-  return handle(params)
+  let data = await handle(params)
+
+  if(!disableCheck){
+    data = await CloudImplementAfter({
+      functionName,
+      request,
+      data,
+      cloudOptions
+    })
+  }
+  return data
 }
 
 async function CheckPermission(currentUser?:AV.User, noUser?:true|null,roles?:string[][]|null) {
@@ -280,7 +380,7 @@ function CheckSchema(schema: Joi.ObjectSchema, params: CloudParams) {
   // console.log(error)
   // console.log(value)
   if (error) {
-    throw new AV.Cloud.Error('schema error:' + error, { code: 400 })
+    throw new AV.Cloud.Error('schema error', { code: 400 })
   }
 }
 
@@ -298,6 +398,8 @@ function ClearInternalParams(params){
   delete params2.platform
   //@ts-ignore
   delete params2.version
+  Object.keys(params2).forEach(e=>{if(e.startsWith('_'))delete params2[e]})
+  // delete params2._api
   return params2
 }
 
@@ -311,7 +413,7 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
 }) {
   let { cache, handle, cloudOptions, functionName, rpc } = info
   let _redis = cache.redisUrl && new Redis(cache.redisUrl, {maxRetriesPerRequest: null})
-  return async (request: AV.Cloud.CloudFunctionRequest & {noUser?:true}) => {
+  return async (request: AV.Cloud.CloudFunctionRequest & {noUser?:true, internal?:true}) => {
 
     let schema = info.schema || null
     let rateLimit = cloudOptions.rateLimit || null
@@ -319,19 +421,6 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
     //@ts-ignore
     let params: CloudParams = request.params || {}
     let roles = cloudOptions.roles || null
-    if(!request.noUser){
-      await CheckPermission(request.currentUser, cloudOptions.noUser, roles)
-    }
-    roles = null
-
-    if (schema) {
-      CheckSchema(schema, params)
-      schema = null
-    }
-    if (rateLimit && request.currentUser) {
-      await RateLimitCheck(functionName, request.currentUser.get('objectId'), rateLimit)
-      rateLimit = null
-    }
     let cacheKeyConfig = {}
     const cacheParamsList = cache.params
     if (cacheParamsList) {
@@ -364,6 +453,17 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
     let cloudParams: CloudParams = params
     //是否执行非缓存的调试版本
     if (cloudParams.noCache) {
+      if (
+        params.adminId &&
+        (await isRole(
+          AV.Object.createWithoutData('_User', params.adminId) as AV.User,
+          'Dev'
+        ))
+      ) {
+      } else {
+        throw new AV.Cloud.Error('non-administrators in noCache', { code: 400 })
+      }
+
       let { startTimestamp, expires } = getCacheTime(cache.timeUnit)
       let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit,roles })
       if (typeof results === 'object') {
@@ -372,6 +472,7 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
       console.log(functionName + ' CloudImplement no cache')
       return Promise.resolve(results)
     }
+    await CloudImplementBefore({ functionName, request, cloudOptions, schema, rateLimit,roles })
 
     if (cache.currentUser) {
       cacheKeyConfig['currentUser'] = request.currentUser
@@ -398,13 +499,18 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
         //   return AV.parseJSON(JSON.parse( textResult ) )
         // }
         //@ts-ignore
-        return AV2.parse(textResult)
+        return await CloudImplementAfter({
+          functionName,
+          request,
+          data:AV2.parse(textResult),
+          cloudOptions
+        }) 
       } catch (error) {
         return textResult
       }
     }
     //获取缓存失败,执行原始云函数
-    let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit,roles })
+    let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit,roles,disableCheck:true })
     let expireBy = cache.expireBy || 'request'
     let startTimestamp: moment.Moment
     let expires: number
@@ -441,7 +547,14 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
       cacheValue = AV2.stringify(results)
     }
     redis2.setex(cacheKey, expires, cacheValue)
-    return Promise.resolve(results)
+
+    return await CloudImplementAfter({
+      functionName,
+      request,
+      data:results,
+      cloudOptions
+    }) 
+    // return Promise.resolve(results)
   }
 }
 
@@ -504,6 +617,15 @@ export function Cloud<T extends CloudParams>(params?: CloudOptions<T>) {
       }
       if (params && params.internal) {
         console.log('internal function '+functionName)
+        AV.Cloud.define(functionName,{internal:true}, (request) =>{
+          let currentUser = request && request.currentUser
+          let params2 = request && request.params
+          return cloudFunction({ currentUser, params:params2, noUser:true,internal:true })
+        })
+        //创建别名函数
+        if (params && params.optionalName) {
+          AV.Cloud.define(params.optionalName,{internal:true}, cloudFunction)
+        }
       } else {
         let options:AV.Cloud.DefineOptions = {}
         if(params && params.noUser && !params.fetchUser){
@@ -521,7 +643,7 @@ export function Cloud<T extends CloudParams>(params?: CloudOptions<T>) {
         delete params2.lock
         delete params2.currentUser
         delete params2.request
-        return cloudFunction({ currentUser, params:params2, noUser:true })
+        return cloudFunction({ currentUser, params:params2, noUser:true,internal:true })
       }
     }
 
@@ -556,11 +678,11 @@ export interface CloudParams {
   /**
    * 操作锁,用于避免不同请求中,同时对某个数据进行操作
    */
-  lock: Lock
+  lock?: Lock
   /**
    * 原始的leancloud 的request内容
    */
-  request: AV.Cloud.CloudFunctionRequest,
+  request?: AV.Cloud.CloudFunctionRequest,
   /**
    * 此请求强制不使用缓存
    */

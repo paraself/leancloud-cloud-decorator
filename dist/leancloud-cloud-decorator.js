@@ -28,6 +28,19 @@ redisSetting.AddCacheUpdateCallback((params) => {
     redis = redisSetting.redis;
     prefix = redisSetting.cachePrefix;
 });
+let beforeInvoke;
+let afterInvoke;
+function SetInvokeCallback(params) {
+    beforeInvoke = params.beforeInvoke;
+    afterInvoke = params.afterInvoke;
+}
+exports.SetInvokeCallback = SetInvokeCallback;
+let test = {
+    schema: { a: joi_1.default.string() },
+    beforeInvoke: async (params) => {
+        params.request.internalData;
+    }
+};
 const NODE_ENV = process.env.NODE_ENV;
 // // Schema 测试
 // interface IKeyChoices {
@@ -51,24 +64,26 @@ const NODE_ENV = process.env.NODE_ENV;
 //     i:Joi.object()
 //   }
 // }
-async function RateLimitCheck(functionName, objectId, rateLimit) {
+async function RateLimitCheck(functionName, objectId, ip, rateLimit) {
     if (rateLimit.length == 0)
         return;
     let pipeline = redis.pipeline();
     for (let i = 0; i < rateLimit.length; ++i) {
         let limit = rateLimit[i];
         let timeUnit = limit.timeUnit;
+        let user = objectId || ip;
         let { startTimestamp, expires } = getCacheTime(limit.timeUnit);
         let date = startTimestamp.valueOf();
-        let cacheKey = `${prefix}:rate:${timeUnit}-${date}:${functionName}:${objectId}`;
+        let cacheKey = `${prefix}:rate:${timeUnit}-${date}:${functionName}:${user}`;
         pipeline.incr(cacheKey).expire(cacheKey, expires);
     }
     let result = await pipeline.exec();
     for (let i = 0; i < rateLimit.length; ++i) {
         let limit = rateLimit[i];
+        let user = objectId || ip;
         let count = result[i * 2 + 0][1];
         if (count > limit.limit) {
-            throw new leanengine_1.default.Cloud.Error(functionName + ' userId ' + objectId + ' run ' + count + ' over limit ' + limit.limit + ' in ' + limit.timeUnit, { code: 401 });
+            throw new leanengine_1.default.Cloud.Error(functionName + ' user ' + user + ' run ' + count + ' over limit ' + limit.limit + ' in ' + limit.timeUnit, { code: 401 });
         }
     }
 }
@@ -90,32 +105,75 @@ function getCacheTime(timeUnit, count = 1) {
     }
     return { startTimestamp, expires };
 }
-async function CloudImplement(cloudImplementOptions) {
-    let { functionName, request, handle, cloudOptions, schema, rateLimit, roles } = cloudImplementOptions;
+async function CloudImplementBefore(cloudImplementOptions) {
+    let { functionName, request, cloudOptions, schema, rateLimit, roles } = cloudImplementOptions;
+    let cloudOptions2 = cloudOptions;
+    beforeInvoke && await beforeInvoke({
+        functionName,
+        cloudOptions: cloudOptions2,
+        request
+    });
+    cloudOptions && cloudOptions.beforeInvoke && await cloudOptions.beforeInvoke({
+        functionName,
+        cloudOptions: cloudOptions2,
+        request
+    });
+    //内部调用, 跳过检测
+    if (request.internal)
+        return;
     //@ts-ignore
     let params = request.params || {};
-    //是否执行非缓存的调试版本
-    if (params.noCache) {
-        if (params.adminId &&
-            (await base_1.isRole(leanengine_1.default.Object.createWithoutData('_User', params.adminId), 'Dev'))) {
-        }
-        else {
-            throw new leanengine_1.default.Cloud.Error('non-administrators in noCache', { code: 400 });
-        }
-    }
     if (!request.noUser) {
         await CheckPermission(request.currentUser, cloudOptions && cloudOptions.noUser, roles);
     }
     if (schema) {
         CheckSchema(schema, params);
     }
-    if (rateLimit && request.currentUser) {
-        await RateLimitCheck(functionName, request.currentUser.get('objectId'), rateLimit);
+    if (rateLimit) {
+        await RateLimitCheck(functionName, request.currentUser && request.currentUser.get('objectId'), request.meta.remoteAddress, rateLimit);
     }
+}
+async function CloudImplementAfter(cloudImplementOptions) {
+    let { functionName, request, cloudOptions, data } = cloudImplementOptions;
+    let cloudOptions2 = cloudOptions;
+    if (cloudOptions && cloudOptions.afterInvoke) {
+        data = await cloudOptions.afterInvoke({
+            functionName,
+            cloudOptions: cloudOptions2,
+            request,
+            data
+        }) || data;
+    }
+    if (afterInvoke) {
+        data = await afterInvoke({
+            functionName,
+            cloudOptions: cloudOptions2,
+            request,
+            data
+        }) || data;
+    }
+    return data;
+}
+async function CloudImplement(cloudImplementOptions) {
+    let { functionName, request, handle, cloudOptions, schema, rateLimit, roles, disableCheck } = cloudImplementOptions;
+    if (!disableCheck) {
+        await CloudImplementBefore(cloudImplementOptions);
+    }
+    //@ts-ignore
+    let params = request.params || {};
     params.currentUser = request.currentUser;
     //@ts-ignore
     params.lock = request.lock;
-    return handle(params);
+    let data = await handle(params);
+    if (!disableCheck) {
+        data = await CloudImplementAfter({
+            functionName,
+            request,
+            data,
+            cloudOptions
+        });
+    }
+    return data;
 }
 async function CheckPermission(currentUser, noUser, roles) {
     if (!currentUser && !noUser) {
@@ -145,7 +203,7 @@ function CheckSchema(schema, params) {
     // console.log(error)
     // console.log(value)
     if (error) {
-        throw new leanengine_1.default.Cloud.Error('schema error:' + error, { code: 400 });
+        throw new leanengine_1.default.Cloud.Error('schema error', { code: 400 });
     }
 }
 /**
@@ -162,6 +220,9 @@ function ClearInternalParams(params) {
     delete params2.platform;
     //@ts-ignore
     delete params2.version;
+    Object.keys(params2).forEach(e => { if (e.startsWith('_'))
+        delete params2[e]; });
+    // delete params2._api
     return params2;
 }
 function CreateCloudCacheFunction(info) {
@@ -174,18 +235,6 @@ function CreateCloudCacheFunction(info) {
         //@ts-ignore
         let params = request.params || {};
         let roles = cloudOptions.roles || null;
-        if (!request.noUser) {
-            await CheckPermission(request.currentUser, cloudOptions.noUser, roles);
-        }
-        roles = null;
-        if (schema) {
-            CheckSchema(schema, params);
-            schema = null;
-        }
-        if (rateLimit && request.currentUser) {
-            await RateLimitCheck(functionName, request.currentUser.get('objectId'), rateLimit);
-            rateLimit = null;
-        }
         let cacheKeyConfig = {};
         const cacheParamsList = cache.params;
         if (cacheParamsList) {
@@ -217,6 +266,12 @@ function CreateCloudCacheFunction(info) {
         let cloudParams = params;
         //是否执行非缓存的调试版本
         if (cloudParams.noCache) {
+            if (params.adminId &&
+                (await base_1.isRole(leanengine_1.default.Object.createWithoutData('_User', params.adminId), 'Dev'))) {
+            }
+            else {
+                throw new leanengine_1.default.Cloud.Error('non-administrators in noCache', { code: 400 });
+            }
             let { startTimestamp, expires } = getCacheTime(cache.timeUnit);
             let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles });
             if (typeof results === 'object') {
@@ -225,6 +280,7 @@ function CreateCloudCacheFunction(info) {
             console.log(functionName + ' CloudImplement no cache');
             return Promise.resolve(results);
         }
+        await CloudImplementBefore({ functionName, request, cloudOptions, schema, rateLimit, roles });
         if (cache.currentUser) {
             cacheKeyConfig['currentUser'] = request.currentUser;
         }
@@ -249,14 +305,19 @@ function CreateCloudCacheFunction(info) {
                 //   return AV.parseJSON(JSON.parse( textResult ) )
                 // }
                 //@ts-ignore
-                return leancloud_storage_1.default.parse(textResult);
+                return await CloudImplementAfter({
+                    functionName,
+                    request,
+                    data: leancloud_storage_1.default.parse(textResult),
+                    cloudOptions
+                });
             }
             catch (error) {
                 return textResult;
             }
         }
         //获取缓存失败,执行原始云函数
-        let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles });
+        let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles, disableCheck: true });
         let expireBy = cache.expireBy || 'request';
         let startTimestamp;
         let expires;
@@ -294,7 +355,13 @@ function CreateCloudCacheFunction(info) {
             cacheValue = leancloud_storage_1.default.stringify(results);
         }
         redis2.setex(cacheKey, expires, cacheValue);
-        return Promise.resolve(results);
+        return await CloudImplementAfter({
+            functionName,
+            request,
+            data: results,
+            cloudOptions
+        });
+        // return Promise.resolve(results)
     };
 }
 /**
@@ -356,6 +423,15 @@ function Cloud(params) {
             }
             if (params && params.internal) {
                 console.log('internal function ' + functionName);
+                leanengine_1.default.Cloud.define(functionName, { internal: true }, (request) => {
+                    let currentUser = request && request.currentUser;
+                    let params2 = request && request.params;
+                    return cloudFunction({ currentUser, params: params2, noUser: true, internal: true });
+                });
+                //创建别名函数
+                if (params && params.optionalName) {
+                    leanengine_1.default.Cloud.define(params.optionalName, { internal: true }, cloudFunction);
+                }
             }
             else {
                 let options = {};
@@ -374,7 +450,7 @@ function Cloud(params) {
                 delete params2.lock;
                 delete params2.currentUser;
                 delete params2.request;
-                return cloudFunction({ currentUser, params: params2, noUser: true });
+                return cloudFunction({ currentUser, params: params2, noUser: true, internal: true });
             };
         }
         // console.log(target.name)
