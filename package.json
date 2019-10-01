@@ -1,12 +1,14 @@
 {
   "name": "leancloud-cloud-decorator",
-  "version": "1.39.27",
+  "version": "1.39.37",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "ts": "npx tsc -p . ",
-    "postinstall": "./dist/copyConfig.js"
+    "postinstall": "./dist/copyConfig.js",
+    "minor": "npm version minor -f",
+    "patch": "npm version patch -f"
   },
   "repository": {
     "type": "git",
@@ -42,6 +44,7 @@
     "lcc-build": "./dist/buildSdk.js",
     "lcc-release": "./dist/releaseSdk.js",
     "lcc-dep": "./dist/buildDevDependencies.js",
+    "lcc-p": "./dist/publishSdk.js",
     "lcc": "./dist/lcc.js",
     "lcc-config": "./dist/copyConfig.js"
   }
