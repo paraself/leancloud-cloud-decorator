@@ -166,7 +166,7 @@ function CreateDecoratorMetaData(datas) {
             // console.log(paramsText1)
             let platforms = platformsText && JSON.parse(platformsText);
             // console.log(params)
-            let paramsText2 = GetJsonValueString(paramsText, 'params');
+            let paramsText2 = GetJsonValueString(GetJsonValueString(paramsText, 'cache') || '', 'params');
             // console.log(paramsText2)
             let params2 = paramsText2 && JSON.parse(paramsText2);
             return {

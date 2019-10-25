@@ -5,6 +5,7 @@ export * from './cloudHandler';
 export * from './cloudStats';
 export * from './errorInfo';
 import { CloudInvoke, CloudInvokeBefore } from './leancloud-cloud-decorator';
+import { CloudFunctionError } from './cloudHandler';
 import AV from 'leanengine';
 interface InitParams<T> {
     /**
@@ -18,7 +19,7 @@ interface InitParams<T> {
     /**
      * 云函数错误回调
      */
-    errorCallback?: (error: any) => any;
+    errorCallback?: (error: CloudFunctionError) => any;
     /**
      * 云函数被调用回调
      */

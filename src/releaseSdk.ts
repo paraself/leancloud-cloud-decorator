@@ -57,7 +57,7 @@ async function compileAndPush () {
     console.log('write ' + infoJsonPath)
     createSdkInfo(platform,packageJsonPath,infoJsonPath)
 
-    await promiseExec(`npx tsc -p ${sdkPath} && npx lcc-dep ${targetPlatform} && npm publish ${sdkPath}`)
+    await promiseExec(`npx tsc -p ${sdkPath} && npx lcc-dep ${targetPlatform}`)
 }
 
 compileAndPush()

@@ -6,7 +6,7 @@ import { Platform, getCacheKey } from './base';
 export { Platform, getCacheKey };
 import { SetCache } from './redis';
 export { SetCache };
-export declare type CloudInvokeBefore<T> = (params: {
+export declare type CloudInvoke<T> = (params: {
     functionName: string;
     request: AV.Cloud.CloudFunctionRequest & {
         noUser?: true;
@@ -21,17 +21,7 @@ export declare type CloudInvokeBefore<T> = (params: {
     data?: any;
     cloudOptions?: CloudOptions<any>;
 }) => Promise<any>;
-export declare type CloudInvoke<T> = (params: {
-    functionName: string;
-    request: AV.Cloud.CloudFunctionRequest & {
-        noUser?: true;
-        internal?: true;
-    } & {
-        internalData?: T;
-    };
-    data?: any;
-    cloudOptions?: CloudOptions<any>;
-}) => Promise<any>;
+export declare type CloudInvokeBefore<T> = CloudInvoke<T>;
 export declare function SetInvokeCallback<T>(params: {
     beforeInvoke?: CloudInvokeBefore<T>;
     afterInvoke?: CloudInvoke<T>;
@@ -137,11 +127,19 @@ interface CloudOptions<T extends CloudParams, A = any> {
      * 云函数调用后的回调, 可用于修改数据, 在全局afterInvoke之前执行
      */
     afterInvoke?: CloudInvoke<A>;
+    /**
+     * 额外自定义配置信息
+     */
+    customOptions?: any;
+}
+export declare class SchemaError extends Error {
+    validationError: Joi.ValidationError;
+    constructor(error: Joi.ValidationError);
 }
 /**
  * 将函数加入云函数中,云函数名为 ``类名.函数名``
  */
-export declare function Cloud<T extends CloudParams>(params?: CloudOptions<T>): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => void;
+export declare function Cloud<T extends CloudParams, A = any>(params?: CloudOptions<T, A>): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => void;
 export interface Lock {
     /**
      * 尝试锁住某个key,成功返回true,失败返回false, 会在云函数结束后自动解锁

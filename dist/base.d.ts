@@ -5,6 +5,9 @@ declare const platforms: {
         module?: {
             [key: string]: string;
         };
+        devDependencies?: {
+            [key: string]: string;
+        };
     };
 };
 export { platforms };

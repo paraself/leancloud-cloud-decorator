@@ -90,7 +90,7 @@ function setDevDependencies(devDependencies, peerDependencies, dir) {
 }
 // let platform = getPlatform(targetPlatform)
 let libPath = getSdkLibPath(targetPlatform);
-let dir = fs.readdirSync(libPath);
+let dir = (fs.existsSync(libPath) && fs.readdirSync(libPath)) || [];
 console.log('build devDependencies....');
 let imports = getImports(dir, libPath);
 let devDependencies = createDevDependencies(imports);
@@ -98,5 +98,5 @@ let devDependencies = createDevDependencies(imports);
 let packageJsonPath = getSdkPackagePath(targetPlatform);
 // let infoJsonDistPath = getSdkInfoDistPath(platform)
 console.log('write ' + packageJsonPath);
-setDevDependencies(devDependencies, { "leancloud-storage": "^3.13.2" }, packageJsonPath);
+setDevDependencies(Object.assign(devDependencies, base_1.platforms[targetPlatform].devDependencies), { "leancloud-storage": "^3.13.2" }, packageJsonPath);
 //# sourceMappingURL=buildDevDependencies.js.map

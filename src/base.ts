@@ -4,7 +4,13 @@ import Config from './config.json'
 import { exec,spawn} from 'child_process'
 import { string } from 'joi';
 
-const platforms :{[key:string]:{package:string,module?:{[key:string]:string}}}= Config.platforms
+const platforms :{[key:string]:
+  {
+    package:string,
+    module?:{[key:string]:string},
+    devDependencies?:{[key:string]:string},
+  }
+}= Config.platforms
 export {platforms}
 
 export type Platform = keyof typeof platforms

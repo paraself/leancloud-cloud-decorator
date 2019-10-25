@@ -33,9 +33,9 @@ redisSetting.AddCacheUpdateCallback((params) => {
 });
 let cloudInvokeCallback;
 let cloudErrorCallback = (error) => {
-    if (typeof error === 'string') {
-        return error;
-    }
+    // if (typeof error === 'string'){
+    //   return error
+    // }
     return error.error;
 };
 /**
@@ -63,6 +63,7 @@ async function CloudHookHandler(request, handler, className, actionName) {
     catch (error) {
         // console.error(error)
         // let ikkError
+        //@ts-ignore
         var errorInfo = {
             user: request.currentUser,
             module: className,
@@ -74,15 +75,15 @@ async function CloudHookHandler(request, handler, className, actionName) {
         //   ikkError = error
         //   ikkError.setData(errorInfo)
         // } else
-        {
-            while (error.ikkMessage) {
-                errorInfo.errorInfo = error.ikkMessage;
-                error = error.originalError;
-            }
-            errorInfo = Object.assign(errorInfo, error);
-            errorInfo.error = error;
-            // ikkError = new IkkError(errorInfo)
+        // {
+        while (error.ikkMessage) {
+            errorInfo.errorInfo = error.ikkMessage;
+            error = error.originalError;
         }
+        errorInfo = Object.assign(errorInfo, error);
+        errorInfo.error = error;
+        // ikkError = new IkkError(errorInfo)
+        // }
         // console.error(ikkError)
         // ikkError.send()
         // return Promise.reject(ikkError.toClient())
@@ -294,20 +295,30 @@ leanengine_1.default.Cloud.define('Cloud.GetStats', async (request) => {
         throw new leanengine_1.default.Cloud.Error('non-administrators', { code: 400 });
     }
 });
-function DeleteCloudCache(params) {
+async function DeleteCloudCache(params) {
     let cacheKeyConfig = params.params;
-    if (params.userId) {
+    if (cacheKeyConfig && params.userId) {
         cacheKeyConfig['currentUser'] = params.userId;
     }
     let functionName = params.module + '.' + params.function;
-    let timeUnitList = ['day', 'hour', 'minute', 'second', 'month'];
-    let pipeline = redis.pipeline();
-    for (let i = 0; i < timeUnitList.length; ++i) {
-        cacheKeyConfig['timeUnit'] = timeUnitList[i];
-        let cacheKey = `${prefix}:cloud:${functionName}:` + base_1.getCacheKey(cacheKeyConfig);
-        pipeline.del(cacheKey);
+    if (cacheKeyConfig) {
+        let timeUnitList = ['day', 'hour', 'minute', 'second', 'month'];
+        let pipeline = redis.pipeline();
+        for (let i = 0; i < timeUnitList.length; ++i) {
+            cacheKeyConfig['timeUnit'] = timeUnitList[i];
+            let cacheKey = `${prefix}:cloud:${functionName}:` + base_1.getCacheKey(cacheKeyConfig);
+            pipeline.del(cacheKey);
+        }
+        return pipeline.exec();
     }
-    return pipeline.exec();
+    else {
+        var keys = await redis.keys(`${prefix}:cloud:${functionName}:*`);
+        let pipeline = redis.pipeline();
+        keys.forEach(e => {
+            pipeline.del(e);
+        });
+        return pipeline.exec();
+    }
 }
 exports.DeleteCloudCache = DeleteCloudCache;
 //@ts-ignore

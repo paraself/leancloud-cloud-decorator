@@ -24,19 +24,20 @@ redisSetting.AddCacheUpdateCallback((params)=>{
 })
 
 
-export type CloudInvokeBefore<T> = (params:{
+export type CloudInvoke<T> = (params:{
   functionName:string
   request:AV.Cloud.CloudFunctionRequest & {noUser?:true, internal?:true} &{internalData?:T} & {params:{_api?:SDKVersion}}
   data?:any
   cloudOptions?:CloudOptions<any>
 })=>Promise<any>
 
-export type CloudInvoke<T> = (params:{
-  functionName:string
-  request:AV.Cloud.CloudFunctionRequest & {noUser?:true, internal?:true} &{internalData?:T}
-  data?:any
-  cloudOptions?:CloudOptions<any>
-})=>Promise<any>
+// export type CloudInvoke<T> = (params:{
+//   functionName:string
+//   request:AV.Cloud.CloudFunctionRequest & {noUser?:true, internal?:true} &{internalData?:T}
+//   data?:any
+//   cloudOptions?:CloudOptions<any>
+// })=>Promise<any>
+export type CloudInvokeBefore<T> = CloudInvoke<T>
 
 let beforeInvoke:CloudInvoke<any>|undefined
 let afterInvoke:CloudInvoke<any>|undefined
@@ -172,6 +173,10 @@ interface CloudOptions<T extends CloudParams,A=any> {
    * 云函数调用后的回调, 可用于修改数据, 在全局afterInvoke之前执行
    */
   afterInvoke?:CloudInvoke<A>
+  /**
+   * 额外自定义配置信息
+   */
+  customOptions?:any
 }
 let test : CloudOptions<{a:string} & CloudParams,number> = {
   schema:{ a:Joi.string()},
@@ -332,13 +337,13 @@ async function CloudImplement<T extends CloudParams>(cloudImplementOptions: {
   if(!disableCheck){
     await CloudImplementBefore(cloudImplementOptions)
   }
-  //@ts-ignore
-  let params: CloudParams = request.params || {}
 
-  params.currentUser = request.currentUser
-  //@ts-ignore
-  params.lock = request.lock
-  let data = await handle(params)
+  let data = await handle( Object.assign({
+    request,
+    currentUser:request.currentUser,
+    //@ts-ignore
+    lock:request.lock
+  },request.params) )
 
   if(!disableCheck){
     data = await CloudImplementAfter({
@@ -373,6 +378,15 @@ async function CheckPermission(currentUser?:AV.User, noUser?:true|null,roles?:st
   }
 }
 
+export class SchemaError extends Error{
+  validationError: Joi.ValidationError
+  constructor(error: Joi.ValidationError){
+    super(error.message)
+    this.validationError = error
+    this.name = 'SchemaError'
+  }
+}
+
 function CheckSchema(schema: Joi.ObjectSchema, params: CloudParams) {
   // console.log(params)
   // console.log('schema')
@@ -380,7 +394,8 @@ function CheckSchema(schema: Joi.ObjectSchema, params: CloudParams) {
   // console.log(error)
   // console.log(value)
   if (error) {
-    throw new AV.Cloud.Error('schema error', { code: 400 })
+    throw new SchemaError(error) 
+    //new AV.Cloud.Error('schema error', { code: 400 })
   }
 }
 
@@ -561,7 +576,7 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
 /**
  * 将函数加入云函数中,云函数名为 ``类名.函数名``
  */
-export function Cloud<T extends CloudParams>(params?: CloudOptions<T>) {
+export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>) {
   return function(target, propertyKey: string, descriptor: PropertyDescriptor) {
     const handle:CloudHandler = descriptor.value
     let functionName =

@@ -45,7 +45,7 @@ async function compileAndPush() {
     let infoJsonPath = getSdkInfoPath(platform);
     console.log('write ' + infoJsonPath);
     createSdkInfo(platform, packageJsonPath, infoJsonPath);
-    await base_1.promiseExec(`npx tsc -p ${sdkPath} && npx lcc-dep ${targetPlatform} && npm publish ${sdkPath}`);
+    await base_1.promiseExec(`npx tsc -p ${sdkPath} && npx lcc-dep ${targetPlatform}`);
 }
 compileAndPush();
 //# sourceMappingURL=releaseSdk.js.map

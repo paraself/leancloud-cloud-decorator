@@ -34,10 +34,10 @@ redisSetting.AddCacheUpdateCallback((params)=>{
 })
 
 let cloudInvokeCallback: (name: string, request: AV.Cloud.CloudFunctionRequest) => any
-let cloudErrorCallback = (error: any) => {
-  if (typeof error === 'string'){
-    return error
-  }
+let cloudErrorCallback = (error: CloudFunctionError) => {
+  // if (typeof error === 'string'){
+  //   return error
+  // }
   return error.error
 }
 
@@ -48,10 +48,43 @@ export function SetCloudInvokeCallback(callback: (name: string, request: AV.Clou
   cloudInvokeCallback = callback
 }
 
+
+export interface CloudFunctionError{
+
+  /**
+   * 出错时前端请求的用户
+   */
+  user?: AV.User,
+  /**
+   * 出错的模块(class名)
+   */
+  module: string,
+  /**
+   * 出错的行为(function名)
+   */
+  action: string
+  /**
+   * 出错时客户端的请求参数
+   */
+  params: any
+  /**
+   * 出错时操作的目标数据
+   */
+  target: AV.Object
+  /**
+   * 出错时抛出的Error
+   */
+  error:Error|any
+  /**
+   * 记录抛出的错误中ikkMessage字段,用于存储额外信息
+   */
+  errorInfo?:any
+}
+
 /**
  * @deprecated please use init
  */
-export function SetCloudErrorCallback(callback: (error: any) => any) {
+export function SetCloudErrorCallback(callback: (error: CloudFunctionError) => any) {
   cloudErrorCallback = callback
 }
 
@@ -66,7 +99,8 @@ async function CloudHookHandler(request: AV.Cloud.ClassHookRequest, handler: AV.
   } catch (error) {
     // console.error(error)
     // let ikkError
-    var errorInfo: any = {
+    //@ts-ignore
+    var errorInfo: CloudFunctionError = {
       user: request.currentUser,
       module: className,
       action: actionName,
@@ -77,7 +111,7 @@ async function CloudHookHandler(request: AV.Cloud.ClassHookRequest, handler: AV.
     //   ikkError = error
     //   ikkError.setData(errorInfo)
     // } else
-    {
+    // {
       while (error.ikkMessage) {
         errorInfo.errorInfo = error.ikkMessage
         error = error.originalError
@@ -85,7 +119,7 @@ async function CloudHookHandler(request: AV.Cloud.ClassHookRequest, handler: AV.
       errorInfo = Object.assign(errorInfo, error)
       errorInfo.error = error
       // ikkError = new IkkError(errorInfo)
-    }
+    // }
     // console.error(ikkError)
     // ikkError.send()
     // return Promise.reject(ikkError.toClient())
@@ -306,23 +340,32 @@ interface DeleteCacheParams {
   userId?:string
   module: string,
   function:string,
-  params: {[key:string]:any}
+  params?: {[key:string]:any}
 }
 
-export function DeleteCloudCache(params:DeleteCacheParams){
+export async function DeleteCloudCache(params:DeleteCacheParams){
   let cacheKeyConfig = params.params
-  if (params.userId) {
+  if (cacheKeyConfig && params.userId) {
     cacheKeyConfig['currentUser'] = params.userId
   }
   let functionName = params.module+'.'+params.function
-  let timeUnitList = ['day', 'hour', 'minute', 'second', 'month']
-  let pipeline = redis.pipeline()
-  for (let i = 0; i < timeUnitList.length; ++i){
-    cacheKeyConfig['timeUnit'] = timeUnitList[i]
-    let cacheKey = `${prefix}:cloud:${functionName}:` + getCacheKey(cacheKeyConfig)
-    pipeline.del(cacheKey)
+  if(cacheKeyConfig){
+    let timeUnitList = ['day', 'hour', 'minute', 'second', 'month']
+    let pipeline = redis.pipeline()
+    for (let i = 0; i < timeUnitList.length; ++i){
+      cacheKeyConfig['timeUnit'] = timeUnitList[i]
+      let cacheKey = `${prefix}:cloud:${functionName}:` + getCacheKey(cacheKeyConfig)
+      pipeline.del(cacheKey)
+    }
+    return pipeline.exec()
+  }else{
+    var keys = await redis.keys(`${prefix}:cloud:${functionName}:*`)
+    let pipeline = redis.pipeline()
+    keys.forEach(e=>{
+      pipeline.del(e)
+    })
+    return pipeline.exec()
   }
-  return pipeline.exec()
 }
 //@ts-ignore
 AV.Cloud.define('Cloud.DeleteCache', async request => {

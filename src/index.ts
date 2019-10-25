@@ -9,7 +9,7 @@ export * from './cloudStats'
 export * from './errorInfo'
 
 import {SetCache,CloudInvoke,CloudInvokeBefore,SetInvokeCallback} from './leancloud-cloud-decorator'
-import {SetCloudErrorCallback,SetCloudInvokeCallback} from './cloudHandler'
+import {SetCloudErrorCallback,SetCloudInvokeCallback,CloudFunctionError} from './cloudHandler'
 import AV from 'leanengine'
 import Redis from 'ioredis'
 
@@ -25,7 +25,7 @@ interface InitParams<T>{
     /**
      * 云函数错误回调
      */
-    errorCallback?: (error: any) => any,
+    errorCallback?: (error: CloudFunctionError) => any,
     /**
      * 云函数被调用回调
      */

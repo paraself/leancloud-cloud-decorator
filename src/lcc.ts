@@ -4,7 +4,7 @@ import { exec,spawn} from 'child_process'
 import {CheckPlatform} from './base'
 var targetPlatform = CheckPlatform(process.argv[2])
 
-const command = `npx lcc-build ${targetPlatform} && lcc-release ${targetPlatform}`
+const command = `npx lcc-build ${targetPlatform} && lcc-release ${targetPlatform} && lcc-p ${targetPlatform}`
 exec(command, { maxBuffer: 1024 * 800 }, (err, stdout, stderr) => {
     if (err) {
       console.log(command)

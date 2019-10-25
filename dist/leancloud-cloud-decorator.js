@@ -159,12 +159,12 @@ async function CloudImplement(cloudImplementOptions) {
     if (!disableCheck) {
         await CloudImplementBefore(cloudImplementOptions);
     }
-    //@ts-ignore
-    let params = request.params || {};
-    params.currentUser = request.currentUser;
-    //@ts-ignore
-    params.lock = request.lock;
-    let data = await handle(params);
+    let data = await handle(Object.assign({
+        request,
+        currentUser: request.currentUser,
+        //@ts-ignore
+        lock: request.lock
+    }, request.params));
     if (!disableCheck) {
         data = await CloudImplementAfter({
             functionName,
@@ -196,6 +196,14 @@ async function CheckPermission(currentUser, noUser, roles) {
         }
     }
 }
+class SchemaError extends Error {
+    constructor(error) {
+        super(error.message);
+        this.validationError = error;
+        this.name = 'SchemaError';
+    }
+}
+exports.SchemaError = SchemaError;
 function CheckSchema(schema, params) {
     // console.log(params)
     // console.log('schema')
@@ -203,7 +211,8 @@ function CheckSchema(schema, params) {
     // console.log(error)
     // console.log(value)
     if (error) {
-        throw new leanengine_1.default.Cloud.Error('schema error', { code: 400 });
+        throw new SchemaError(error);
+        //new AV.Cloud.Error('schema error', { code: 400 })
     }
 }
 /**
