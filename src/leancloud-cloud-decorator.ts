@@ -731,4 +731,8 @@ export interface CloudParams {
    * 调用云函数的管理员id,用于特殊操作,比如noCache操作
    */
   adminId?: string
+  /**
+   * 调用云函数的sdk信息
+   */
+  _api?:SDKVersion
 }
