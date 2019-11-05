@@ -6,7 +6,7 @@ import { Platform, getCacheKey } from './base';
 export { Platform, getCacheKey };
 import { SetCache } from './redis';
 export { SetCache };
-export declare type CloudInvoke<T> = (params: {
+export interface CloudInvokeParams<T> {
     functionName: string;
     request: AV.Cloud.CloudFunctionRequest & {
         noUser?: true;
@@ -20,7 +20,8 @@ export declare type CloudInvoke<T> = (params: {
     };
     data?: any;
     cloudOptions?: CloudOptions<any>;
-}) => Promise<any>;
+}
+export declare type CloudInvoke<T> = (params: CloudInvokeParams<T>) => Promise<any>;
 export declare type CloudInvokeBefore<T> = CloudInvoke<T>;
 export declare function SetInvokeCallback<T>(params: {
     beforeInvoke?: CloudInvokeBefore<T>;
@@ -132,6 +133,13 @@ interface CloudOptions<T extends CloudParams, A = any> {
      */
     customOptions?: any;
 }
+export interface Listener<A> {
+    /**
+     * 限流被触发的回调
+     */
+    onRateLimited?: CloudInvoke<A>;
+}
+export declare function SetListener(p: Listener<any>): void;
 export declare class SchemaError extends Error {
     validationError: Joi.ValidationError;
     constructor(error: Joi.ValidationError);

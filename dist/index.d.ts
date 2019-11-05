@@ -4,10 +4,10 @@ export * from './cloudMetaData';
 export * from './cloudHandler';
 export * from './cloudStats';
 export * from './errorInfo';
-import { CloudInvoke, CloudInvokeBefore } from './leancloud-cloud-decorator';
+import { CloudInvoke, CloudInvokeBefore, Listener } from './leancloud-cloud-decorator';
 import { CloudFunctionError } from './cloudHandler';
 import AV from 'leanengine';
-interface InitParams<T> {
+interface InitParams<T> extends Listener<T> {
     /**
      * redis连接地址
      */

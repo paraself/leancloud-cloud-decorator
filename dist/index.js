@@ -25,6 +25,7 @@ function init(params) {
     leancloud_cloud_decorator_1.SetInvokeCallback(params);
     params.errorCallback && cloudHandler_1.SetCloudErrorCallback(params.errorCallback);
     params.cloudInvokeCallback && cloudHandler_1.SetCloudInvokeCallback(params.cloudInvokeCallback);
+    leancloud_cloud_decorator_1.SetListener(params);
 }
 exports.init = init;
 //# sourceMappingURL=index.js.map

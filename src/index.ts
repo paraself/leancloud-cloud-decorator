@@ -8,12 +8,12 @@ export * from './cloudHandler'
 export * from './cloudStats'
 export * from './errorInfo'
 
-import {SetCache,CloudInvoke,CloudInvokeBefore,SetInvokeCallback} from './leancloud-cloud-decorator'
+import {SetCache,CloudInvoke,CloudInvokeBefore,SetInvokeCallback,Listener, SetListener} from './leancloud-cloud-decorator'
 import {SetCloudErrorCallback,SetCloudInvokeCallback,CloudFunctionError} from './cloudHandler'
 import AV from 'leanengine'
 import Redis from 'ioredis'
 
-interface InitParams<T>{
+interface InitParams<T> extends Listener<T> {
     /**
      * redis连接地址
      */
@@ -47,4 +47,5 @@ export function init<T=undefined>(params:InitParams<T>){
     SetInvokeCallback(params)
     params.errorCallback && SetCloudErrorCallback(params.errorCallback)
     params.cloudInvokeCallback && SetCloudInvokeCallback(params.cloudInvokeCallback)
+    SetListener(params)
 }

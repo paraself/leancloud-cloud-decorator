@@ -23,13 +23,14 @@ redisSetting.AddCacheUpdateCallback((params)=>{
   prefix = redisSetting.cachePrefix
 })
 
-
-export type CloudInvoke<T> = (params:{
+export interface CloudInvokeParams<T>{
   functionName:string
   request:AV.Cloud.CloudFunctionRequest & {noUser?:true, internal?:true} &{internalData?:T} & {params:{_api?:SDKVersion}}
   data?:any
   cloudOptions?:CloudOptions<any>
-})=>Promise<any>
+}
+
+export type CloudInvoke<T> = (params:CloudInvokeParams<T>)=>Promise<any>
 
 // export type CloudInvoke<T> = (params:{
 //   functionName:string
@@ -178,6 +179,20 @@ interface CloudOptions<T extends CloudParams,A=any> {
    */
   customOptions?:any
 }
+
+export interface Listener<A>{
+  /**
+   * 限流被触发的回调
+   */
+  onRateLimited?:CloudInvoke<A>
+}
+
+let listener : Listener<any> = {}
+
+export function SetListener(p:Listener<any>){
+  listener = p || {}
+}
+
 let test : CloudOptions<{a:string} & CloudParams,number> = {
   schema:{ a:Joi.string()},
   beforeInvoke:async (params)=>{
@@ -210,7 +225,9 @@ const NODE_ENV = process.env.NODE_ENV as string
 //   }
 // }
 
-async function RateLimitCheck(functionName: string, objectId: string, ip:string, rateLimit: RateLimitOptions[]) {
+async function RateLimitCheck(params: {functionName: string, objectId: string, ip:string, rateLimit: RateLimitOptions[], cloudInvokeData: CloudInvokeParams<any>}) {
+
+  let {functionName, objectId, ip, rateLimit, cloudInvokeData} = params
   if(rateLimit.length==0) return
   let pipeline = redis.pipeline()
   for (let i = 0; i < rateLimit.length; ++i){
@@ -229,6 +246,9 @@ async function RateLimitCheck(functionName: string, objectId: string, ip:string,
     let user =  objectId||ip
     let count = result[i*2+0][1]
     if (count > limit.limit) {
+      if(listener.onRateLimited){
+        listener.onRateLimited(cloudInvokeData)
+      }
       throw new AV.Cloud.Error(functionName + ' user ' + user + ' run ' + count + ' over limit ' + limit.limit + ' in ' + limit.timeUnit, { code: 401 })
     }
   }
@@ -292,7 +312,15 @@ async function CloudImplementBefore<T extends CloudParams>(cloudImplementOptions
     CheckSchema(schema, params)
   }
   if (rateLimit) {
-    await RateLimitCheck(functionName, request.currentUser && request.currentUser.get('objectId'),request.meta.remoteAddress, rateLimit)
+    await RateLimitCheck({functionName, 
+      objectId: request.currentUser && request.currentUser.get('objectId'),
+      ip:request.meta.remoteAddress, 
+      rateLimit,
+      cloudInvokeData: {
+        functionName,
+        cloudOptions: cloudOptions2,
+        request
+      }})
   }
 }
 async function CloudImplementAfter<T extends CloudParams>(cloudImplementOptions: {
@@ -359,9 +387,6 @@ async function CloudImplement<T extends CloudParams>(cloudImplementOptions: {
 async function CheckPermission(currentUser?:AV.User, noUser?:true|null,roles?:string[][]|null) {
   if (!currentUser && !noUser) {
     throw new AV.Cloud.Error('missing user', { code: 400 })
-  }
-  if(currentUser&&currentUser.get('marked')){
-    throw new AV.Cloud.Error('Banned user', { code: 400 })
   }
   if (roles) {
     let havePermission = false

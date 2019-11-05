@@ -188,9 +188,6 @@ AV.Cloud.define = function(
         api: params.api ,
         version: params.version ,
       })
-      if(request.currentUser&&request.currentUser.get('marked')){
-        throw new AV.Cloud.Error('Banned user', { code: 400 })
-      }
       var result = callback(request)
       if (!result) {
         lock.clearLock()
