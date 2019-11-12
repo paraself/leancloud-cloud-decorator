@@ -137,6 +137,29 @@ export default user
 // 也可以后端代码的其他位置，直接import这个模块，调用里面的云函数
 user.GetTime()
 ```
+## 函数防抖
+debounce字段为函数防抖动配置,配置内容为参数列表条件的数组.当用户参数满足云函数配置中的其中一个数组的条件时启用函数防抖
+同一个用户，同样的函数名，如果参数相同的话，前一个请求如果没有结束完，下一个请求就会被debounce
+```typescript
+class Test{
+  @Cloud<TestDebounceParams>({
+    schema:{
+      expId:Joi.string().optional(),
+      id:Joi.string().optional(),
+    },
+    debounce:[["expId"]]
+  })
+  async TestDebounce(params:TestDebounceParams){
+    await new Promise((resolve)=>{
+      setTimeout(resolve, 3000);
+    })
+    console.log({
+      expId:params.expId,
+      id:params.id
+    })
+  }
+}
+```
 
 ## 限流
 有时需要限制每个用户调用某个接口的频率, 以防止非正常的用户请求
