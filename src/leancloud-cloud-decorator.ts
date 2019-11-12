@@ -322,7 +322,7 @@ async function CloudImplementBefore<T extends CloudParams>(cloudImplementOptions
       }})
   }
   if(debounce && request.currentUser){
-    CheckDebounce(debounce as string[][],params,request.currentUser,
+    await CheckDebounce(debounce as string[][],params,request.currentUser,
       //@ts-ignore
       request.lock as Lock)
   }

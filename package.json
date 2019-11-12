@@ -8,7 +8,7 @@
     "postinstall": "./dist/copyConfig.js",
     "build": "npx tsc -p . ",
     "release-minor": "npm run build && git add -A && git commit -m \"auto release\" && npm version minor && git push && npm publish",
-    "release-patch": "npm run build && git add -A && git commit -m \"auto release\" && npm version patch && git push && npm publish"
+    "release-patch": "npm run build && git add -A && git commit -m \"增加防抖配置(Debounce)\" && npm version patch && git push && npm publish"
   },
   "repository": {
     "type": "git",

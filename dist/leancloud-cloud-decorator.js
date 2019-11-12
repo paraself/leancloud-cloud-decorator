@@ -144,7 +144,7 @@ async function CloudImplementBefore(cloudImplementOptions) {
             } });
     }
     if (debounce && request.currentUser) {
-        CheckDebounce(debounce, params, request.currentUser, 
+        await CheckDebounce(debounce, params, request.currentUser, 
         //@ts-ignore
         request.lock);
     }
