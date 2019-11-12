@@ -147,9 +147,6 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                 api: params.api,
                 version: params.version,
             });
-            if (request.currentUser && request.currentUser.get('marked')) {
-                throw new leanengine_1.default.Cloud.Error('Banned user', { code: 400 });
-            }
             var result = callback(request);
             if (!result) {
                 lock.clearLock();

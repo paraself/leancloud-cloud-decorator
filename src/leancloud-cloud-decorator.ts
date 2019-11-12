@@ -135,6 +135,10 @@ interface CloudOptions<T extends CloudParams,A=any> {
    */
   cache?: CacheOptions<T>
   /**
+   * 防抖配置
+   */
+  debounce?:Array<Array<keyof T>>
+  /**
    * 备选名,用于让新的云函数,兼容旧的云函数调用
    */
   optionalName?: string,
@@ -193,12 +197,6 @@ export function SetListener(p:Listener<any>){
   listener = p || {}
 }
 
-let test : CloudOptions<{a:string} & CloudParams,number> = {
-  schema:{ a:Joi.string()},
-  beforeInvoke:async (params)=>{
-    params.request.internalData
-  }
-}
 const NODE_ENV = process.env.NODE_ENV as string
 
 // // Schema 测试
@@ -284,8 +282,9 @@ async function CloudImplementBefore<T extends CloudParams>(cloudImplementOptions
   schema: Joi.ObjectSchema | null
   rateLimit: RateLimitOptions[] | null
   roles:string[][]|null
+  debounce:Array<Array<keyof T>>| null
 }){
-  let { functionName, request, cloudOptions, schema, rateLimit,roles } = cloudImplementOptions
+  let { functionName, request, cloudOptions, schema, rateLimit,roles,debounce } = cloudImplementOptions
 
   let cloudOptions2 = cloudOptions as (CloudOptions<any> | undefined)
 
@@ -321,6 +320,11 @@ async function CloudImplementBefore<T extends CloudParams>(cloudImplementOptions
         cloudOptions: cloudOptions2,
         request
       }})
+  }
+  if(debounce && request.currentUser){
+    CheckDebounce(debounce as string[][],params,request.currentUser,
+      //@ts-ignore
+      request.lock as Lock)
   }
 }
 async function CloudImplementAfter<T extends CloudParams>(cloudImplementOptions: {
@@ -360,8 +364,9 @@ async function CloudImplement<T extends CloudParams>(cloudImplementOptions: {
   rateLimit: RateLimitOptions[] | null
   roles:string[][]|null,
   disableCheck?:true
+  debounce:Array<Array<keyof T>>| null
 }) {
-  let { functionName, request, handle, cloudOptions, schema, rateLimit,roles,disableCheck } = cloudImplementOptions
+  let { functionName, request, handle, cloudOptions, schema, rateLimit,roles,disableCheck,debounce } = cloudImplementOptions
   if(!disableCheck){
     await CloudImplementBefore(cloudImplementOptions)
   }
@@ -412,6 +417,47 @@ export class SchemaError extends Error{
   }
 }
 
+export class DebounceError extends Error{
+  constructor(message = ''){
+    super(message)
+    this.name = 'debounce'
+  }
+}
+
+async function CheckDebounce(debounce:string[][], params: CloudParams,currentUser:AV.User,lock:Lock){
+
+  //判断是否符合防抖条件
+  let cacheParams: string[] | null = null
+  let paramsKeys = Object.keys(ClearInternalParams(params))
+  for (let i = 0; i < debounce.length; ++i) {
+    let _cacheParams = debounce[i]
+    if (
+      _cacheParams.length == paramsKeys.length &&
+      //@ts-ignore
+      paramsKeys.every(u => _cacheParams.indexOf(u) >= 0)
+    ) {
+      //@ts-ignore
+      cacheParams = _cacheParams
+    }
+  }
+  if (cacheParams) {
+    let cacheKeyConfig = {}
+    cacheKeyConfig['currentUser'] = currentUser
+    cacheParams.forEach(e=>{
+      cacheKeyConfig[e] = params[e]
+    })
+    //符合缓存条件,记录所使用的查询keys
+    if(! await lock.tryLock(getCacheKey(cacheKeyConfig))){
+      for (let i = 0; i < cacheParams.length; ++i) {
+        let key = cacheParams[i]
+        cacheKeyConfig[key] = params[key]
+      }
+    }else{
+      throw new DebounceError()
+    }
+  }
+}
+
 function CheckSchema(schema: Joi.ObjectSchema, params: CloudParams) {
   // console.log(params)
   // console.log('schema')
@@ -450,12 +496,14 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
   cloudOptions: CloudOptions<T>,
   schema?: Joi.ObjectSchema,
   rpc?:boolean
+  debounce?:Array<Array<keyof T>>
 }) {
   let { cache, handle, cloudOptions, functionName, rpc } = info
   let _redis = cache.redisUrl && new Redis(cache.redisUrl, {maxRetriesPerRequest: null})
   return async (request: AV.Cloud.CloudFunctionRequest & {noUser?:true, internal?:true}) => {
 
     let schema = info.schema || null
+    let debounce = info.debounce || null
     let rateLimit = cloudOptions.rateLimit || null
     // console.log(functionName)
     //@ts-ignore
@@ -487,7 +535,7 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
       } else {
         //不符合缓存条件,直接执行云函数
         // console.log(functionName+' CloudImplement(request, descriptor)')
-        return CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit,roles })
+        return CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit,roles,debounce })
       }
     }
     let cloudParams: CloudParams = params
@@ -505,14 +553,14 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
       }
 
       let { startTimestamp, expires } = getCacheTime(cache.timeUnit)
-      let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit,roles })
+      let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit,roles,debounce })
       if (typeof results === 'object') {
         results.timestamp = startTimestamp.valueOf()
       }
       console.log(functionName + ' CloudImplement no cache')
       return Promise.resolve(results)
     }
-    await CloudImplementBefore({ functionName, request, cloudOptions, schema, rateLimit,roles })
+    await CloudImplementBefore({ functionName, request, cloudOptions, schema, rateLimit,roles,debounce })
 
     if (cache.currentUser) {
       cacheKeyConfig['currentUser'] = request.currentUser
@@ -550,7 +598,7 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
       }
     }
     //获取缓存失败,执行原始云函数
-    let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit,roles,disableCheck:true })
+    let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit,roles,disableCheck:true,debounce })
     let expireBy = cache.expireBy || 'request'
     let startTimestamp: moment.Moment
     let expires: number
@@ -636,6 +684,7 @@ export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>)
       }
       let rateLimit = params && params.rateLimit || null
       let roles = params && params.roles|| null
+      let debounce = params && params.debounce|| null
       // console.log(params)
       if (params && params.cache) {
         //缓存版本
@@ -653,7 +702,7 @@ export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>)
       } else {
         // console.log(functionName + ' normal cloud function')
         //无缓存版本
-        cloudFunction = (request) => CloudImplement({ functionName, request, handle, cloudOptions: params! , schema: schema || null, rateLimit,roles })
+        cloudFunction = (request) => CloudImplement({ functionName, request, handle, cloudOptions: params! , schema: schema || null, rateLimit,roles,debounce })
       }
       if (params && params.internal) {
         console.log('internal function '+functionName)

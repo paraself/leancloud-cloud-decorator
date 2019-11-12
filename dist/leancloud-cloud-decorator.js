@@ -40,12 +40,6 @@ function SetListener(p) {
     listener = p || {};
 }
 exports.SetListener = SetListener;
-let test = {
-    schema: { a: joi_1.default.string() },
-    beforeInvoke: async (params) => {
-        params.request.internalData;
-    }
-};
 const NODE_ENV = process.env.NODE_ENV;
 // // Schema 测试
 // interface IKeyChoices {
@@ -115,7 +109,7 @@ function getCacheTime(timeUnit, count = 1) {
     return { startTimestamp, expires };
 }
 async function CloudImplementBefore(cloudImplementOptions) {
-    let { functionName, request, cloudOptions, schema, rateLimit, roles } = cloudImplementOptions;
+    let { functionName, request, cloudOptions, schema, rateLimit, roles, debounce } = cloudImplementOptions;
     let cloudOptions2 = cloudOptions;
     beforeInvoke && await beforeInvoke({
         functionName,
@@ -149,6 +143,11 @@ async function CloudImplementBefore(cloudImplementOptions) {
                 request
             } });
     }
+    if (debounce && request.currentUser) {
+        CheckDebounce(debounce, params, request.currentUser, 
+        //@ts-ignore
+        request.lock);
+    }
 }
 async function CloudImplementAfter(cloudImplementOptions) {
     let { functionName, request, cloudOptions, data } = cloudImplementOptions;
@@ -172,7 +171,7 @@ async function CloudImplementAfter(cloudImplementOptions) {
     return data;
 }
 async function CloudImplement(cloudImplementOptions) {
-    let { functionName, request, handle, cloudOptions, schema, rateLimit, roles, disableCheck } = cloudImplementOptions;
+    let { functionName, request, handle, cloudOptions, schema, rateLimit, roles, disableCheck, debounce } = cloudImplementOptions;
     if (!disableCheck) {
         await CloudImplementBefore(cloudImplementOptions);
     }
@@ -196,9 +195,6 @@ async function CheckPermission(currentUser, noUser, roles) {
     if (!currentUser && !noUser) {
         throw new leanengine_1.default.Cloud.Error('missing user', { code: 400 });
     }
-    if (currentUser && currentUser.get('marked')) {
-        throw new leanengine_1.default.Cloud.Error('Banned user', { code: 400 });
-    }
     if (roles) {
         let havePermission = false;
         for (let i = 0; i < roles.length; ++i) {
@@ -221,6 +217,44 @@ class SchemaError extends Error {
     }
 }
 exports.SchemaError = SchemaError;
+class DebounceError extends Error {
+    constructor(message = '') {
+        super(message);
+        this.name = 'debounce';
+    }
+}
+exports.DebounceError = DebounceError;
+async function CheckDebounce(debounce, params, currentUser, lock) {
+    //判断是否符合防抖条件
+    let cacheParams = null;
+    let paramsKeys = Object.keys(ClearInternalParams(params));
+    for (let i = 0; i < debounce.length; ++i) {
+        let _cacheParams = debounce[i];
+        if (_cacheParams.length == paramsKeys.length &&
+            //@ts-ignore
+            paramsKeys.every(u => _cacheParams.indexOf(u) >= 0)) {
+            //@ts-ignore
+            cacheParams = _cacheParams;
+        }
+    }
+    if (cacheParams) {
+        let cacheKeyConfig = {};
+        cacheKeyConfig['currentUser'] = currentUser;
+        cacheParams.forEach(e => {
+            cacheKeyConfig[e] = params[e];
+        });
+        //符合缓存条件,记录所使用的查询keys
+        if (!await lock.tryLock(base_2.getCacheKey(cacheKeyConfig))) {
+            for (let i = 0; i < cacheParams.length; ++i) {
+                let key = cacheParams[i];
+                cacheKeyConfig[key] = params[key];
+            }
+        }
+        else {
+            throw new DebounceError();
+        }
+    }
+}
 function CheckSchema(schema, params) {
     // console.log(params)
     // console.log('schema')
@@ -256,6 +290,7 @@ function CreateCloudCacheFunction(info) {
     let _redis = cache.redisUrl && new ioredis_1.default(cache.redisUrl, { maxRetriesPerRequest: null });
     return async (request) => {
         let schema = info.schema || null;
+        let debounce = info.debounce || null;
         let rateLimit = cloudOptions.rateLimit || null;
         // console.log(functionName)
         //@ts-ignore
@@ -286,7 +321,7 @@ function CreateCloudCacheFunction(info) {
             else {
                 //不符合缓存条件,直接执行云函数
                 // console.log(functionName+' CloudImplement(request, descriptor)')
-                return CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles });
+                return CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles, debounce });
             }
         }
         let cloudParams = params;
@@ -299,14 +334,14 @@ function CreateCloudCacheFunction(info) {
                 throw new leanengine_1.default.Cloud.Error('non-administrators in noCache', { code: 400 });
             }
             let { startTimestamp, expires } = getCacheTime(cache.timeUnit);
-            let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles });
+            let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles, debounce });
             if (typeof results === 'object') {
                 results.timestamp = startTimestamp.valueOf();
             }
             console.log(functionName + ' CloudImplement no cache');
             return Promise.resolve(results);
         }
-        await CloudImplementBefore({ functionName, request, cloudOptions, schema, rateLimit, roles });
+        await CloudImplementBefore({ functionName, request, cloudOptions, schema, rateLimit, roles, debounce });
         if (cache.currentUser) {
             cacheKeyConfig['currentUser'] = request.currentUser;
         }
@@ -343,7 +378,7 @@ function CreateCloudCacheFunction(info) {
             }
         }
         //获取缓存失败,执行原始云函数
-        let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles, disableCheck: true });
+        let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles, disableCheck: true, debounce });
         let expireBy = cache.expireBy || 'request';
         let startTimestamp;
         let expires;
@@ -427,6 +462,7 @@ function Cloud(params) {
             }
             let rateLimit = params && params.rateLimit || null;
             let roles = params && params.roles || null;
+            let debounce = params && params.debounce || null;
             // console.log(params)
             if (params && params.cache) {
                 //缓存版本
@@ -445,7 +481,7 @@ function Cloud(params) {
             else {
                 // console.log(functionName + ' normal cloud function')
                 //无缓存版本
-                cloudFunction = (request) => CloudImplement({ functionName, request, handle, cloudOptions: params, schema: schema || null, rateLimit, roles });
+                cloudFunction = (request) => CloudImplement({ functionName, request, handle, cloudOptions: params, schema: schema || null, rateLimit, roles, debounce });
             }
             if (params && params.internal) {
                 console.log('internal function ' + functionName);

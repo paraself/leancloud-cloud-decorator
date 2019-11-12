@@ -87,6 +87,10 @@ interface CloudOptions<T extends CloudParams, A = any> {
      */
     cache?: CacheOptions<T>;
     /**
+     * 防抖配置
+     */
+    debounce?: Array<Array<keyof T>>;
+    /**
      * 备选名,用于让新的云函数,兼容旧的云函数调用
      */
     optionalName?: string;
@@ -144,6 +148,9 @@ export declare class SchemaError extends Error {
     validationError: Joi.ValidationError;
     constructor(error: Joi.ValidationError);
 }
+export declare class DebounceError extends Error {
+    constructor(message?: string);
+}
 /**
  * 将函数加入云函数中,云函数名为 ``类名.函数名``
  */
@@ -182,4 +189,8 @@ export interface CloudParams {
      * 调用云函数的管理员id,用于特殊操作,比如noCache操作
      */
     adminId?: string;
+    /**
+     * 调用云函数的sdk信息
+     */
+    _api?: SDKVersion;
 }

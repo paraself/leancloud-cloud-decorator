@@ -156,10 +156,11 @@ function createSdkFile(sourceFile) {
             case ts.SyntaxKind.ExportAssignment:
                 skipAllNode(node);
                 break;
+            case ts.SyntaxKind.TypeAliasDeclaration:
             case ts.SyntaxKind.VariableStatement:
                 {
-                    let variableStatement = node;
-                    if (variableStatement.modifiers && variableStatement.modifiers.find(e => e.kind == ts.SyntaxKind.ExportKeyword)) {
+                    let declaration = node;
+                    if (declaration.modifiers && declaration.modifiers.find(e => e.kind == ts.SyntaxKind.ExportKeyword)) {
                     }
                     else {
                         skipAllNode(node);
