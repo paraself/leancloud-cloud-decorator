@@ -420,7 +420,7 @@ export class SchemaError extends Error{
 export class DebounceError extends Error{
   constructor(message = ''){
     super(message)
-    this.name = 'debounce'
+    this.name = 'DebounceError'
   }
 }
 
@@ -444,7 +444,7 @@ async function CheckDebounce(debounce:string[][], params: CloudParams,currentUse
     let key = currentUser.get('objectId')+':'+cacheParams.join(',')
     //符合缓存条件,记录所使用的查询keys
     if(! await lock.tryLock(key)){
-      throw new DebounceError()
+      throw new DebounceError('debounce error')
     }
   }
 }

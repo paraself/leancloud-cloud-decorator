@@ -220,7 +220,7 @@ exports.SchemaError = SchemaError;
 class DebounceError extends Error {
     constructor(message = '') {
         super(message);
-        this.name = 'debounce';
+        this.name = 'DebounceError';
     }
 }
 exports.DebounceError = DebounceError;
@@ -241,7 +241,7 @@ async function CheckDebounce(debounce, params, currentUser, lock) {
         let key = currentUser.get('objectId') + ':' + cacheParams.join(',');
         //符合缓存条件,记录所使用的查询keys
         if (!await lock.tryLock(key)) {
-            throw new DebounceError();
+            throw new DebounceError('debounce error');
         }
     }
 }
