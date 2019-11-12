@@ -739,12 +739,12 @@ export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>)
         let errorRange = afterInvokes.filter(e=>!semver.validRange(e.semver))
         //检查合法性
         if(errorRange.length>0){
-          console.error(functionName+': Error afterInvokes semver '+errorRange.map(e=>e.semver).join(','))
+          console.error(functionName+': Error afterInvokes semver: '+errorRange.map(e=>e.semver).join(', '))
         }
         //检测是否存在范围相交
         let errorIntersects = afterInvokes.filter((e,i)=>afterInvokes!.find((e2,i2)=>i!=i2&&semver.intersects(e.semver,e2.semver)))
         if(errorIntersects.length>0){
-          console.error(functionName+': Error afterInvokes semver '+errorIntersects.map(e=>e.semver).join(','))
+          console.error(functionName+': Error afterInvokes semver: '+errorIntersects.map(e=>e.semver).join(', '))
         }
       }
       if (params && params.internal) {
