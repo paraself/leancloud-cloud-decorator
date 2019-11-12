@@ -494,12 +494,12 @@ function Cloud(params) {
                 let errorRange = afterInvokes.filter(e => !semver_1.default.validRange(e.semver));
                 //检查合法性
                 if (errorRange.length > 0) {
-                    console.error(name + ': Error afterInvokes semver ' + errorRange.map(e => e.semver).join(','));
+                    console.error(functionName + ': Error afterInvokes semver ' + errorRange.map(e => e.semver).join(','));
                 }
                 //检测是否存在范围相交
-                let errorIntersects = afterInvokes.filter((e, i) => afterInvokes.every((e2, i2) => i != i2 && semver_1.default.intersects(e.semver, e2.semver)));
+                let errorIntersects = afterInvokes.filter((e, i) => afterInvokes.find((e2, i2) => i != i2 && semver_1.default.intersects(e.semver, e2.semver)));
                 if (errorIntersects.length > 0) {
-                    console.error(name + ': Error afterInvokes semver ' + errorIntersects.map(e => e.semver).join(','));
+                    console.error(functionName + ': Error afterInvokes semver ' + errorIntersects.map(e => e.semver).join(','));
                 }
             }
             if (params && params.internal) {
