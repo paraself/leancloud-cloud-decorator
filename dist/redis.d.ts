@@ -25,7 +25,7 @@ export declare function AddCacheUpdateCallback(callback: CacheUpdateCallback): v
  * @param {string} key
  * @return {Promise<number>} - 1成功加锁,0已被其他地方加锁
  */
-export declare function tryLock(key: any): Promise<any>;
+export declare function tryLock(key: any): any;
 /**
  *
  * @param {string} key

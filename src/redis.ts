@@ -4,6 +4,8 @@ import {Redis} from 'ioredis'
 
 export let redis: Redis
 export let cachePrefix = 'pteppp'
+import fs from 'fs'
+import path from 'path'
 let lockPrefix = `${cachePrefix}:lock:`
 
 /**
@@ -23,6 +25,11 @@ export function SetCache(params: {
     cachePrefix = params.cachePrefix||'pteppp'
     lockPrefix = `${cachePrefix}:lock:`
     cacheUpdateCallbackList.forEach(e=>e(params))
+
+    redis.defineCommand('setnxex', {
+      numberOfKeys: 3,
+      lua: fs.readFileSync(path.resolve(__dirname,'setnxex.lua')).toString()
+  });
   }
 type CacheUpdateCallback = (params:{cache: Redis,cachePrefix?:string}) => void
 
@@ -39,7 +46,8 @@ export function AddCacheUpdateCallback(callback:CacheUpdateCallback){
  */
 export function tryLock(key) {
     key = lockPrefix + key;
-    return redis.setnx(key, 1)
+    //@ts-ignore
+    return redis.setnxex(key,60, 1)
   }
   
   

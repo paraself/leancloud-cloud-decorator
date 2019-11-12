@@ -1,6 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cachePrefix = 'pteppp';
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 let lockPrefix = `${exports.cachePrefix}:lock:`;
 /**
  * 设置redis缓存
@@ -11,6 +16,10 @@ function SetCache(params) {
     exports.cachePrefix = params.cachePrefix || 'pteppp';
     lockPrefix = `${exports.cachePrefix}:lock:`;
     cacheUpdateCallbackList.forEach(e => e(params));
+    exports.redis.defineCommand('setnxex', {
+        numberOfKeys: 3,
+        lua: fs_1.default.readFileSync(path_1.default.resolve(__dirname, 'setnxex.lua')).toString()
+    });
 }
 exports.SetCache = SetCache;
 let cacheUpdateCallbackList = [];
@@ -25,7 +34,8 @@ exports.AddCacheUpdateCallback = AddCacheUpdateCallback;
  */
 function tryLock(key) {
     key = lockPrefix + key;
-    return exports.redis.setnx(key, 1);
+    //@ts-ignore
+    return exports.redis.setnxex(key, 60, 1);
 }
 exports.tryLock = tryLock;
 /**
