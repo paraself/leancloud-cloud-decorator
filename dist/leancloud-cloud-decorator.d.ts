@@ -22,6 +22,20 @@ export interface CloudInvokeParams<T> {
     cloudOptions?: CloudOptions<any>;
 }
 export declare type CloudInvoke<T> = (params: CloudInvokeParams<T>) => Promise<any>;
+export declare type SemverCloudInvoke<T> = {
+    /**
+     * 平台
+     */
+    platform: Platform;
+    /**
+     * 可执行的版本
+     */
+    semver: string;
+    /**
+     * 符合条件时的回调
+     */
+    callback: CloudInvoke<T>;
+};
 export declare type CloudInvokeBefore<T> = CloudInvoke<T>;
 export declare function SetInvokeCallback<T>(params: {
     beforeInvoke?: CloudInvokeBefore<T>;
@@ -129,9 +143,14 @@ interface CloudOptions<T extends CloudParams, A = any> {
      */
     beforeInvoke?: CloudInvoke<A>;
     /**
+     * @deprecated
      * 云函数调用后的回调, 可用于修改数据, 在全局afterInvoke之前执行
      */
     afterInvoke?: CloudInvoke<A>;
+    /**
+     * 云函数调用后的回调, 可用于修改数据, 在全局afterInvoke之前执行
+     */
+    afterInvokes?: SemverCloudInvoke<A>[];
     /**
      * 额外自定义配置信息
      */

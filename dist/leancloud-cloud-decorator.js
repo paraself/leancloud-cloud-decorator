@@ -16,6 +16,7 @@ const joi_1 = __importDefault(require("joi"));
 const moment_1 = __importDefault(require("moment"));
 const base_1 = require("./base");
 const cloudStats_1 = require("./cloudStats");
+const semver_1 = __importDefault(require("semver"));
 const base_2 = require("./base");
 exports.getCacheKey = base_2.getCacheKey;
 const redisSetting = __importStar(require("./redis"));
@@ -159,6 +160,21 @@ async function CloudImplementAfter(cloudImplementOptions) {
             request,
             data
         }) || data;
+    }
+    if (cloudOptions && cloudOptions.afterInvokes) {
+        //@ts-ignore
+        let version = request.params && request.params._api;
+        if (version) {
+            let fit = cloudOptions.afterInvokes.find(x => semver_1.default.valid(version.version) && semver_1.default.satisfies(version.version, x.semver));
+            if (fit) {
+                data = await fit.callback({
+                    functionName,
+                    cloudOptions: cloudOptions2,
+                    request,
+                    data
+                }) || data;
+            }
+        }
     }
     if (afterInvoke) {
         data = await afterInvoke({
@@ -472,6 +488,19 @@ function Cloud(params) {
                 // console.log(functionName + ' normal cloud function')
                 //无缓存版本
                 cloudFunction = (request) => CloudImplement({ functionName, request, handle, cloudOptions: params, schema: schema || null, rateLimit, roles, debounce });
+            }
+            let afterInvokes = params && params.afterInvokes;
+            if (afterInvokes) {
+                let errorRange = afterInvokes.filter(e => !semver_1.default.validRange(e.semver));
+                //检查合法性
+                if (errorRange.length > 0) {
+                    console.error(name + ': Error afterInvokes semver ' + errorRange.map(e => e.semver).join(','));
+                }
+                //检测是否存在范围相交
+                let errorIntersects = afterInvokes.filter((e, i) => afterInvokes.every((e2, i2) => i != i2 && semver_1.default.intersects(e.semver, e2.semver)));
+                if (errorIntersects.length > 0) {
+                    console.error(name + ': Error afterInvokes semver ' + errorIntersects.map(e => e.semver).join(','));
+                }
             }
             if (params && params.internal) {
                 console.log('internal function ' + functionName);

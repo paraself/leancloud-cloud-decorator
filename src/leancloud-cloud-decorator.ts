@@ -5,6 +5,7 @@ import moment from 'moment'
 import {isRole,isRoles} from './base'
 import { IncrCache } from './cloudStats'
 import {SDKVersion} from './cloudHandler'
+import semver from 'semver'
 
 import { Platform,getCacheKey } from './base'
 export { Platform,getCacheKey }
@@ -31,6 +32,21 @@ export interface CloudInvokeParams<T>{
 }
 
 export type CloudInvoke<T> = (params:CloudInvokeParams<T>)=>Promise<any>
+
+export type SemverCloudInvoke<T> = {
+  /**
+   * 平台
+   */
+  platform:Platform,
+  /**
+   * 可执行的版本
+   */
+  semver:string,
+  /**
+   * 符合条件时的回调
+   */
+  callback:CloudInvoke<T>
+}
 
 // export type CloudInvoke<T> = (params:{
 //   functionName:string
@@ -175,9 +191,14 @@ interface CloudOptions<T extends CloudParams,A=any> {
    */
   beforeInvoke?:CloudInvoke<A>,
   /**
+   * @deprecated
    * 云函数调用后的回调, 可用于修改数据, 在全局afterInvoke之前执行
    */
-  afterInvoke?:CloudInvoke<A>
+  afterInvoke?:CloudInvoke<A>,
+  /**
+   * 云函数调用后的回调, 可用于修改数据, 在全局afterInvoke之前执行
+   */
+  afterInvokes?:SemverCloudInvoke<A>[],
   /**
    * 额外自定义配置信息
    */
@@ -331,7 +352,7 @@ async function CloudImplementAfter<T extends CloudParams>(cloudImplementOptions:
   functionName: string
   request: AV.Cloud.CloudFunctionRequest & {noUser?:true, internal?:true}
   cloudOptions: CloudOptions<T> | undefined
-  data?:any
+  data?:any,
 }){
   let { functionName, request, cloudOptions,data } = cloudImplementOptions
 
@@ -344,6 +365,23 @@ async function CloudImplementAfter<T extends CloudParams>(cloudImplementOptions:
       data
     }) || data
   }
+
+  if(cloudOptions && cloudOptions.afterInvokes){
+    //@ts-ignore
+    let version = request.params && request.params._api as SDKVersion
+    if(version){
+      let fit = cloudOptions.afterInvokes.find(x=> semver.valid(version.version) && semver.satisfies(version.version,x.semver))
+      if(fit){
+        data = await fit.callback({
+          functionName,
+          cloudOptions: cloudOptions2,
+          request,
+          data
+        }) || data
+      }
+    }
+  }
+
   if(afterInvoke){
     data = await afterInvoke({
       functionName,
@@ -694,6 +732,20 @@ export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>)
         // console.log(functionName + ' normal cloud function')
         //无缓存版本
         cloudFunction = (request) => CloudImplement({ functionName, request, handle, cloudOptions: params! , schema: schema || null, rateLimit,roles,debounce })
+      }
+
+      let afterInvokes =params &&  params.afterInvokes
+      if (afterInvokes) {
+        let errorRange = afterInvokes.filter(e=>!semver.validRange(e.semver))
+        //检查合法性
+        if(errorRange.length>0){
+          console.error(name+': Error afterInvokes semver '+errorRange.map(e=>e.semver).join(','))
+        }
+        //检测是否存在范围相交
+        let errorIntersects = afterInvokes.filter((e,i)=>afterInvokes!.every((e2,i2)=>i!=i2&&semver.intersects(e.semver,e2.semver)))
+        if(errorIntersects.length>0){
+          console.error(name+': Error afterInvokes semver '+errorIntersects.map(e=>e.semver).join(','))
+        }
       }
       if (params && params.internal) {
         console.log('internal function '+functionName)

@@ -8,7 +8,7 @@
     "postinstall": "./dist/copyConfig.js",
     "build": "npx tsc -p . ",
     "release-minor": "npm run build && git add -A && git commit -m \"auto release\" && npm version minor && git push && npm publish",
-    "release-patch": "npm run build && git add -A && git commit -m \"auto release\" && npm version patch && git push && npm publish"
+    "release-patch": "npm run build && git add -A && git commit -m \"增加云函数afterInvokes回调\" && npm version patch && git push && npm publish"
   },
   "repository": {
     "type": "git",
@@ -22,7 +22,8 @@
   "homepage": "https://github.com/paraself/leancloud-cloud-decorator#readme",
   "dependencies": {
     "ioredis": "^4.9.3",
-    "moment": "^2.24.0"
+    "moment": "^2.24.0",
+    "semver": "^6.3.0"
   },
   "devDependencies": {
     "@types/express": "^4.16.1",
@@ -30,8 +31,9 @@
     "@types/joi": "^14.3.3",
     "@types/lodash": "^4.14.129",
     "@types/node": "^12.0.2",
-    "leanengine": "^3.4.0",
+    "@types/semver": "^6.2.0",
     "leancloud-storage": "^3.15.0",
+    "leanengine": "^3.4.0",
     "typedoc": "^0.14.2",
     "typescript": "^3.5.2"
   },
