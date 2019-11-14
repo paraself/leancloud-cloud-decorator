@@ -165,7 +165,7 @@ async function CloudImplementAfter(cloudImplementOptions) {
         //@ts-ignore
         let version = request.params && request.params._api;
         if (version) {
-            let fit = cloudOptions.afterInvokes.find(x => semver_1.default.valid(version.version) && semver_1.default.satisfies(version.version, x.semver));
+            let fit = cloudOptions.afterInvokes.find(x => semver_1.default.valid(version.clientVersion) && semver_1.default.satisfies(version.clientVersion, x.semver));
             if (fit) {
                 data = await fit.callback({
                     functionName,

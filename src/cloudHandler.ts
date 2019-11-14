@@ -8,8 +8,8 @@ import { Lock } from './redis'
 
 export interface SDKVersion{
   platform: string ,
-  api: string,
-  version: string,
+  apiVersion: string,
+  clientVersion: string,
 }
 
 const _define = AV.Cloud.define
@@ -212,9 +212,9 @@ AV.Cloud.define = function(
               //@ts-ignore
               platform: (api && api.platform)|| params.platform,
               //@ts-ignore
-              api: (api && api.api)||params.api,
+              api: (api && api.apiVersion)||params.api,
               //@ts-ignore
-              version: (api && api.version)||params.version,
+              version: (api && api.clientVersion)||params.version,
             }
             // if (info instanceof IkkError) {
             //   ikkError = info

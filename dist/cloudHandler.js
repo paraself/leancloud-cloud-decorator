@@ -171,9 +171,9 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                         //@ts-ignore
                         platform: (api && api.platform) || params.platform,
                         //@ts-ignore
-                        api: (api && api.api) || params.api,
+                        api: (api && api.apiVersion) || params.api,
                         //@ts-ignore
-                        version: (api && api.version) || params.version,
+                        version: (api && api.clientVersion) || params.version,
                     };
                     // if (info instanceof IkkError) {
                     //   ikkError = info
