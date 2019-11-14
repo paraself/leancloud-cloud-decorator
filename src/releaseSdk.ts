@@ -37,8 +37,8 @@ function createSdkInfo(platform: Platform,dir:string,infoDir:string){
     // infoJson.api = packageJson.version
     let infoJson = {
       platform,
-      api:packageJson.version,
-      "version": "0.0.0"
+      apiVersion:packageJson.version,
+      clientVersion: "0.0.0"
     }
     writeFileSync(infoDir, 'export default '+JSON.stringify(infoJson, null, 2), 'utf-8')
     // writeFileSync(infoDistDir, JSON.stringify(infoJson, null, 2), 'utf-8')

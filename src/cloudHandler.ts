@@ -139,7 +139,7 @@ AV.Cloud.afterDelete = CreateHookFunction('afterDelete', _afterDelete)
 AV.Cloud.afterSave = CreateHookFunction('afterSave', _afterSave)
 AV.Cloud.afterUpdate = CreateHookFunction('afterUpdate', _afterUpdate)
 
-const UNKNOW_STATS = process.env.NODE_ENV ? 'unknow' : 'local'
+const UNKNOW_STATS = process.env.NODE_ENV ? 'unknown' : 'local'
 /**
  * @function define - 更改原始函数,增加日志记录功能. 必须在云函数定义被require之前定义
  * @param {string} name
@@ -175,18 +175,21 @@ AV.Cloud.define = function(
     // return callback(request)
 
     var lock = new Lock(name + ':')
-    let params:any = request.params || {}
-    params.platform = params.platform || UNKNOW_STATS
-    params.api = params.api || UNKNOW_STATS
-    params.version = params.version || UNKNOW_STATS
+    let params = request.params || {}
+    let apiVersion = params._api
+    apiVersion = {
+      platform: (apiVersion&&apiVersion.platform)||UNKNOW_STATS,
+      apiVersion: (apiVersion&&(apiVersion.apiVersion||apiVersion['api']))||UNKNOW_STATS,
+      clientVersion: (apiVersion&&(apiVersion.clientVersion||apiVersion['version']))||UNKNOW_STATS,
+    }
     try {
       //@ts-ignore
       request.lock = lock
       IncrCall({
         function: name,
-        platform: params.platform ,
-        api: params.api ,
-        version: params.version ,
+        platform: apiVersion.platform ,
+        api: apiVersion.apiVersion ,
+        version: apiVersion.clientVersion ,
       })
       var result = callback(request)
       if (!result) {
@@ -257,9 +260,9 @@ AV.Cloud.define = function(
         function: name,
         params: request.params,
         ip,
-        platform: params.platform,
-        api: params.api,
-        version: params.version,
+        platform: apiVersion.platform,
+        api: apiVersion.apiVersion,
+        version: apiVersion.clientVersion,
       }
     
       {
