@@ -194,7 +194,7 @@ function createSdkFile(sourceFile: ts.SourceFile){
                             if(namedImports&&namedImports.elements){
                                 let names = namedImports.elements.filter(e=>!IsInternalName(e)).map(e=>e.name.escapedText.toString())
                                 if(names.length>0){
-                                    text+=(text&&', ')||''+`{ ${names.join(', ')} }`
+                                    text+=((text&&', ')||'')+`{ ${names.join(', ')} }`
                                 }
                             }
                             if(text){
