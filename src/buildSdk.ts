@@ -103,7 +103,7 @@ function IsInternalName(node:{name?:ts.Identifier}){
 }
 
 function GetImportName(importSpecifier:ts.ImportSpecifier){
-    return (importSpecifier.propertyName && (importSpecifier.propertyName.escapedText.toString()+' as '))
+    return ((importSpecifier.propertyName && (importSpecifier.propertyName.escapedText.toString()+' as '))||'')
         + importSpecifier.name.escapedText.toString()
 }
 

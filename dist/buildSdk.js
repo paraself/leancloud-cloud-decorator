@@ -105,7 +105,7 @@ function IsInternalName(node) {
     return node.name && node.name.escapedText.toString().startsWith('_');
 }
 function GetImportName(importSpecifier) {
-    return (importSpecifier.propertyName && (importSpecifier.propertyName.escapedText.toString() + ' as '))
+    return ((importSpecifier.propertyName && (importSpecifier.propertyName.escapedText.toString() + ' as ')) || '')
         + importSpecifier.name.escapedText.toString();
 }
 //https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
