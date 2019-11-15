@@ -369,7 +369,7 @@ async function CloudImplementAfter<T extends CloudParams>(cloudImplementOptions:
   if(cloudOptions && cloudOptions.afterInvokes){
     //@ts-ignore
     let version = request.params && request.params._api as SDKVersion
-    if(version){
+    if(version){ 
       let fit = cloudOptions.afterInvokes.find(x=> semver.valid(version.clientVersion) && semver.satisfies(version.clientVersion,x.semver))
       if(fit){
         data = await fit.callback({
