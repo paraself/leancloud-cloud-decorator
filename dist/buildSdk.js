@@ -104,6 +104,10 @@ function createCloudRunText(node, method = 'run') {
 function IsInternalName(node) {
     return node.name && node.name.escapedText.toString().startsWith('_');
 }
+function GetImportName(importSpecifier) {
+    return (importSpecifier.propertyName && (importSpecifier.propertyName.escapedText.toString() + ' as '))
+        + importSpecifier.name.escapedText.toString();
+}
 //https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
 //在线查看代码ast的工具 https://ts-ast-viewer.com/
 function createSdkFile(sourceFile) {
@@ -185,19 +189,28 @@ function createSdkFile(sourceFile) {
                         let importClause = importDeclaration.importClause;
                         if (importClause) {
                             let text = '';
-                            if (importClause.name && !IsInternalName(importClause)) {
-                                text += importClause.name.escapedText.toString();
-                            }
-                            let namedImports = importClause.namedBindings;
-                            if (namedImports && namedImports.elements) {
-                                let names = namedImports.elements.filter(e => !IsInternalName(e)).map(e => e.name.escapedText.toString());
-                                if (names.length > 0) {
-                                    text += ((text && ', ') || '') + `{ ${names.join(', ')} }`;
+                            if (!node.getText().includes('_')) {
+                                text = node.getText();
+                                if (moduleMap[moduleName]) {
+                                    text = text.replace(moduleName, moduleMap[moduleName]);
                                 }
                             }
-                            if (text) {
-                                let moduleName2 = moduleMap[moduleName] || moduleName;
-                                text = `import ${text} from '${moduleName2}'`;
+                            else {
+                                //去除_开头的引用项目
+                                if (importClause.name && !IsInternalName(importClause)) {
+                                    text += importClause.name.escapedText.toString();
+                                }
+                                let namedImports = importClause.namedBindings;
+                                if (namedImports && namedImports.elements) {
+                                    let names = namedImports.elements.filter(e => !IsInternalName(e)).map(e => GetImportName(e));
+                                    if (names.length > 0) {
+                                        text += ((text && ', ') || '') + `{ ${names.join(', ')} }`;
+                                    }
+                                }
+                                if (text) {
+                                    let moduleName2 = moduleMap[moduleName] || moduleName;
+                                    text = `import ${text} from '${moduleName2}'`;
+                                }
                             }
                             // for (let i = 0; i < Object.keys(Platform).length; ++i) 
                             {
