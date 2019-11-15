@@ -145,7 +145,7 @@ function createSdkFile(sourceFile: ts.SourceFile){
             case ts.SyntaxKind.FunctionDeclaration:
                 {
                     let functionDeclaration = <ts.FunctionDeclaration>node
-                    if(functionDeclaration.modifiers && functionDeclaration.modifiers.find(e=>e.kind == ts.SyntaxKind.ExportKeyword)){
+                    if((!functionDeclaration.name||functionDeclaration.name.escapedText[0]!='_') && functionDeclaration.modifiers && functionDeclaration.modifiers.find(e=>e.kind == ts.SyntaxKind.ExportKeyword)){
 
                     }else{
                         skipAllNode(node)
