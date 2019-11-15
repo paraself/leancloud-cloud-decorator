@@ -191,7 +191,7 @@ function createSdkFile(sourceFile: ts.SourceFile){
                                 text+=importClause.name.escapedText.toString()
                             }
                             let namedImports = <ts.NamedImports>importClause.namedBindings
-                            if(namedImports){
+                            if(namedImports&&namedImports.elements){
                                 let names = namedImports.elements.filter(e=>!IsInternalName(e)).map(e=>e.name.escapedText.toString())
                                 if(names.length>0){
                                     text+=(text&&', ')||''+`{ ${names.join(', ')} }`
