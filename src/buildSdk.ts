@@ -98,6 +98,10 @@ function createCloudRunText(node:ts.MethodDeclaration,method = 'run'){
 //     return {name,parameters}
 // }
 
+function IsInternalName(node:{name?:ts.Identifier}){
+    return node.name && node.name.escapedText.toString().startsWith('_')
+}
+
 //https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
 //在线查看代码ast的工具 https://ts-ast-viewer.com/
 function createSdkFile(sourceFile: ts.SourceFile){
@@ -145,7 +149,7 @@ function createSdkFile(sourceFile: ts.SourceFile){
             case ts.SyntaxKind.FunctionDeclaration:
                 {
                     let functionDeclaration = <ts.FunctionDeclaration>node
-                    if((!functionDeclaration.name||functionDeclaration.name.escapedText.toString().startsWith('_')) && functionDeclaration.modifiers && functionDeclaration.modifiers.find(e=>e.kind == ts.SyntaxKind.ExportKeyword)){
+                    if(!IsInternalName(functionDeclaration) && functionDeclaration.modifiers && functionDeclaration.modifiers.find(e=>e.kind == ts.SyntaxKind.ExportKeyword)){
 
                     }else{
                         skipAllNode(node)
@@ -180,14 +184,28 @@ function createSdkFile(sourceFile: ts.SourceFile){
                     if (!moduleName.includes('..')
                     && !moduleName.includes('.json') 
                     && !skipModuleNames.includes(moduleName)) {
-                        let text = node.getText()
-                        if(moduleMap[moduleName]) {
-                            text = text.replace(moduleName,moduleMap[moduleName])
-                        }
-                        // for (let i = 0; i < Object.keys(Platform).length; ++i) 
-                        {
-                            let i = 0
-                            appendText(text + '\n', i)
+                        let importClause = importDeclaration.importClause
+                        if(importClause){
+                            let text = ''
+                            if(importClause.name&&!IsInternalName(importClause)){
+                                text+=importClause.name.escapedText.toString()
+                            }
+                            let namedImports = <ts.NamedImports>importClause.namedBindings
+                            if(namedImports){
+                                let names = namedImports.elements.filter(e=>!IsInternalName(e)).map(e=>e.name.escapedText.toString())
+                                if(names.length>0){
+                                    text+=(text&&', ')||''+`{ ${names.join(', ')} }`
+                                }
+                            }
+                            if(text){
+                                let moduleName2 = moduleMap[moduleName] || moduleName
+                                text=`import ${text} from '${moduleName2}'`
+                            }
+                            // for (let i = 0; i < Object.keys(Platform).length; ++i) 
+                            {
+                                let i = 0
+                                appendText(text + '\n', i)
+                            }
                         }
                     }
                     skipAllNode(node)
