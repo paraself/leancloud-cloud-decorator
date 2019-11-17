@@ -108,6 +108,9 @@ function GetImportName(importSpecifier) {
     return ((importSpecifier.propertyName && (importSpecifier.propertyName.escapedText.toString() + ' as ')) || '')
         + importSpecifier.name.escapedText.toString();
 }
+function IsExportDisabled(node) {
+    return node.getFullText().includes('//@lcc-export-disabled');
+}
 //https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
 //在线查看代码ast的工具 https://ts-ast-viewer.com/
 function createSdkFile(sourceFile) {
@@ -150,6 +153,10 @@ function createSdkFile(sourceFile) {
         switch (node.kind) {
             case ts.SyntaxKind.FunctionDeclaration:
                 {
+                    if (IsExportDisabled(node)) {
+                        skipAllNode(node);
+                        break;
+                    }
                     let functionDeclaration = node;
                     if (!IsInternalName(functionDeclaration) && functionDeclaration.modifiers && functionDeclaration.modifiers.find(e => e.kind == ts.SyntaxKind.ExportKeyword)) {
                     }
@@ -166,6 +173,10 @@ function createSdkFile(sourceFile) {
             case ts.SyntaxKind.TypeAliasDeclaration:
             case ts.SyntaxKind.VariableStatement:
                 {
+                    if (IsExportDisabled(node)) {
+                        skipAllNode(node);
+                        break;
+                    }
                     let declaration = node;
                     if (declaration.modifiers && declaration.modifiers.find(e => e.kind == ts.SyntaxKind.ExportKeyword)) {
                     }
@@ -176,6 +187,10 @@ function createSdkFile(sourceFile) {
                 break;
             case ts.SyntaxKind.ImportDeclaration:
                 {
+                    if (IsExportDisabled(node)) {
+                        skipAllNode(node);
+                        break;
+                    }
                     const skipModuleNames = [
                         './cloud', './index', './base', 'bluebird', 'leancloud-cloud-decorator'
                     ];
@@ -224,6 +239,10 @@ function createSdkFile(sourceFile) {
                 break;
             case ts.SyntaxKind.ImportEqualsDeclaration:
                 {
+                    if (IsExportDisabled(node)) {
+                        skipAllNode(node);
+                        break;
+                    }
                     let importEqualsDeclaration = node;
                     if (importEqualsDeclaration.moduleReference.kind == ts.SyntaxKind.QualifiedName) {
                     }
@@ -244,6 +263,10 @@ function createSdkFile(sourceFile) {
                 break;
             case ts.SyntaxKind.InterfaceDeclaration:
                 {
+                    if (IsExportDisabled(node)) {
+                        skipAllNode(node);
+                        break;
+                    }
                     let interfaceNode = node;
                     //是否需要增加 export
                     let needExport = true;
@@ -265,6 +288,10 @@ function createSdkFile(sourceFile) {
                 break;
             case ts.SyntaxKind.ClassDeclaration:
                 {
+                    if (IsExportDisabled(node)) {
+                        skipAllNode(node);
+                        break;
+                    }
                     let classNode = node;
                     let needExport = true;
                     if (classNode.modifiers) {
@@ -290,6 +317,10 @@ function createSdkFile(sourceFile) {
                 break;
             case ts.SyntaxKind.MethodDeclaration:
                 {
+                    if (IsExportDisabled(node)) {
+                        skipAllNode(node);
+                        break;
+                    }
                     let methodNode = node;
                     let decorators = methodNode.decorators;
                     if (decorators) {
