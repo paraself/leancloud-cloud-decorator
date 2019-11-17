@@ -108,7 +108,7 @@ function GetImportName(importSpecifier:ts.ImportSpecifier){
 }
 
 function IsExportDisabled(node:ts.Node){
-    return node.getFullText().includes('//@lcc-export-disabled')
+    return node.getFullText().includes('@lcc-export-disabled')
 }
 
 //https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API

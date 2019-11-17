@@ -109,7 +109,7 @@ function GetImportName(importSpecifier) {
         + importSpecifier.name.escapedText.toString();
 }
 function IsExportDisabled(node) {
-    return node.getFullText().includes('//@lcc-export-disabled');
+    return node.getFullText().includes('@lcc-export-disabled');
 }
 //https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
 //在线查看代码ast的工具 https://ts-ast-viewer.com/
