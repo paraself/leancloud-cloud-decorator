@@ -584,7 +584,7 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
       let { startTimestamp, expires } = getCacheTime(cache.timeUnit)
       let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit,roles,debounce })
       if (typeof results === 'object') {
-        results.timestamp = startTimestamp.valueOf()
+        results.__timestamp = startTimestamp.valueOf()
       }
       console.log(functionName + ' CloudImplement no cache')
       return Promise.resolve(results)
@@ -620,7 +620,7 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
         // }
         let data = AV2.parse(textResult)
         if(typeof data === 'object'){
-          data.timestamp = timestamp
+          data.__timestamp = timestamp
         }
         //@ts-ignore
         return await CloudImplementAfter({
@@ -654,7 +654,7 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
     
     let timestamp = startTimestamp.valueOf()
     // if (typeof results === 'object') {
-    //   results.timestamp = startTimestamp.valueOf()
+    //   results.__timestamp = startTimestamp.valueOf()
     //   if(rpc) {
     //     // if(results instanceof AV.Object){
     //     //   results = results.toFullJSON()
@@ -671,7 +671,7 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
       //@ts-ignore
       cacheValue = AV2.stringify(results)
       if(typeof results === 'object'){
-        results.timestamp = timestamp
+        results.__timestamp = timestamp
       }
     }
     redis2.multi().setex(cacheKey, expires, cacheValue).setex(cacheKey+':timestamp', expires, timestamp).exec()
