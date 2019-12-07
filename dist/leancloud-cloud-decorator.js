@@ -428,6 +428,9 @@ function CreateCloudCacheFunction(info) {
             // cacheValue = JSON.stringify(results)
             //@ts-ignore
             cacheValue = leancloud_storage_1.default.stringify(results);
+            if (typeof results === 'object') {
+                results.timestamp = timestamp;
+            }
         }
         redis2.multi().setex(cacheKey, expires, cacheValue).setex(cacheKey + ':timestamp', expires, timestamp).exec();
         return await CloudImplementAfter({
