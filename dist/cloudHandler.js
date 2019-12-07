@@ -309,7 +309,14 @@ async function DeleteCloudCache(params) {
             let cacheKey = `${prefix}:cloud:${functionName}:` + base_1.getCacheKey(cacheKeyConfig);
             pipeline.del(cacheKey);
         }
-        return pipeline.exec();
+        let result = await pipeline.exec();
+        return {
+            'day': result[0][1],
+            'hour': result[1][1],
+            'minute': result[2][1],
+            'second': result[3][1],
+            'month': result[4][1]
+        };
     }
     else {
         var keys = await redis.keys(`${prefix}:cloud:${functionName}:*`);
@@ -317,7 +324,12 @@ async function DeleteCloudCache(params) {
         keys.forEach(e => {
             pipeline.del(e);
         });
-        return pipeline.exec();
+        let result = await pipeline.exec();
+        let out = {};
+        keys.forEach((e, i) => {
+            out[e] = result[i][1];
+        });
+        return out;
     }
 }
 exports.DeleteCloudCache = DeleteCloudCache;

@@ -357,14 +357,26 @@ export async function DeleteCloudCache(params:DeleteCacheParams){
       let cacheKey = `${prefix}:cloud:${functionName}:` + getCacheKey(cacheKeyConfig)
       pipeline.del(cacheKey)
     }
-    return pipeline.exec()
+    let result : [null,number][] = await pipeline.exec()
+    return {
+      'day':result[0][1], 
+      'hour':result[1][1], 
+      'minute':result[2][1], 
+      'second':result[3][1], 
+      'month':result[4][1]
+    }
   }else{
     var keys = await redis.keys(`${prefix}:cloud:${functionName}:*`)
     let pipeline = redis.pipeline()
     keys.forEach(e=>{
       pipeline.del(e)
     })
-    return pipeline.exec()
+    let result : [null,number][] = await  pipeline.exec()
+    let out = {}
+    keys.forEach((e,i)=>{
+      out[e] = result[i][1]
+    })
+    return out
   }
 }
 //@ts-ignore

@@ -356,8 +356,11 @@ function CreateCloudCacheFunction(info) {
         // console.log(functionName + ' CloudImplement Cache')
         //尝试获取缓存
         let redis2 = _redis || redis;
-        let textResult = await redis2.get(cacheKey);
+        let cacheResults = await redis2.pipeline().get(cacheKey).get(cacheKey + ':timestamp');
+        let textResult = cacheResults[0][1];
+        // let textResult = await redis2.get(cacheKey)
         if (textResult) {
+            let timestamp = cacheResults[1][1] && parseInt(cacheResults[1][1]);
             try {
                 cloudStats_1.IncrCache({
                     function: functionName,
@@ -371,11 +374,15 @@ function CreateCloudCacheFunction(info) {
                 // if(rpc){
                 //   return AV.parseJSON(JSON.parse( textResult ) )
                 // }
+                let data = leancloud_storage_1.default.parse(textResult);
+                if (typeof data === 'object') {
+                    data.timestamp = timestamp;
+                }
                 //@ts-ignore
                 return await CloudImplementAfter({
                     functionName,
                     request,
-                    data: leancloud_storage_1.default.parse(textResult),
+                    data,
                     cloudOptions
                 });
             }
@@ -402,16 +409,17 @@ function CreateCloudCacheFunction(info) {
             startTimestamp = moment_1.default();
             expires = getTimeLength(cache.timeUnit, cache.count);
         }
-        if (typeof results === 'object') {
-            results.timestamp = startTimestamp.valueOf();
-            if (rpc) {
-                // if(results instanceof AV.Object){
-                //   results = results.toFullJSON()
-                // }else if(Array.isArray(results)){
-                //   results = results.map(e=> (e instanceof AV.Object&&e.toFullJSON())|| e)
-                // }
-            }
-        }
+        let timestamp = startTimestamp.valueOf();
+        // if (typeof results === 'object') {
+        //   results.timestamp = startTimestamp.valueOf()
+        //   if(rpc) {
+        //     // if(results instanceof AV.Object){
+        //     //   results = results.toFullJSON()
+        //     // }else if(Array.isArray(results)){
+        //     //   results = results.map(e=> (e instanceof AV.Object&&e.toFullJSON())|| e)
+        //     // }
+        //   }
+        // }
         let cacheValue;
         if (typeof results === 'string') {
             cacheValue = results;
@@ -419,9 +427,9 @@ function CreateCloudCacheFunction(info) {
         else {
             // cacheValue = JSON.stringify(results)
             //@ts-ignore
-            cacheValue = leancloud_storage_1.default.stringify(results);
+            cacheValue = leancloud_storage_1.default.stringiyf(results);
         }
-        redis2.setex(cacheKey, expires, cacheValue);
+        redis2.multi().setex(cacheKey, expires, cacheValue).setex(cacheKey + ':timestamp', expires, timestamp).exec();
         return await CloudImplementAfter({
             functionName,
             request,

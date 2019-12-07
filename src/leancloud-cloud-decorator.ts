@@ -1,6 +1,6 @@
 import AV, { request } from 'leanengine'
 import AV2 from 'leancloud-storage'
-import Joi, { any } from 'joi'
+import Joi, { any, object } from 'joi'
 import moment from 'moment'
 import {isRole,isRoles} from './base'
 import { IncrCache } from './cloudStats'
@@ -600,8 +600,11 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
     // console.log(functionName + ' CloudImplement Cache')
     //尝试获取缓存
     let redis2 = _redis || redis
-    let textResult = await redis2.get(cacheKey)
+    let cacheResults =  await redis2.pipeline().get(cacheKey).get(cacheKey+':timestamp')
+    let textResult = cacheResults[0][1]
+    // let textResult = await redis2.get(cacheKey)
     if (textResult) {
+      let timestamp =  cacheResults[1][1] && parseInt(cacheResults[1][1])
       try {
         IncrCache({
           function:functionName,
@@ -615,11 +618,15 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
         // if(rpc){
         //   return AV.parseJSON(JSON.parse( textResult ) )
         // }
+        let data = AV2.parse(textResult)
+        if(typeof data === 'object'){
+          data.timestamp = timestamp
+        }
         //@ts-ignore
         return await CloudImplementAfter({
           functionName,
           request,
-          data:AV2.parse(textResult),
+          data,
           cloudOptions
         }) 
       } catch (error) {
@@ -645,25 +652,26 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
       expires = getTimeLength(cache.timeUnit,cache.count)
     }
     
-    if (typeof results === 'object') {
-      results.timestamp = startTimestamp.valueOf()
-      if(rpc) {
-        // if(results instanceof AV.Object){
-        //   results = results.toFullJSON()
-        // }else if(Array.isArray(results)){
-        //   results = results.map(e=> (e instanceof AV.Object&&e.toFullJSON())|| e)
-        // }
-      }
-    }
+    let timestamp = startTimestamp.valueOf()
+    // if (typeof results === 'object') {
+    //   results.timestamp = startTimestamp.valueOf()
+    //   if(rpc) {
+    //     // if(results instanceof AV.Object){
+    //     //   results = results.toFullJSON()
+    //     // }else if(Array.isArray(results)){
+    //     //   results = results.map(e=> (e instanceof AV.Object&&e.toFullJSON())|| e)
+    //     // }
+    //   }
+    // }
     let cacheValue: string
     if (typeof results === 'string') {
       cacheValue = results
     } else {
       // cacheValue = JSON.stringify(results)
       //@ts-ignore
-      cacheValue = AV2.stringify(results)
+      cacheValue = AV2.stringiyf(results)
     }
-    redis2.setex(cacheKey, expires, cacheValue)
+    redis2.multi().setex(cacheKey, expires, cacheValue).setex(cacheKey+':timestamp', expires, timestamp).exec()
 
     return await CloudImplementAfter({
       functionName,
