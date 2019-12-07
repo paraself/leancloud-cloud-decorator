@@ -600,7 +600,7 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
     // console.log(functionName + ' CloudImplement Cache')
     //尝试获取缓存
     let redis2 = _redis || redis
-    let cacheResults =  await redis2.pipeline().get(cacheKey).get(cacheKey+':timestamp')
+    let cacheResults =  await redis2.pipeline().get(cacheKey).get(cacheKey+':timestamp').exec()
     let textResult = cacheResults[0][1]
     // let textResult = await redis2.get(cacheKey)
     if (textResult) {
