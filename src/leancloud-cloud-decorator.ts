@@ -669,7 +669,7 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
     } else {
       // cacheValue = JSON.stringify(results)
       //@ts-ignore
-      cacheValue = AV2.stringiyf(results)
+      cacheValue = AV2.stringify(results)
     }
     redis2.multi().setex(cacheKey, expires, cacheValue).setex(cacheKey+':timestamp', expires, timestamp).exec()
 
