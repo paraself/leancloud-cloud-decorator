@@ -1,6 +1,6 @@
 {
   "name": "leancloud-cloud-decorator",
-  "version": "1.47.10",
+  "version": "1.48.10",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -35,7 +35,7 @@
     "leancloud-storage": "^3.15.0",
     "leanengine": "^3.4.0",
     "typedoc": "^0.14.2",
-    "typescript": "^3.5.2"
+    "typescript": "^3.7.3"
   },
   "peerDependencies": {
     "joi": "^14.3.1",

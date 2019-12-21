@@ -21,10 +21,25 @@ class DartArrayDeclaration implements DartType{
         if(this.elementType instanceof DartPrimitive){
             return variable
         }
-        return `${variable}.map((a) => ${this.elementType.decoding('b')} )`
+        return `${variable}.map((a) => ${this.elementType.decoding('a')} )`
     }
     get name():string{
         return "List<"+this.elementType.name+">"
+    }
+    constructor(params:{elementType:DartType}){
+        this.elementType = params.elementType
+    }
+    elementType:DartType
+}
+class DartPromiseDeclaration implements DartType{
+    encoding(variable: string): string {
+        return this.elementType.encoding(variable)
+    }
+    decoding(variable: string): string {
+        return this.elementType.decoding(variable)
+    }
+    get name():string{
+        return "Future<"+this.elementType.name+">"
     }
     constructor(params:{elementType:DartType}){
         this.elementType = params.elementType
@@ -113,84 +128,16 @@ class DartInterface extends DartDeclaration{
 
     private ScanElement(element:ts.PropertySignature | ts.IndexSignatureDeclaration){
         let typeNode = element.type
-        if(this.name=='GetWebPayQRParams'){
-            console.log('pause')
-        }
+        // if(this.name=='GetWebPayQRParams'){
+        //     console.log('pause')
+        // }
         if(typeNode){
             if(element.name){
-                this.ScanType(this.name+'_'+getMemberName(element.name.getText()),typeNode)
+                this.file.ScanType(this.name+'_'+getMemberName(element.name.getText()),typeNode)
             }else{
-                this.ScanType(this.name,typeNode)
+                this.file.ScanType(this.name,typeNode)
             }
         }
-    }
-    private ScanArrayType(node:ts.TypeReferenceNode|ts.ArrayTypeNode,name:string,elementType:ts.TypeNode){
-        let dartTypeManager = this.file.manager
-        let dartElementType = dartTypeManager.GetType(elementType)
-        if(!dartElementType){
-            dartElementType = this.ScanType(name,elementType)
-        }
-        if(!dartElementType){
-            dartElementType = dartTypeManager.defaultType
-        }
-        let dartArray = new DartArrayDeclaration({elementType:dartElementType})
-        dartTypeManager.AddNodeType(node,dartArray)
-        return dartArray
-    }
-    private ScanMapType(node:ts.TypeLiteralNode, name:string,indexSignature:ts.IndexSignatureDeclaration){
-        let dartTypeManager = this.file.manager
-        let valueType = indexSignature.type
-        let dartValueType = dartTypeManager.GetType(valueType)
-        if(!dartValueType){
-            dartValueType = this.ScanType(name,dartValueType)
-        }
-        if(!dartValueType){
-            dartValueType = dartTypeManager.defaultType
-        }
-        let dartType = new DartMapDeclaration({valueType:dartValueType,keyType:dartTypeManager.GetType(indexSignature.parameters[0].type)})
-        dartTypeManager.AddNodeType(node,dartType)
-        return dartType
-    }
-    private ScanMapTypeNode(node:ts.MappedTypeNode, name:string,mappedTypeNode:ts.MappedTypeNode){
-        let dartTypeManager = this.file.manager
-        let valueType = mappedTypeNode.type
-        let dartValueType = dartTypeManager.GetType(valueType)
-        if(!dartValueType){
-            dartValueType = this.ScanType(name,dartValueType)
-        }
-        if(!dartValueType){
-            dartValueType = dartTypeManager.defaultType
-        }
-        let dartType = new DartMapDeclaration({valueType:dartValueType,keyType:dartTypeManager.GetTypeByName('String')})
-        dartTypeManager.AddNodeType(node,dartType)
-        return dartType
-    }
-    private ScanType(name:string,typeNode:ts.TypeNode):DartType{
-        switch(typeNode.kind){
-            case ts.SyntaxKind.ArrayType: {
-                return this.ScanArrayType(typeNode as ts.ArrayTypeNode, name, (typeNode as ts.ArrayTypeNode).elementType )
-            }
-            break
-            case ts.SyntaxKind.TypeReference:
-                let typeReferenceNode =(typeNode as ts.TypeReferenceNode)
-                if(typeReferenceNode.typeName.getText()=='Array'){
-                    return this.ScanArrayType(typeReferenceNode, name, typeReferenceNode.typeArguments![0] )
-                }
-                break
-            case ts.SyntaxKind.TypeLiteral: {
-                let typeLiteralNode = typeNode as ts.TypeLiteralNode
-                if(typeLiteralNode.members.length==1&&typeLiteralNode.members[0].kind==ts.SyntaxKind.IndexSignature){
-                    return this.ScanMapType(typeLiteralNode, name,typeLiteralNode.members[0] as ts.IndexSignatureDeclaration)
-                }
-                return this.file.AddLiteralDeclaration(name,typeLiteralNode)
-            }
-            case ts.SyntaxKind.MappedType:{
-                if(ts.isMappedTypeNode(typeNode)){
-                    return this.ScanMapTypeNode(typeNode, name,typeNode)
-                }
-            }
-        }
-        return  this.file.manager.GetType(typeNode)
     }
 
     toString():string{
@@ -198,11 +145,19 @@ class DartInterface extends DartDeclaration{
         const indent2 = indent+indent.substr(1)
         let members = this.node.members as ts.NodeArray<ts.PropertySignature>
         let dartTypeManager = this.file.manager
+        let constructorText = ''
+        if(members.length>0){
+            constructorText = 
+              indent+this.name+'({'
+            + members.map(e=>indent2+(e.questionToken?'':'@required ')+'this.'+getMemberName(e.name.getText())).join(',')
+            + indent+'});'
+        }
         return `class ${this.name}`
         + '\n{\n'
+        + constructorText
         + members.map(e=>indent+dartTypeManager.GetPropertyType(e).name+' '+ getMemberName(e.name.getText())+';').join('\n')
-        + indent+this.name+'.fromMap(Map<String, dynamic> data){\n'
-        + members.map(e=>indent2 + `if(data["${getJsonKey(e.name.getText())}"!=null]) this.${getMemberName(e.name.getText())}=${dartTypeManager.GetPropertyType(e).encoding('data["'+getJsonKey(e.name.getText())+'"]')};`).join('\n')
+        + '\n' +indent+this.name+'.fromMap(Map<String, dynamic> data){\n'
+        + members.map(e=>indent2 + `if(data["${getJsonKey(e.name.getText())}"!=null]) this.${getMemberName(e.name.getText())}=${dartTypeManager.GetPropertyType(e).decoding('data["'+getJsonKey(e.name.getText())+'"]')};`).join('\n')
         + indent+'}'
         + indent+'Map<String, dynamic> toMap(){'
         + indent2 + 'return{'
@@ -230,7 +185,7 @@ function getMemberName(name:string){
     if(name.includes('-')){
         return name.replace('-',"_")
     }
-    if(parseInt(name)!=NaN){
+    if(!isNaN(parseInt(name))){
         return 'num'+name
     }
     return name
@@ -273,12 +228,254 @@ class DartEnum extends DartDeclaration {
         + '\n}'
     }
 }
+class DartClassFunction{
+    classFunction:ts.MethodDeclaration
+    file:DartFile
+    constructor(params:{
+        classFunction:ts.MethodDeclaration,
+        file:DartFile}){
+            this.classFunction = params.classFunction
+            this.file = params.file
+        }
+    DeepScan(){
+        if(this.classFunction.type){
+            this.file.ScanType(this.file.className+'_'+this.name+'_Return',this.classFunction.type) 
+        }
+    }
+    get name(){
+        return this.classFunction.name.getText()
+    }
+    toString():string{
+        let dartTypeManager = this.file.manager
+        let returnType = 'Future<dynamic>'
+        let dartReturnType = dartTypeManager.defaultType
+        if(this.classFunction.type){
+            dartReturnType = dartTypeManager.GetPropertyType(this.classFunction)
+            returnType = dartReturnType.name
+        }
+        let parameterType = ''
+        if(this.classFunction.parameters.length>0){
+            parameterType = dartTypeManager.GetPropertyType(this.classFunction.parameters[0]).name
+        }
+        let parameter = (parameterType&&`${parameterType} params`)||''
+        let parameterEncoding = (parameter&&', params.toMap()')||''
+        // const indent = '\n    '
+        // const indent2 = indent+indent.substr(1)
+        let result = dartReturnType.decoding(`(await Cloud.run("${this.file.className}.${this.name}"${parameterEncoding}))`)
+        return `
+        ${returnType} ${this.name}(${parameter}) async {
+            return ${result};
+        }`
+    }
+}
+
+class DartFile{
+    manager:DartTypeManager
+    node:ts.SourceFile
+    // nodePath:string
+    // dartPath:string
+    imports:string[] = [
+        'package:leancloud_dart/cloudfunction.dart',
+        'package:meta/meta.dart'
+    ]
+    interfaces:DartInterface[] = []
+    literals:DartInterface[] = []
+    enums:DartEnum[] = []
+    classFunctions:DartClassFunction[] = []
+    constructor(params:{
+        manager:DartTypeManager
+        node:ts.SourceFile}){
+            this.manager = params.manager
+            this.node = params.node
+        }
+
+    DeepScanMemebers(){
+        this.interfaces.forEach(e=>e.DeepScanMemebers())
+        this.classFunctions.forEach(e=>e.DeepScan())
+    }
+    AddInterfaceDeclaration(typeNode:ts.InterfaceDeclaration){
+        let declaration = new DartInterface({
+            name:typeNode.name.getText(),
+            node:typeNode,
+            file:this
+        })
+        this.interfaces.push(declaration)
+        this.manager.AddType(declaration)
+        // declaration.DeepScanMemebers()
+        return declaration
+    }
+    AddLiteralDeclaration(name:string,typeNode:ts.TypeLiteralNode){
+        let declaration = new DartInterface({
+            name:name,
+            node:typeNode,
+            file:this
+        })
+        this.literals.push(declaration)
+        this.manager.AddNodeType(typeNode,declaration)
+        declaration.DeepScanMemebers()
+        return declaration
+    }
+    AddEnumDeclaration(typeNode:ts.EnumDeclaration){
+        let declaration = new DartEnum({
+            name:typeNode.name.getText(),
+            node:typeNode,
+            file:this
+        })
+        this.enums.push(declaration)
+        this.manager.AddType(declaration)
+        return declaration
+    }
+
+    AddClassFunction(classFunction:ts.MethodDeclaration){
+        this.classFunctions.push(new DartClassFunction({
+            file:this,
+            classFunction
+        }))
+    }
+
+    AddImport(){
+
+    }
+
+    private ScanPromiseType(node:ts.TypeReferenceNode,name:string,elementType:ts.TypeNode){
+        let dartTypeManager = this.manager
+        let dartElementType = dartTypeManager.GetType(elementType)
+        if(!dartElementType){
+            dartElementType = this.ScanType(name,elementType)
+        }
+        if(!dartElementType){
+            dartElementType = dartTypeManager.defaultType
+        }
+        let dartArray = new DartPromiseDeclaration({elementType:dartElementType})
+        dartTypeManager.AddNodeType(node,dartArray)
+        return dartArray
+    }
+    private ScanArrayType(node:ts.TypeReferenceNode|ts.ArrayTypeNode,name:string,elementType:ts.TypeNode){
+        let dartTypeManager = this.manager
+        let dartElementType = dartTypeManager.GetType(elementType)
+        if(!dartElementType){
+            dartElementType = this.ScanType(name,elementType)
+        }
+        if(!dartElementType){
+            dartElementType = dartTypeManager.defaultType
+        }
+        let dartArray = new DartArrayDeclaration({elementType:dartElementType})
+        dartTypeManager.AddNodeType(node,dartArray)
+        return dartArray
+    }
+    //处理语法 words: {[key: string]: string }
+    private ScanMapType(node:ts.TypeLiteralNode, name:string,indexSignature:ts.IndexSignatureDeclaration){
+        let dartTypeManager = this.manager
+        let valueType = indexSignature.type
+        let dartValueType = dartTypeManager.GetType(valueType)
+        if(!dartValueType){
+            dartValueType = this.ScanType(name,dartValueType)
+        }
+        if(!dartValueType){
+            dartValueType = dartTypeManager.defaultType
+        }
+        let dartType = new DartMapDeclaration({valueType:dartValueType,keyType:dartTypeManager.GetType(indexSignature.parameters[0].type)})
+        dartTypeManager.AddNodeType(node,dartType)
+        return dartType
+    }
+    //处理语法 objectId: {[key in ICheckType]?: number}
+    private ScanMapTypeNode(node:ts.MappedTypeNode, name:string,mappedTypeNode:ts.MappedTypeNode){
+        let dartTypeManager = this.manager
+        let valueType = mappedTypeNode.type
+        let dartValueType = dartTypeManager.GetType(valueType)
+        if(!dartValueType){
+            dartValueType = this.ScanType(name,dartValueType)
+        }
+        if(!dartValueType){
+            dartValueType = dartTypeManager.defaultType
+        }
+        let dartType = new DartMapDeclaration({valueType:dartValueType,keyType:dartTypeManager.GetTypeByName('String')})
+        dartTypeManager.AddNodeType(node,dartType)
+        return dartType
+    }
+    ScanType(name:string,typeNode:ts.TypeNode):DartType{
+        switch(typeNode.kind){
+            case ts.SyntaxKind.ArrayType: {
+                return this.ScanArrayType(typeNode as ts.ArrayTypeNode, name, (typeNode as ts.ArrayTypeNode).elementType )
+            }
+            break
+            case ts.SyntaxKind.TypeReference:
+                let typeReferenceNode =(typeNode as ts.TypeReferenceNode)
+                switch(typeReferenceNode.typeName.getText()){
+                    case 'Array': return this.ScanArrayType(typeReferenceNode, name, typeReferenceNode.typeArguments![0] )
+                    case 'Promise': return this.ScanPromiseType(typeReferenceNode, name, typeReferenceNode.typeArguments![0] )
+                }
+                break
+            case ts.SyntaxKind.TypeLiteral: {
+                let typeLiteralNode = typeNode as ts.TypeLiteralNode
+                if(typeLiteralNode.members.length==1&&typeLiteralNode.members[0].kind==ts.SyntaxKind.IndexSignature){
+                    return this.ScanMapType(typeLiteralNode, name,typeLiteralNode.members[0] as ts.IndexSignatureDeclaration)
+                }
+                return this.AddLiteralDeclaration(name,typeLiteralNode)
+            }
+            case ts.SyntaxKind.MappedType:{
+                if(ts.isMappedTypeNode(typeNode)){
+                    return this.ScanMapTypeNode(typeNode, name,typeNode)
+                }
+            }
+        }
+        return  this.manager.GetType(typeNode)
+    }
+
+    get fileName(){
+        return path.basename(this.node.fileName,'.ts')+'.dart'
+    }
+
+    get className(){
+        let name = path.basename(this.node.fileName,'.ts')
+        name = name.replace('-','_')
+        return name[0].toUpperCase()+name.substr(1)
+    }
+    
+    cloudToString():string{
+        if(this.classFunctions.length==0){
+            return ''
+        }
+        return 'class '+ this.className +'{'
+        + this.classFunctions.map(e=>e.toString()).join('\n')
+        +'\n}'
+    }
+
+    toString():string{
+        return this.imports.map(e=>`import '${e}';`).join('\n')+
+        `
+/**
+ * automatic generated from typescript TypeLiteral
+ */
+`
+        +this.literals.map(e=>e.toString()).join('\n') +
+`
+/**
+ * automatic generated from typescript interface
+ */
+`
+        +this.interfaces.map(e=>e.toString()).join('\n') +
+`
+/**
+ * automatic generated from typescript enum
+ */
+`
+    +this.enums.map(e=>e.toString()).join('\n')  +
+`
+/**
+ * automatic generated from cloud function class
+ */
+`
+    + this.cloudToString()
+    }
+}
 
 class DartTypeManager{
     types:{[key:string]:DartType} = {}
     defaultType = new DartPrimitive('dynamic')
     codeToType:{[key:string]:DartType} = {}
     packageName:string
+    files:DartFile[] = []
     constructor(params:{packageName:string}){
         this.packageName = params.packageName
         this.AddTypes([
@@ -290,6 +487,17 @@ class DartTypeManager{
         ])
     }
     
+    AddFile(node:ts.SourceFile){
+        let file = new DartFile({
+            manager:this,
+            node
+        })
+        this.files.push(file)
+        return file
+    }
+    RemoveUnusedFiles(){
+        this.files = this.files.filter(e=>e.classFunctions.length>0)
+    }
     private GetMapTypeDartText(prefix:string,typeNode:ts.IndexSignatureDeclaration):string{
         return 'Map<'+this.GetTypeName(prefix,typeNode.parameters[0].type),+this.GetTypeName(prefix,typeNode.type)+'>'
     }
@@ -303,6 +511,7 @@ class DartTypeManager{
         switch(typeText){
             case 'Date': return 'DateTime';
             case 'Array': return 'List<'+this.GetTypeName(prefix,typeNode.typeArguments![0])+'>'
+            case 'Promise': return 'Future<'+this.GetTypeName(prefix,typeNode.typeArguments![0])+'>'
         }
         let dartType = this.GetTypeByName(typeText)
         if(dartType instanceof DartPrimitive){
@@ -369,12 +578,12 @@ class DartTypeManager{
         dartTypes.forEach(e=>this.types[e.name]=e)
     }
 
-    GetPropertyType(node:ts.PropertySignature){
+    GetPropertyType(node:ts.PropertySignature|ts.MethodDeclaration|ts.ParameterDeclaration){
         // if(node.getText()=='type?: ActivityType')
-        if(node.getSourceFile().fileName=='check.ts'&&node.pos==1805)
-        {
-            console.log('pause')
-        }
+        // if(node.getSourceFile().fileName=='check.ts'&&node.pos==1805)
+        // {
+        //     console.log('pause')
+        // }
         let dartType:DartType | null = null
         if(node.type){
             dartType = this.codeToType[ node.getSourceFile().fileName+node.type.pos ]
@@ -394,104 +603,13 @@ class DartTypeManager{
     GetTypeByName(type:string){
         return this.types[ type]
     }
-    // GetEncoding(type:ts.PropertySignature, variable:string):string{
-    //     let dartType = this.types[type]
-    //     if(dartType){
-    //         return dartType.encoding(variable)
-    //     }
-    //     console.error('Error Type To Dart GetEncoding  '+type)
-    //     return variable
-    // }
-    // GetDecoding(type:ts.PropertySignature, variable:string):string{
-    //     let dartType = this.types[type]
-    //     if(dartType){
-    //         return dartType.decoding(variable)
-    //     }
-    //     console.error('Error Type To Dart GetEncoding  '+type)
-    //     return variable
-    // }
-}
-
-class DartFile{
-    manager:DartTypeManager
-    node:ts.SourceFile
-    // nodePath:string
-    // dartPath:string
-    imports:string[] = []
-    interfaces:DartInterface[] = []
-    literals:DartInterface[] = []
-    enums:DartEnum[] = []
-    constructor(params:{
-        manager:DartTypeManager
-        node:ts.SourceFile}){
-            this.manager = params.manager
-            this.node = params.node
-        }
-
-    DeepScanMemebers(){
-        this.interfaces.forEach(e=>e.DeepScanMemebers())
-    }
-    AddInterfaceDeclaration(typeNode:ts.InterfaceDeclaration){
-        let declaration = new DartInterface({
-            name:typeNode.name.getText(),
-            node:typeNode,
-            file:this
-        })
-        this.interfaces.push(declaration)
-        this.manager.AddType(declaration)
-        // declaration.DeepScanMemebers()
-        return declaration
-    }
-    AddLiteralDeclaration(name:string,typeNode:ts.TypeLiteralNode){
-        let declaration = new DartInterface({
-            name:name,
-            node:typeNode,
-            file:this
-        })
-        this.literals.push(declaration)
-        this.manager.AddNodeType(typeNode,declaration)
-        declaration.DeepScanMemebers()
-        return declaration
-    }
-    AddEnumDeclaration(typeNode:ts.EnumDeclaration){
-        let declaration = new DartEnum({
-            name:typeNode.name.getText(),
-            node:typeNode,
-            file:this
-        })
-        this.enums.push(declaration)
-        this.manager.AddType(declaration)
-        return declaration
-    }
-    AddImport(){
-
-    }
-
-    get fileName(){
-        return path.basename(this.node.fileName,'.ts')+'.dart'
-    }
-
-    toString():string{
-        return `
-/**
- * automatic generated from typescript TypeLiteral
- */
-`
-        +this.literals.map(e=>e.toString()).join('\n') +
-`
-/**
- * automatic generated from typescript interface
- */
-`
-        +this.interfaces.map(e=>e.toString()).join('\n') +
-`
-/**
- * automatic generated from typescript enum
- */
-`
-    +this.enums.map(e=>e.toString()).join('\n') 
+    IndexFileBody(){
+        return this.files.map(e=>`import "${this.packageName}/lib/${e.fileName}" as _${e.className};`).join('\n')
+        +'\n\n'
+        + this.files.map(e=>`final ${e.className} = new _${e.className}.${e.className}();`).join('\n')
     }
 }
+
 
 function GetUnionDartType(unionType:ts.UnionTypeNode) {
     if(unionType.types.every(e=>{
@@ -550,12 +668,14 @@ function IsExportDisabled(node:ts.Node){
 
 //https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
 //在线查看代码ast的工具 https://ts-ast-viewer.com/
-function createSdkFile(sourceFile: ts.SourceFile,manager:DartTypeManager){
+function createSdkFile(file:DartFile){
 
-    let file = new DartFile({
-        manager,
-        node:sourceFile
-    })
+    let sourceFile = file.node
+    let manager = file.manager
+    // let file = new DartFile({
+    //     manager,
+    //     node:sourceFile
+    // })
     let results:string[] = []
     let lastPositions:number[] = [];
     let exportText = ''
@@ -812,6 +932,9 @@ function createSdkFile(sourceFile: ts.SourceFile,manager:DartTypeManager){
                             let internal = internalText && JSON.parse(internalText)
 
                             needSkip = false;
+                            if(!internal && (!platforms || platforms.length==0)){
+                                file.AddClassFunction(methodNode)
+                            }
                             // let parameters = sandbox.result || {}
                             // let platforms:string[] = parameters.platforms
                             // let keys = Object.keys(Platform)
@@ -892,6 +1015,7 @@ function createSdk(dir:string[],exclude:string[]){
                 deleteFolderRecursive(libPath)
             }
             fs.mkdirSync(libPath)
+            fs.mkdirSync(libPath+'/lib')
         }
     // }
 
@@ -899,7 +1023,7 @@ function createSdk(dir:string[],exclude:string[]){
         packageName:'package:pteapp_app'
     })
     let indexFileText = ''
-    let dartFiles:DartFile[] = []
+    // let dartFiles:DartFile[] = []
     for(let d=0;d<dir.length;++d){
         let file = dir[d]
         if( path.extname(file)=='.ts' && exclude.indexOf(file)<0){
@@ -912,8 +1036,8 @@ function createSdk(dir:string[],exclude:string[]){
                 /*setParentNodes */ true
             );
             //   console.log(printNode(sourceFile))
-            var dartFile = createSdkFile(sourceFile,manager)
-            dartFiles.push(dartFile)
+            createSdkFile(manager.AddFile(sourceFile))
+            
             // if(sdks){
             //     // for (let i = 0; i < Platform.count; ++i) {
             //     // let keys = Object.keys(Platform)
@@ -939,12 +1063,16 @@ function createSdk(dir:string[],exclude:string[]){
     
         }
     }
-    dartFiles.forEach(e=>e.DeepScanMemebers())
-    dartFiles.forEach(e=>{
-        let libPath = getSdkLibPath(targetPlatform) + '/' + e.fileName
+    manager.RemoveUnusedFiles()
+    manager.files.forEach(e=>e.DeepScanMemebers())
+    manager.files.forEach(e=>{
+        let libPath = getSdkLibPath(targetPlatform) + '/lib/' + e.fileName
         console.log('write ' + libPath)
         fs.writeFileSync(libPath, e.toString())
     })
+    let indexPath = getSdkLibPath(targetPlatform) + '/index.dart'
+    console.log('write ' + 'index.dart')
+    fs.writeFileSync(indexPath, manager.IndexFileBody())
     // for (let i = 0; i < Platform.count; ++i) {
     // for(let i in Platform)
     // {
