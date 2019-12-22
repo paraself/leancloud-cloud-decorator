@@ -3,7 +3,7 @@
 import { Platform,CheckPlatform,promiseExec } from './base'
 import { readFileSync,writeFileSync } from 'fs'
 import YAML from 'yaml'
-import { resolve } from 'path';
+import semver from 'semver'
 
 // let paths = Object.keys(config)
 // let paths = ['weapp', 'web-admin', 'web-user']
@@ -28,17 +28,19 @@ function getSdkPackagePath(platform: Platform) {
 function createSdkInfo(platform: Platform,dir:string,infoDir:string){
     let packageJson = YAML.parse(readFileSync(dir, 'utf-8'))
     // 版本号加一
-    let version = packageJson.version as string
-    let versions = version.split('.')
-    versions[2] = (parseInt(versions[2]) + 1).toString()
-    version = versions.join('.')
+    let version = semver.parse(packageJson.version as string) 
+    if(!version){
+        throw new Error('Error version '+packageJson.version )
+    }
+    version.patch += 1
+    console.log('write '+ version!.format())
     console.log('write '+ dir)
     writeFileSync(dir,YAML.stringify(packageJson))
 
     console.log('write '+ infoDir)
     writeFileSync(infoDir, `
 var platform = ${platform};
-var apiVersion = ${version};
+var apiVersion = ${version!.format()};
     ` )
 
 }
