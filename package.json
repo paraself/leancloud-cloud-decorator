@@ -1,6 +1,6 @@
 {
   "name": "leancloud-cloud-decorator",
-  "version": "1.49.10",
+  "version": "1.49.11",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -41,7 +41,8 @@
   "peerDependencies": {
     "joi": "^14.3.1",
     "leancloud-storage": "^3.15.0",
-    "leanengine": "^3.3.3"
+    "leanengine": "^3.3.3",
+    "yaml": "^1.7.2"
   },
   "bin": {
     "lcc-build": "./dist/buildSdk.js",
