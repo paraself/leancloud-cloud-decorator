@@ -34,6 +34,7 @@ function createSdkInfo(platform: Platform,dir:string,infoDir:string){
     }
     version.patch += 1
     console.log('write '+ version!.format())
+    packageJson.version = version!.format()
     console.log('write '+ dir)
     writeFileSync(dir,YAML.stringify(packageJson))
 
