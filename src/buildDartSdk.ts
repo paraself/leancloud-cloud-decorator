@@ -218,15 +218,11 @@ class DartEnum extends DartDeclaration {
         +'\n}'
         + `\n${this.name} ${this.name}_decoding(dynamic value){`
         + indent+`var text = dynamic.toString();`
-        + members.map(e=>indent+`if(text=="${e.initializer!.getText()}") return ${this.name}.${e.name.getText()};`).join('\n')
+        + members.map(e=>indent+`if(text==${e.initializer!.getText()}) return ${this.name}.${e.name.getText()};`).join('\n')
         + indent+'return null;'
         + '\n}'
         + `\ndynamic ${this.name}_encoding(${this.name} value){`
-        + members.map(e=>indent+`if(value==${this.name}.${e.name.getText()}) return ${
-            e.initializer!.kind==ts.SyntaxKind.StringLiteral?
-            ('"'+e.initializer!.getText()+'"'):
-            e.initializer!.getText()
-        }`).map(e=>e+';').join('\n')
+        + members.map(e=>indent+`if(value==${this.name}.${e.name.getText()}) return ${e.initializer!.getText()}`).map(e=>e+';').join('\n')
         + indent+'return null;'
         + '\n}'
     }
@@ -659,33 +655,6 @@ function GetComment(node:ts.Node) {
     return out
 }
 
-function getFunctionName(node:ts.MethodDeclaration){
-
-    let classNode = <ts.ClassLikeDeclaration>node.parent
-    if(!classNode.name || ! node.name)
-        throw new Error('missing classNode.name or node.name')
-    let functionName = classNode.name.getText() +'.'+ node.name.getText()
-    return functionName
-}
-
-function createCloudRunText(node:ts.MethodDeclaration,method = 'run'){
-    let functionName = getFunctionName(node)
-    if(node.parameters.length>0){
-        let parameterName = node.parameters[0].name.getText()
-        return `{return API.${method}('${functionName}',${parameterName}) }`
-    }
-    return `{return  API.${method}('${functionName}') }`
-}
-
-function IsInternalName(node:{name?:ts.Identifier}){
-    return node.name && node.name.escapedText.toString().startsWith('_')
-}
-
-function GetImportName(importSpecifier:ts.ImportSpecifier){
-    return ((importSpecifier.propertyName && (importSpecifier.propertyName.escapedText.toString()+' as '))||'')
-        + importSpecifier.name.escapedText.toString()
-}
-
 function IsExportDisabled(node:ts.Node){
     return node.getFullText().includes('@lcc-export-disabled')
 }
@@ -696,68 +665,13 @@ function createSdkFile(file:DartFile){
 
     let sourceFile = file.node
     let manager = file.manager
-    // let file = new DartFile({
-    //     manager,
-    //     node:sourceFile
-    // })
-    let results:string[] = []
-    let lastPositions:number[] = [];
-    let exportText = ''
-    // for(let i=0;i<Object.keys(Platform).length;++i){
-        results.push(
-            "import * as API from '..'\n"
-            + "export interface CloudParams{ noCache?: boolean; \n adminId ?: string; }\n"
-        )
-        lastPositions.push(0)
-    // }
-    // let resultText = ''
-    let sourceText = sourceFile.text
-    function skipNode(nodeStart: ts.Node,nodeEnd: ts.Node,platform:number){
-        skipText(nodeStart.getFullStart(), (nodeEnd||nodeStart).getEnd(),platform)
-    }
-
-    function skipAllNode(nodeStart: ts.Node,nodeEnd?: ts.Node){
-        skipAllText(nodeStart.getFullStart(), (nodeEnd||nodeStart).getEnd())
-        // skipText(nodeStart.getFullStart(), (nodeEnd||nodeStart).getEnd())
-    }
-    function skipAllText(start:number,end:number){
-        let i = 0
-        // for(let i=0;i<Object.keys(Platform).length;++i){
-            skipText(start,end,i)
-        // }
-    }
-    function skipText(start:number,end:number,platform:number){
-        let text = sourceText.substring(lastPositions[platform], start)
-        // console.log(Platform[platform])
-        // console.log(lastPositions[platform]+"-" +start+"->" + text+'=>'+start)
-        results[platform] += text
-        lastPositions[platform] = end;
-        // console.log('results:')
-        // console.log(results[platform])
-    }
-    function appendText(text:string,platform:number){
-        results[platform]+=text
-    }
     function scanNode(node: ts.Node) {
         switch (node.kind){
             case ts.SyntaxKind.FunctionDeclaration:
-                {
-                    if(IsExportDisabled(node)){
-                        skipAllNode(node)
-                        break
-                    }
-                    let functionDeclaration = <ts.FunctionDeclaration>node
-                    if(!IsInternalName(functionDeclaration) && functionDeclaration.modifiers && functionDeclaration.modifiers.find(e=>e.kind == ts.SyntaxKind.ExportKeyword)){
-
-                    }else{
-                        skipAllNode(node)
-                    }
-                }
                 break;
             case ts.SyntaxKind.ExpressionStatement:
             case ts.SyntaxKind.IfStatement:
             case ts.SyntaxKind.ExportAssignment:
-                skipAllNode(node)
             break
             case ts.SyntaxKind.TypeAliasDeclaration:{
                 let typeAliasDeclaration = node as ts.TypeAliasDeclaration
@@ -766,23 +680,11 @@ function createSdkFile(file:DartFile){
                 }
             }
             case ts.SyntaxKind.VariableStatement:
-                {
-                    if(IsExportDisabled(node)){
-                        skipAllNode(node)
-                        break
-                    }
-                    let declaration = <ts.Node>node
-                    if(declaration.modifiers && declaration.modifiers.find(e=>e.kind == ts.SyntaxKind.ExportKeyword)){
-
-                    }else{
-                        skipAllNode(node)
-                    }
-                }
+                
             break
             case ts.SyntaxKind.ImportDeclaration:
                 {
                     if(IsExportDisabled(node)){
-                        skipAllNode(node)
                         break
                     }
                     const skipModuleNames = [
@@ -799,66 +701,19 @@ function createSdkFile(file:DartFile){
                         if(moduleName.startsWith('./')){
                             file.AddLocalImport(moduleName.substr(2))
                         }
-                        let importClause = importDeclaration.importClause
-                        if(importClause){
-                            let text = ''
-
-                            if(!node.getText().includes('_')){
-                                text = node.getText()
-                                if(moduleMap[moduleName]) {
-                                    text = text.replace(moduleName,moduleMap[moduleName])
-                                }
-                            }
-                            else{
-                                //去除_开头的引用项目
-                                if(importClause.name&&!IsInternalName(importClause)){
-                                    text+=importClause.name.escapedText.toString()
-                                }
-                                let namedImports = <ts.NamedImports>importClause.namedBindings
-                                if(namedImports&&namedImports.elements){
-                                    let names = namedImports.elements.filter(e=>!IsInternalName(e)).map(e=>GetImportName( e ))
-                                    if(names.length>0){
-                                        text+=((text&&', ')||'')+`{ ${names.join(', ')} }`
-                                    }
-                                }
-                                if(text){
-                                    let moduleName2 = moduleMap[moduleName] || moduleName
-                                    text=`import ${text} from '${moduleName2}'`
-                                }
-                            }
-
-                            // for (let i = 0; i < Object.keys(Platform).length; ++i) 
-                            {
-                                let i = 0
-                                appendText(text + '\n', i)
-                            }
-                        }
                     }
-                    skipAllNode(node)
                 }
             break
             case ts.SyntaxKind.ImportEqualsDeclaration:
                 {
                     if(IsExportDisabled(node)){
-                        skipAllNode(node)
                         break
                     }
                     let importEqualsDeclaration = <ts.ImportEqualsDeclaration>node
                     if(importEqualsDeclaration.moduleReference.kind==ts.SyntaxKind.QualifiedName){
 
                     }else{
-                        skipAllNode(node)
                     }
-                    // let moduleName = (<ts.ExternalModuleReference>importEqualsDeclaration.moduleReference).expression.getText()
-                    // let importName = importEqualsDeclaration.name.getText()
-                    // // console.log(moduleName)
-                    // if (moduleName[1] != '.') {
-                    //     let importText = `import * as ${importName} from ${moduleName}`
-                    //     for (let i = 0; i < Platform.count; ++i) {
-                    //         // appendText(node.getText() + '\n', i)
-                    //         appendText(importText + '\n', i)
-                    //     }
-                    // }
                 }
             break
             case ts.SyntaxKind.EnumDeclaration:{
@@ -869,34 +724,16 @@ function createSdkFile(file:DartFile){
             case ts.SyntaxKind.InterfaceDeclaration:
             {
                 if(IsExportDisabled(node)){
-                    skipAllNode(node)
                     break
                 }
                 let interfaceNode = <ts.InterfaceDeclaration>node
-                //是否需要增加 export
-                let needExport = true
-                // if(interfaceNode.modifiers){
-                //     if(interfaceNode.modifiers.find(x=>x.kind==ts.SyntaxKind.ExportKeyword)){
-                //         needExport = false
-                //     }
-                // }
-                if(needExport){
-                    file.AddInterfaceDeclaration(interfaceNode)
-                    // for(let i=0;i<Object.keys(Platform).length;++i)
-                    {
-                        let i = 0
-                        skipText(interfaceNode.getStart(),interfaceNode.getStart(),i)
-                        //增加 export 标示
-                        appendText('export ',i)
-                    }
-                }
+                file.AddInterfaceDeclaration(interfaceNode)
 
             }
             break
             case ts.SyntaxKind.ClassDeclaration:
             {
                 if(IsExportDisabled(node)){
-                    skipAllNode(node)
                     break
                 }
                 let classNode = <ts.ClassDeclaration>node
@@ -906,26 +743,17 @@ function createSdkFile(file:DartFile){
                         needExport = false
                     }
                 }
-                if(needExport){
-                    // for(let i=0;i<Object.keys(Platform).length;++i)
-                    {
-                        let i=0
-                        skipText(classNode.getStart(),classNode.getStart(),i)
-                        appendText('export ',i)
-                    }
-                }
                 ts.forEachChild(node, scanNode)
                 if(classNode.name){
                     let className:string = classNode.name.getText()
                     let instance = className[0].toLowerCase()+className.substr(1)
-                    exportText = `\nlet ${instance} = new ${className}()\nexport default ${instance}`
+                    // exportText = `\nlet ${instance} = new ${className}()\nexport default ${instance}`
                 }
             }
             break
             case ts.SyntaxKind.MethodDeclaration:
             {
                 if(IsExportDisabled(node)){
-                    skipAllNode(node)
                     break
                 }
                 let methodNode = <ts.MethodDeclaration>node
@@ -938,18 +766,6 @@ function createSdkFile(file:DartFile){
                         let decorator = decorators[i].getText()
                         if(decorator.substring(0,6)=='@Cloud')
                         {
-                            // let sandbox = {
-                            //     result :{platforms:[],rpc:false},
-                            //     Platform:Platform
-                            // }
-                            // vm.createContext(sandbox); // Contextify the sandbox.
-                            // let cloudFunction = decorator.substring(1)
-                            // let genericIndex = cloudFunction.indexOf('Cloud<')
-                            // if (genericIndex >= 0) {
-                            //     cloudFunction = 'Cloud' + cloudFunction.substring(cloudFunction.indexOf('>')+1)
-                            // }
-                            // let code = 'function Cloud(p){result = p} '+ cloudFunction
-                            // vm.runInContext(code, sandbox);
 
                             let platformText = PlatformString(decorator)
                             // console.log(paramsText)
@@ -963,43 +779,16 @@ function createSdkFile(file:DartFile){
                             if(!internal && (!platforms || platforms.length==0)){
                                 file.AddClassFunction(methodNode)
                             }
-                            // let parameters = sandbox.result || {}
-                            // let platforms:string[] = parameters.platforms
-                            // let keys = Object.keys(Platform)
-                            // for (let i = 0; i < keys.length; ++i) 
-                            {
-                                // let s = keys[i].replace('_', '-')
-                                // let s = targetPlatform.replace('_', '-')
-                                if (internal || (platforms && !platforms.includes(targetPlatform))){
-                                    skipNode(node,node,i)
-                                }else if(methodNode.body){
-                                    skipText(decorators[0].getStart(),decorators[decorators.length-1].getEnd(),i)
-                                    skipNode(methodNode.body,methodNode.body,i)
-                                    appendText(createCloudRunText(methodNode,rpc?'rpc':'run'),i)
-                                }
-                            }
                             break
                         }
                     }
-                    if(needSkip)
-                        skipAllNode(node)
                 }
-                else
-                    skipAllNode(node)
             }
             break
         }
     }
     ts.forEachChild(sourceFile, scanNode);
     return file
-    // if(!exportText)
-    //     return null
-    // // for(let i=0;i<Object.keys(Platform).length;++i){
-    //     let i=0
-    //     appendText(exportText,i)
-    //     results[i] += sourceText.substring(lastPositions[i], sourceFile.getEnd())
-    // // }
-    // return results;
 }
 
 function deleteFolderRecursive(path:string) {
@@ -1026,16 +815,6 @@ function getSdkLibPath(platform:Platform){
 
 function createSdk(dir:string[],exclude:string[]){
 
-    // for(let i=0;i<Platform.count;++i){
-    //     if(!fs.existsSync(getSdkLibPath(i))){
-    //         fs.mkdirSync(getSdkLibPath(i))
-    //     }
-    // }
-
-    // for (let i = 0; i < Platform.count; ++i) {
-    // for(let i in Platform){
-        let i=0
-        // if (!targetPlatform || targetPlatform == getSdkFolderName(targetPlatform)) 
         {
             let libPath = getSdkLibPath(targetPlatform)
             if (fs.existsSync(libPath)) {
@@ -1065,29 +844,6 @@ function createSdk(dir:string[],exclude:string[]){
             );
             //   console.log(printNode(sourceFile))
             createSdkFile(manager.AddFile(sourceFile))
-            
-            // if(sdks){
-            //     // for (let i = 0; i < Platform.count; ++i) {
-            //     // let keys = Object.keys(Platform)
-            //     // for(let i in Platform){
-            //     // for (let i = 0; i < keys.length; ++i) 
-            //     {
-            //         let i=0
-            //         // if (!targetPlatform || targetPlatform == getSdkFolderName(keys[i] as Platform)) 
-            //         {
-            //             if (fs.existsSync(getSdkLibPath(targetPlatform))) {
-            //                 let libPath = getSdkLibPath(targetPlatform) + '/' + file
-            //                 console.log('write ' + libPath)
-            //                 fs.writeFileSync(libPath, sdks[i])
-            //             }
-            //         }
-            //     }
-            //     let moduleName = name.charAt(0).toUpperCase() + name.slice(1)
-            //     indexFileText += `import ${name} from './${name}'\n`
-            //     indexFileText += `export { ${name} as ${moduleName} }\n`
-            //     indexFileText += `import * as ${moduleName}__ from './${name}'\n`
-            //     indexFileText += `export { ${moduleName}__  }\n`
-            // }
     
         }
     }
@@ -1101,29 +857,14 @@ function createSdk(dir:string[],exclude:string[]){
     let indexPath = getSdkLibPath(targetPlatform) + '/index.dart'
     console.log('write ' + 'index.dart')
     fs.writeFileSync(indexPath, manager.IndexFileBody())
-    // for (let i = 0; i < Platform.count; ++i) {
-    // for(let i in Platform)
-    // {
-    //     // if (!targetPlatform || targetPlatform == getSdkFolderName(targetPlatform)) 
-    //     {
-    //         if (fs.existsSync(getSdkLibPath(targetPlatform))) {
-    //             let libPath = getSdkLibPath(targetPlatform) + '/index.ts'
-    //             console.log('write ' + libPath)
-    //             fs.writeFileSync(libPath, indexFileText)
-    //         }
-    //     }
-    // }
 }
 
 // let targetPlatform = CheckPlatform( process.argv[2] )
 let targetPlatform = 'dart'
 let moduleMap = {}//GetModuleMap(targetPlatform)
 moduleMap['leanengine'] = moduleMap['leanengine'] || moduleMap['leancloud-storage'] || 'leancloud-storage'
-import { exec ,spawn} from 'child_process';
-import e = require("express");
-import { string } from "joi";
-// console.log('clear last build....')
-// clearOldBuild()
+
+
 const exclude = ['cloud.ts', 'index.ts','base.ts']
 let dir = fs.readdirSync(_dirroot + 'src/cloud/')
 console.log('build typescript sdk....')
