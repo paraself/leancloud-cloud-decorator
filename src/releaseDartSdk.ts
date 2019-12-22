@@ -32,12 +32,10 @@ function createSdkInfo(platform: Platform,dir:string,infoDir:string){
     let versions = version.split('.')
     versions[2] = (parseInt(versions[2]) + 1).toString()
     version = versions.join('.')
+    console.log('write '+ dir)
     writeFileSync(dir,YAML.stringify(packageJson))
-    let infoJson = {
-      platform,
-      apiVersion: version,
-      clientVersion: "0.0.0"
-    }
+
+    console.log('write '+ infoDir)
     writeFileSync(infoDir, `
 var platform = ${platform};
 var apiVersion = ${version};
@@ -51,10 +49,7 @@ async function compileAndPush () {
     let platform = targetPlatform
     let packageJsonPath = getSdkPackagePath(platform)
     let infoJsonPath = getSdkInfoPath(platform)
-    console.log('write ' + infoJsonPath)
     createSdkInfo(platform,packageJsonPath,infoJsonPath)
-
-    await promiseExec(`npx tsc -p ${sdkPath} && npx lcc-dep ${targetPlatform}`)
 }
 
 

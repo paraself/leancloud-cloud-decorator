@@ -12,6 +12,7 @@ function getSdkPackagePath(platform: Platform) {
     return _dirroot + 'release/api/' + platform + '/pubspec.yaml'
 }
 
+console.log('publish')
 if(platforms[targetPlatform].type=='dart'){
     let packageJson = YAML.parse(readFileSync(getSdkPackagePath(targetPlatform), 'utf-8'))
     let version = packageJson.version as string

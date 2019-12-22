@@ -13,6 +13,7 @@ let sdkPath = _dirroot + 'release/api/' + targetPlatform;
 function getSdkPackagePath(platform) {
     return _dirroot + 'release/api/' + platform + '/pubspec.yaml';
 }
+console.log('publish');
 if (base_1.platforms[targetPlatform].type == 'dart') {
     let packageJson = yaml_1.default.parse(fs_1.readFileSync(getSdkPackagePath(targetPlatform), 'utf-8'));
     let version = packageJson.version;
