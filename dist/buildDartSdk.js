@@ -786,15 +786,15 @@ function createSdk(dir, exclude) {
     });
     let indexPath = getSdkLibPath(targetPlatform) + '/index.dart';
     console.log('write ' + 'index.dart');
-    fs.writeFileSync(`import "package:${packageName}/info.dart" as sdkInfo";
+    fs.writeFileSync(indexPath, `import "package:${packageName}/info.dart" as sdkInfo";
 import "package:leancloud_dart/cloudfunction.dart";
-
+`
+        + manager.IndexFileBody()
+        + `  
 void Init({String clientVersion}){
     Cloud.SetAPIInfo(sdkInfo.platform, sdkInfo.apiVersion, clientVersion);
 }
-
-`
-        + indexPath, manager.IndexFileBody());
+`);
 }
 // let targetPlatform = CheckPlatform( process.argv[2] )
 let _dirroot = '/Users/zhilongchen/home/muyue/pteai-node-ts2/';
