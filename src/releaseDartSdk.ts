@@ -40,8 +40,8 @@ function createSdkInfo(platform: Platform,dir:string,infoDir:string){
 
     console.log('write '+ infoDir)
     writeFileSync(infoDir, `
-var platform = ${platform};
-var apiVersion = ${version!.format()};
+var platform = "${platform}";
+var apiVersion = "${version!.format()}";
     ` )
 
 }

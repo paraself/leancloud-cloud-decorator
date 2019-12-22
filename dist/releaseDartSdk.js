@@ -35,8 +35,8 @@ function createSdkInfo(platform, dir, infoDir) {
     fs_1.writeFileSync(dir, yaml_1.default.stringify(packageJson));
     console.log('write ' + infoDir);
     fs_1.writeFileSync(infoDir, `
-var platform = ${platform};
-var apiVersion = ${version.format()};
+var platform = "${platform}";
+var apiVersion = "${version.format()}";
     `);
 }
 async function compileAndPush() {

@@ -786,7 +786,7 @@ function createSdk(dir, exclude) {
     });
     let indexPath = getSdkLibPath(targetPlatform) + '/index.dart';
     console.log('write ' + 'index.dart');
-    fs.writeFileSync(indexPath, `import "package:${packageName}/info.dart" as sdkInfo";
+    fs.writeFileSync(indexPath, `import "package:${packageName}/info.dart" as sdkInfo;
 import "package:leancloud_dart/cloudfunction.dart";
 `
         + manager.IndexFileBody()
