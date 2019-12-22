@@ -16,7 +16,7 @@ console.log('publish')
 if(platforms[targetPlatform].type=='dart'){
     let packageJson = YAML.parse(readFileSync(getSdkPackagePath(targetPlatform), 'utf-8'))
     let version = packageJson.version as string
-    let command = `cd ${sdkPath} && git add -A && git commit -m "auto release" && git tag -a v${version}-m "${version}" && git push`
+    let command = `cd ${sdkPath} && git add -A && git commit -m "auto release" && git tag -a v${version} -m "${version}" && git push`
     console.log(command)
     promiseExec(command)
   }else{
