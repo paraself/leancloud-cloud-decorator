@@ -7,6 +7,7 @@ import { string } from 'joi';
 const platforms :{[key:string]:
   {
     package:string,
+    type?:string,
     module?:{[key:string]:string},
     devDependencies?:{[key:string]:string},
   }

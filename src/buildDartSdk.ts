@@ -15,13 +15,13 @@ class DartArrayDeclaration implements DartType{
         if(this.elementType instanceof DartPrimitive){
             return variable
         }
-        return `${variable}.map((a)=> ${this.elementType.encoding('a')} )`
+        return `${variable}.map((a)=> ${this.elementType.encoding('a')} ).toList()`
     }
     decoding(variable: string): string {
         if(this.elementType instanceof DartPrimitive){
             return variable
         }
-        return `${variable}.map((a) => ${this.elementType.decoding('a')} )`
+        return `(${variable} as List<dynamic>).map((a) => ${this.elementType.decoding('a')} ).toList()`
     }
     get name():string{
         return "List<"+this.elementType.name+">"
@@ -100,11 +100,11 @@ class DartPrimitive implements DartType {
 //todo:
 class DartDate implements DartType {
     encoding(variable: string): string {
-        return variable;
+        return `${variable}.toIso8601String()`;
     }
     readonly name = 'DateTime'
     decoding(variable: string): string {
-        return variable
+        return `${variable} is Map ? DateTime.parse(${variable}["iso"]): DateTime.parse(${variable})`
     }
 }
 class DartInterface extends DartDeclaration{
@@ -152,17 +152,19 @@ class DartInterface extends DartDeclaration{
             + members.map(e=>indent2+(e.questionToken?'':'@required ')+'this.'+getMemberName(e.name.getText())).join(',')
             + indent+'});'
         }
-        return `class ${this.name}`
+        return `${GetComment(this.node)}class ${this.name}`
         + '\n{\n'
         + constructorText
-        + members.map(e=>indent+dartTypeManager.GetPropertyType(e).name+' '+ getMemberName(e.name.getText())+';').join('\n')
+        + members.map(e=>GetComment(e)+indent+dartTypeManager.GetPropertyType(e).name+' '+ getMemberName(e.name.getText())+';').join('\n')
         + '\n' +indent+this.name+'.fromMap(Map<String, dynamic> data){\n'
-        + members.map(e=>indent2 + `if(data["${getJsonKey(e.name.getText())}"!=null]) this.${getMemberName(e.name.getText())}=${dartTypeManager.GetPropertyType(e).decoding('data["'+getJsonKey(e.name.getText())+'"]')};`).join('\n')
+        + members.map(e=>indent2 + `if(data["${getJsonKey(e.name.getText())}"]!=null) this.${getMemberName(e.name.getText())}=${dartTypeManager.GetPropertyType(e).decoding('data["'+getJsonKey(e.name.getText())+'"]')};`).join('\n')
         + indent+'}'
         + indent+'Map<String, dynamic> toMap(){'
-        + indent2 + 'return{'
+        + indent2 + 'var __return_value = {'
         + members.map(e=>indent2 + `"${getJsonKey(e.name.getText())}":${dartTypeManager.GetPropertyType(e).encoding(getMemberName(e.name.getText()))}`).join(',\n')
         + indent2 + '};'
+        + indent2 + '__return_value.removeWhere((k,v)=>v==null);'
+        + indent2 + 'return __return_value;'
         + indent+'}'
         +'\n}'
     }
@@ -210,8 +212,9 @@ class DartEnum extends DartDeclaration {
         const indent = '\n    '
         let members = this.node.members as ts.NodeArray<ts.EnumMember>
         let dartTypeManager = this.file.manager
-        return `enum ${this.name}{`
-        + members.map(e=>indent+e.name.getText()).join(',\n')
+        return GetComment(this.node)
+        + `enum ${this.name}{`
+        + members.map(e=>GetComment(e)+indent+e.name.getText()).join(',\n')
         +'\n}'
         + `\n${this.name} ${this.name}_decoding(dynamic value){`
         + indent+`var text = dynamic.toString();`
@@ -258,14 +261,14 @@ class DartClassFunction{
             parameterType = dartTypeManager.GetPropertyType(this.classFunction.parameters[0]).name
         }
         let parameter = (parameterType&&`${parameterType} params`)||''
-        let parameterEncoding = (parameter&&', params.toMap()')||''
+        let parameterEncoding = (parameter&&', params.toMap()')||', {}'
         // const indent = '\n    '
         // const indent2 = indent+indent.substr(1)
         let result = dartReturnType.decoding(`(await Cloud.run("${this.file.className}.${this.name}"${parameterEncoding}))`)
         return `
-        ${returnType} ${this.name}(${parameter}) async {
-            return ${result};
-        }`
+    ${GetComment(this.classFunction)}${returnType} ${this.name}(${parameter}) async {
+        return ${result};
+    }`
     }
 }
 
@@ -275,9 +278,10 @@ class DartFile{
     // nodePath:string
     // dartPath:string
     imports:string[] = [
-        'package:leancloud_dart/cloudfunction.dart',
-        'package:meta/meta.dart'
+        'leancloud_dart/cloudfunction.dart',
+        'meta/meta.dart'
     ]
+    localImports:string[] = []
     interfaces:DartInterface[] = []
     literals:DartInterface[] = []
     enums:DartEnum[] = []
@@ -333,8 +337,12 @@ class DartFile{
         }))
     }
 
-    AddImport(){
+    AddLocalImport(file:string){
+        this.localImports.push(file+'.dart')
+    }
 
+    ClearUnavailableImport(){
+        this.localImports.filter(e=>this.manager.files.find(f=>f.className == e))
     }
 
     private ScanPromiseType(node:ts.TypeReferenceNode,name:string,elementType:ts.TypeNode){
@@ -442,7 +450,9 @@ class DartFile{
     }
 
     toString():string{
-        return this.imports.map(e=>`import '${e}';`).join('\n')+
+        let packageName = this.manager.packageName
+        return this.imports.map(e=>`import 'package:${e}';`).join('\n')+
+        '\n'+ this.localImports.map(e=>`import 'package:${packageName}/lib/${e}';`).join('\n')+
         `
 /**
  * automatic generated from typescript TypeLiteral
@@ -497,6 +507,7 @@ class DartTypeManager{
     }
     RemoveUnusedFiles(){
         this.files = this.files.filter(e=>e.classFunctions.length>0)
+        this.files.forEach(f=>f.ClearUnavailableImport())
     }
     private GetMapTypeDartText(prefix:string,typeNode:ts.IndexSignatureDeclaration):string{
         return 'Map<'+this.GetTypeName(prefix,typeNode.parameters[0].type),+this.GetTypeName(prefix,typeNode.type)+'>'
@@ -604,7 +615,7 @@ class DartTypeManager{
         return this.types[ type]
     }
     IndexFileBody(){
-        return this.files.map(e=>`import "${this.packageName}/lib/${e.fileName}" as _${e.className};`).join('\n')
+        return this.files.map(e=>`import "package:${this.packageName}/lib/${e.fileName}" as _${e.className};`).join('\n')
         +'\n\n'
         + this.files.map(e=>`final ${e.className} = new _${e.className}.${e.className}();`).join('\n')
     }
@@ -633,6 +644,19 @@ function GetUnionDartType(unionType:ts.UnionTypeNode) {
         return 'bool'
     }
     return 'dynamic'
+}
+
+function GetComment(node:ts.Node) {
+    let sourceText = node.getSourceFile().getText()
+    let range = ts.getLeadingCommentRanges(sourceText, node.getFullStart())
+    if(!range){
+        return ''
+    } 
+    let out = '\n'+range.map(e=>sourceText.substring(e.pos,e.end)).join('\n')
+    if(out && out[out.length-1]!='\n'){
+        out += '\n'
+    }
+    return out
 }
 
 function getFunctionName(node:ts.MethodDeclaration){
@@ -771,6 +795,10 @@ function createSdkFile(file:DartFile){
                     if (!moduleName.includes('..')
                     && !moduleName.includes('.json') 
                     && !skipModuleNames.includes(moduleName)) {
+
+                        if(moduleName.startsWith('./')){
+                            file.AddLocalImport(moduleName.substr(2))
+                        }
                         let importClause = importDeclaration.importClause
                         if(importClause){
                             let text = ''
@@ -1020,7 +1048,7 @@ function createSdk(dir:string[],exclude:string[]){
     // }
 
     let manager = new DartTypeManager({
-        packageName:'package:pteapp_app'
+        packageName:'pteapp_app'
     })
     let indexFileText = ''
     // let dartFiles:DartFile[] = []
