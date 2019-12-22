@@ -5,8 +5,9 @@ import { readFileSync } from "fs";
 import * as fs from "fs";
 import * as ts from "typescript";
 import * as path from 'path'
-import { Platform,CheckPlatform, GetModuleMap } from './base'
+import { Platform,CheckPlatform, GetModuleMap, platforms } from './base'
 import { PlatformString,GetJsonValueString } from './cloudMetaData'
+import {CreatDartSdk} from './buildDartSdk'
 // import * as vm from 'vm'
 // require('./cloud/index')
 
@@ -107,7 +108,7 @@ function GetImportName(importSpecifier:ts.ImportSpecifier){
         + importSpecifier.name.escapedText.toString()
 }
 
-function IsExportDisabled(node:ts.Node){
+export function IsExportDisabled(node:ts.Node){
     return node.getFullText().includes('@lcc-export-disabled')
 }
 
@@ -539,14 +540,16 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
 let targetPlatform = CheckPlatform( process.argv[2] )
 let moduleMap = GetModuleMap(targetPlatform)
 moduleMap['leanengine'] = moduleMap['leanengine'] || moduleMap['leancloud-storage'] || 'leancloud-storage'
-import { exec ,spawn} from 'child_process';
-import e = require("express");
 // console.log('clear last build....')
 // clearOldBuild()
-const exclude = ['cloud.ts', 'index.ts','base.ts']
-let dir = fs.readdirSync(_dirroot + 'src/cloud/')
-console.log('build typescript sdk....')
-createSdk(dir,exclude)
+if(platforms[targetPlatform].type=='dart'){
+    CreatDartSdk({platform:targetPlatform as string,dirroot:_dirroot})
+}else{
+    const exclude = ['cloud.ts', 'index.ts','base.ts']
+    let dir = fs.readdirSync(_dirroot + 'src/cloud/')
+    console.log('build typescript sdk....')
+    createSdk(dir,exclude)
+}
 
 // console.log('compile....')
 // compileAndPush()

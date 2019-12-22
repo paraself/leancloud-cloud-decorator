@@ -15,6 +15,7 @@ const ts = __importStar(require("typescript"));
 const path = __importStar(require("path"));
 const base_1 = require("./base");
 const cloudMetaData_1 = require("./cloudMetaData");
+const buildDartSdk_1 = require("./buildDartSdk");
 // import * as vm from 'vm'
 // require('./cloud/index')
 function printNode(sourceFile) {
@@ -111,6 +112,7 @@ function GetImportName(importSpecifier) {
 function IsExportDisabled(node) {
     return node.getFullText().includes('@lcc-export-disabled');
 }
+exports.IsExportDisabled = IsExportDisabled;
 //https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
 //在线查看代码ast的工具 https://ts-ast-viewer.com/
 function createSdkFile(sourceFile) {
@@ -508,10 +510,15 @@ let moduleMap = base_1.GetModuleMap(targetPlatform);
 moduleMap['leanengine'] = moduleMap['leanengine'] || moduleMap['leancloud-storage'] || 'leancloud-storage';
 // console.log('clear last build....')
 // clearOldBuild()
-const exclude = ['cloud.ts', 'index.ts', 'base.ts'];
-let dir = fs.readdirSync(_dirroot + 'src/cloud/');
-console.log('build typescript sdk....');
-createSdk(dir, exclude);
+if (base_1.platforms[targetPlatform].type == 'dart') {
+    buildDartSdk_1.CreatDartSdk({ platform: targetPlatform, dirroot: _dirroot });
+}
+else {
+    const exclude = ['cloud.ts', 'index.ts', 'base.ts'];
+    let dir = fs.readdirSync(_dirroot + 'src/cloud/');
+    console.log('build typescript sdk....');
+    createSdk(dir, exclude);
+}
 // console.log('compile....')
 // compileAndPush()
 // let sourceFile = ts.createSourceFile(

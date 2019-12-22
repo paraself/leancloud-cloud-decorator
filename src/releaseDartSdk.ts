@@ -1,28 +1,23 @@
 #!/usr/bin/env node
 
-import { Platform,platforms,CheckPlatform,promiseExec } from './base'
+import { Platform,CheckPlatform,promiseExec } from './base'
 import { readFileSync,writeFileSync } from 'fs'
+import YAML from 'yaml'
 import { resolve } from 'path';
-import {releaseDartSdk} from './releaseDartSdk'
 
 // let paths = Object.keys(config)
 // let paths = ['weapp', 'web-admin', 'web-user']
-
-var targetPlatform = CheckPlatform(process.argv[2])
-
-// const _dirroot = __dirname+'/../../../'
-const _dirroot = ''
 
 // function getSdkFolderName(platform: Platform) {
 //     return platform.replace('_', '-');
 //   }
 
 function getSdkInfoPath(platform: Platform) {
-    return _dirroot + 'release/api/' + platform + '/src/info.ts'
+    return _dirroot + 'release/api/' + platform + '/lib/info.dart'
   }
 
 function getSdkPackagePath(platform: Platform) {
-    return _dirroot + 'release/api/' + platform + '/package.json'
+    return _dirroot + 'release/api/' + platform + '/pubspec.yaml'
 }
 
 // function getPlatform(targetPlatform: string): Platform {
@@ -31,26 +26,27 @@ function getSdkPackagePath(platform: Platform) {
 
 
 function createSdkInfo(platform: Platform,dir:string,infoDir:string){
-    let packageJson = JSON.parse(readFileSync(dir, 'utf-8'))
-  try {
-    // let infoText = readFileSync(infoDir, 'utf-8')
-    // let infoJson = JSON.parse(infoText.substr(infoText.indexOf('{')))
-    // infoJson.api = packageJson.version
+    let packageJson = YAML.parse(readFileSync(dir, 'utf-8'))
+    // 版本号加一
+    let version = packageJson.version as string
+    let versions = version.split('.')
+    versions[2] = (parseInt(versions[2]) + 1).toString()
+    version = versions.join('.')
+    writeFileSync(dir,YAML.stringify(packageJson))
     let infoJson = {
       platform,
-      apiVersion:packageJson.version,
+      apiVersion: version,
       clientVersion: "0.0.0"
     }
-    writeFileSync(infoDir, 'export default '+JSON.stringify(infoJson, null, 2), 'utf-8')
-    // writeFileSync(infoDistDir, JSON.stringify(infoJson, null, 2), 'utf-8')
-  } catch (error) {
-    
-  }
+    writeFileSync(infoDir, `
+var platform = ${platform};
+var apiVersion = ${version};
+    ` )
+
 }
 
 async function compileAndPush () {
     let sdkPath = _dirroot + 'release/api/' + targetPlatform
-    await promiseExec(`cd ${sdkPath} && npm version minor -f`)
 
     let platform = targetPlatform
     let packageJsonPath = getSdkPackagePath(platform)
@@ -61,8 +57,14 @@ async function compileAndPush () {
     await promiseExec(`npx tsc -p ${sdkPath} && npx lcc-dep ${targetPlatform}`)
 }
 
-if(platforms[targetPlatform].type=='dart'){
-  releaseDartSdk({platform:targetPlatform as string})
-}else{
-  compileAndPush()
+
+var targetPlatform = 'dart'
+
+// const _dirroot = __dirname+'/../../../'
+const _dirroot = ''
+
+export function releaseDartSdk(params: {platform:string}){
+    targetPlatform = params.platform
+    compileAndPush()
 }
+

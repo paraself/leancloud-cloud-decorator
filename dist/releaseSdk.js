@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const base_1 = require("./base");
 const fs_1 = require("fs");
+const releaseDartSdk_1 = require("./releaseDartSdk");
 // let paths = Object.keys(config)
 // let paths = ['weapp', 'web-admin', 'web-user']
 var targetPlatform = base_1.CheckPlatform(process.argv[2]);
@@ -47,5 +48,10 @@ async function compileAndPush() {
     createSdkInfo(platform, packageJsonPath, infoJsonPath);
     await base_1.promiseExec(`npx tsc -p ${sdkPath} && npx lcc-dep ${targetPlatform}`);
 }
-compileAndPush();
+if (base_1.platforms[targetPlatform].type == 'dart') {
+    releaseDartSdk_1.releaseDartSdk({ platform: targetPlatform });
+}
+else {
+    compileAndPush();
+}
 //# sourceMappingURL=releaseSdk.js.map

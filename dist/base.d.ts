@@ -2,6 +2,7 @@ import * as AV from 'leanengine';
 declare const platforms: {
     [key: string]: {
         package: string;
+        type?: string;
         module?: {
             [key: string]: string;
         };

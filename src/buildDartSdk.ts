@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import * as fs from "fs";
 import * as ts from "typescript";
 import * as path from 'path'
-import { Platform,CheckPlatform, GetModuleMap } from './base'
+import { Platform,CheckPlatform, GetModuleMap, platforms } from './base'
 import { PlatformString,GetJsonValueString } from './cloudMetaData'
 
 interface DartType{
@@ -805,12 +805,6 @@ function deleteFolderRecursive(path:string) {
     }
   };
 
-// const _dirroot = __dirname+'/../../../'
-const _dirroot = '/Users/zhilongchen/home/muyue/pteai-node-ts2/'
-function getSdkLibPath(platform:Platform){
-    return _dirroot + 'release/api/'+platform+'/lib'
-}
-
 
 
 function createSdk(dir:string[],exclude:string[]){
@@ -826,8 +820,9 @@ function createSdk(dir:string[],exclude:string[]){
         }
     // }
 
+    let packageName = platforms[targetPlatform].package
     let manager = new DartTypeManager({
-        packageName:'pteapp_app'
+        packageName
     })
     let indexFileText = ''
     // let dartFiles:DartFile[] = []
@@ -856,16 +851,36 @@ function createSdk(dir:string[],exclude:string[]){
     })
     let indexPath = getSdkLibPath(targetPlatform) + '/index.dart'
     console.log('write ' + 'index.dart')
-    fs.writeFileSync(indexPath, manager.IndexFileBody())
+    fs.writeFileSync(
+`import "package:${packageName}/info.dart" as sdkInfo";
+import "package:leancloud_dart/cloudfunction.dart";
+
+void Init({String clientVersion}){
+    Cloud.SetAPIInfo(sdkInfo.platform, sdkInfo.apiVersion, clientVersion);
+}
+
+`
+        +indexPath, manager.IndexFileBody())
 }
 
 // let targetPlatform = CheckPlatform( process.argv[2] )
+
+let _dirroot = '/Users/zhilongchen/home/muyue/pteai-node-ts2/'
+function getSdkLibPath(platform:Platform){
+    return _dirroot + 'release/api/'+platform+'/lib'
+}
 let targetPlatform = 'dart'
 let moduleMap = {}//GetModuleMap(targetPlatform)
 moduleMap['leanengine'] = moduleMap['leanengine'] || moduleMap['leancloud-storage'] || 'leancloud-storage'
 
 
 const exclude = ['cloud.ts', 'index.ts','base.ts']
-let dir = fs.readdirSync(_dirroot + 'src/cloud/')
-console.log('build typescript sdk....')
-createSdk(dir,exclude)
+
+export function CreatDartSdk(params:{platform:string,dirroot:string}) {
+    targetPlatform = params.platform
+    _dirroot = params.dirroot
+    console.log('build typescript sdk....')
+    let dir = fs.readdirSync(_dirroot + 'src/cloud/')
+    createSdk(dir,exclude)
+}
+

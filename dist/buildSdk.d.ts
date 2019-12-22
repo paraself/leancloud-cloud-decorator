@@ -1,2 +1,3 @@
 #!/usr/bin/env node
-export {};
+import * as ts from "typescript";
+export declare function IsExportDisabled(node: ts.Node): boolean;

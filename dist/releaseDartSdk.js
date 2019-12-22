@@ -1,0 +1,59 @@
+#!/usr/bin/env node
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const base_1 = require("./base");
+const fs_1 = require("fs");
+const yaml_1 = __importDefault(require("yaml"));
+// let paths = Object.keys(config)
+// let paths = ['weapp', 'web-admin', 'web-user']
+// function getSdkFolderName(platform: Platform) {
+//     return platform.replace('_', '-');
+//   }
+function getSdkInfoPath(platform) {
+    return _dirroot + 'release/api/' + platform + '/lib/info.dart';
+}
+function getSdkPackagePath(platform) {
+    return _dirroot + 'release/api/' + platform + '/pubspec.yaml';
+}
+// function getPlatform(targetPlatform: string): Platform {
+//   return targetPlatform.replace('-','_') as Platform
+// }
+function createSdkInfo(platform, dir, infoDir) {
+    let packageJson = yaml_1.default.parse(fs_1.readFileSync(dir, 'utf-8'));
+    // 版本号加一
+    let version = packageJson.version;
+    let versions = version.split('.');
+    versions[2] = (parseInt(versions[2]) + 1).toString();
+    version = versions.join('.');
+    fs_1.writeFileSync(dir, yaml_1.default.stringify(packageJson));
+    let infoJson = {
+        platform,
+        apiVersion: version,
+        clientVersion: "0.0.0"
+    };
+    fs_1.writeFileSync(infoDir, `
+var platform = ${platform};
+var apiVersion = ${version};
+    `);
+}
+async function compileAndPush() {
+    let sdkPath = _dirroot + 'release/api/' + targetPlatform;
+    let platform = targetPlatform;
+    let packageJsonPath = getSdkPackagePath(platform);
+    let infoJsonPath = getSdkInfoPath(platform);
+    console.log('write ' + infoJsonPath);
+    createSdkInfo(platform, packageJsonPath, infoJsonPath);
+    await base_1.promiseExec(`npx tsc -p ${sdkPath} && npx lcc-dep ${targetPlatform}`);
+}
+var targetPlatform = 'dart';
+// const _dirroot = __dirname+'/../../../'
+const _dirroot = '';
+function releaseDartSdk(params) {
+    targetPlatform = params.platform;
+    compileAndPush();
+}
+exports.releaseDartSdk = releaseDartSdk;
+//# sourceMappingURL=releaseDartSdk.js.map
