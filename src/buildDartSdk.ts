@@ -160,7 +160,7 @@ class DartInterface extends DartDeclaration{
         + members.map(e=>indent2 + `if(data["${getJsonKey(e.name.getText())}"]!=null) this.${getMemberName(e.name.getText())}=${dartTypeManager.GetPropertyType(e).decoding('data["'+getJsonKey(e.name.getText())+'"]')};`).join('\n')
         + indent+'}'
         + indent+'Map<String, dynamic> toMap(){'
-        + indent2 + 'var __return_value = {'
+        + indent2 + 'Map<String, dynamic> __return_value = {'
         + members.map(e=>indent2 + `"${getJsonKey(e.name.getText())}":${dartTypeManager.GetPropertyType(e).encoding(getMemberName(e.name.getText()))}`).join(',\n')
         + indent2 + '};'
         + indent2 + '__return_value.removeWhere((k,v)=>v==null);'
