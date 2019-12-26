@@ -57,7 +57,7 @@ class DartMapDeclaration implements DartType{
         if(this.valueType instanceof DartPrimitive){
             return variable
         }
-        return `${variable}.map((a, b) => MapEntry(a, ${this.valueType.decoding('b')} ))`
+        return `(${variable} as Map<String, dynamic>).map((a, b) => MapEntry(a, ${this.valueType.decoding('b')} ))`
     }
     get name():string{
         return "Map<"+this.keyType.name+","+this.valueType.name+">"
@@ -140,10 +140,31 @@ class DartInterface extends DartDeclaration{
         }
     }
 
+    getMembers():ts.PropertySignature[]{
+        let manager = this.file.manager
+        let members = (this.node.members as ts.NodeArray<ts.PropertySignature>).map(e=>e)
+        if('heritageClauses' in this.node && this.node.heritageClauses && this.node.heritageClauses.length > 0){
+            for(let i=0;i<this.node.heritageClauses.length;++i){
+                let types = this.node.heritageClauses![i].types;
+                for(let t=0;t<types.length;++t){
+                    let name = types[t].expression.getText()
+                    let dartType = manager.GetTypeByName(name) as DartInterface
+                    if(dartType){
+                        let superMembers = dartType.getMembers()
+                        //去掉已经在 members 里的字段
+                        superMembers = superMembers.filter(e=>members.includes(e))
+                        members.push(...superMembers)
+                    }
+                }
+            }
+        }
+        return members
+    }
+
     toString():string{
         const indent = '\n    '
         const indent2 = indent+indent.substr(1)
-        let members = this.node.members as ts.NodeArray<ts.PropertySignature>
+        let members = this.getMembers()
         let dartTypeManager = this.file.manager
         let constructorText = ''
         if(members.length>0){
@@ -156,7 +177,7 @@ class DartInterface extends DartDeclaration{
         + '\n{\n'
         + constructorText
         + members.map(e=>GetComment(e)+indent+dartTypeManager.GetPropertyType(e).name+' '+ getMemberName(e.name.getText())+';').join('\n')
-        + '\n' +indent+this.name+'.fromMap(Map<String, dynamic> data){\n'
+        + '\n' +indent+this.name+'.fromMap(Map<dynamic, dynamic> data){\n'
         + members.map(e=>indent2 + `if(data["${getJsonKey(e.name.getText())}"]!=null) this.${getMemberName(e.name.getText())}=${dartTypeManager.GetPropertyType(e).decoding('data["'+getJsonKey(e.name.getText())+'"]')};`).join('\n')
         + indent+'}'
         + indent+'Map<String, dynamic> toMap(){'
@@ -379,7 +400,7 @@ class DartFile{
             dartValueType = dartTypeManager.defaultType
         }
         let dartType = new DartMapDeclaration({valueType:dartValueType,keyType:dartTypeManager.GetType(indexSignature.parameters[0].type)})
-        dartTypeManager.AddNodeType(node,dartType)
+        dartTypeManager.AddNodeType(node,dartType,name)
         return dartType
     }
     //处理语法 objectId: {[key in ICheckType]?: number}
@@ -394,7 +415,7 @@ class DartFile{
             dartValueType = dartTypeManager.defaultType
         }
         let dartType = new DartMapDeclaration({valueType:dartValueType,keyType:dartTypeManager.GetTypeByName('String')})
-        dartTypeManager.AddNodeType(node,dartType)
+        dartTypeManager.AddNodeType(node,dartType,name)
         return dartType
     }
     ScanType(name:string,typeNode:ts.TypeNode):DartType{
@@ -520,6 +541,9 @@ class DartTypeManager{
             case 'Array': return 'List<'+this.GetTypeName(prefix,typeNode.typeArguments![0])+'>'
             case 'Promise': return 'Future<'+this.GetTypeName(prefix,typeNode.typeArguments![0])+'>'
         }
+        if(typeText.includes('.')){
+            typeText = typeText.substring(0,typeText.indexOf('.'))
+        }
         let dartType = this.GetTypeByName(typeText)
         if(dartType instanceof DartPrimitive){
             return dartType.name
@@ -576,8 +600,11 @@ class DartTypeManager{
     AddType(dartType:DartType,name?:string){
         this.types[name||dartType.name] = dartType
     }
-    AddNodeType(node :ts.TypeLiteralNode|ts.TypeReferenceNode|ts.ArrayTypeNode|ts.MappedTypeNode, dartType:DartType){
+    AddNodeType(node :ts.TypeLiteralNode|ts.TypeReferenceNode|ts.ArrayTypeNode|ts.MappedTypeNode, dartType:DartType,name2?:string){
         this.types[dartType.name] = dartType
+        if(name2){
+            this.types[name2] = dartType
+        }
         this.codeToType[ node.getSourceFile().fileName+node.pos ] = dartType
     }
 
@@ -677,6 +704,8 @@ function createSdkFile(file:DartFile){
                 let typeAliasDeclaration = node as ts.TypeAliasDeclaration
                 if(ts.isUnionTypeNode(typeAliasDeclaration.type)){
                     manager.AddType( manager.GetTypeByName(GetUnionDartType(typeAliasDeclaration.type)),typeAliasDeclaration.name.getText()) 
+                }else{
+                    file.ScanType(typeAliasDeclaration.name.getText(),typeAliasDeclaration.type)
                 }
             }
             case ts.SyntaxKind.VariableStatement:
