@@ -238,7 +238,7 @@ class DartEnum extends DartDeclaration {
         + members.map(e=>GetComment(e)+indent+e.name.getText()).join(',\n')
         +'\n}'
         + `\n${this.name} ${this.name}_decoding(dynamic value){`
-        + indent+`var text = dynamic.toString();`
+        + indent+`var text = value.toString();`
         + members.map(e=>indent+`if(text==${e.initializer!.getText()}) return ${this.name}.${e.name.getText()};`).join('\n')
         + indent+'return null;'
         + '\n}'
