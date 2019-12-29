@@ -1,14 +1,14 @@
 {
   "name": "leancloud-cloud-decorator",
-  "version": "1.50.8",
+  "version": "1.50.9",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "./dist/copyConfig.js",
     "build": "npx tsc -p . ",
-    "release-minor": "npm version minor -f && npm run build && git add -A && git commit -m \"auto release\" && git push && npm publish",
-    "release-patch": "npm version patch -f && npm run build && git add -A && git commit -m \"auto release\" && git push && npm publish"
+    "release-minor": "npm run build && gnpm version minor -f && it add -A && git commit -m \"auto release\" && git push && npm publish",
+    "release-patch": "npm run build &&npm version patch -f &&  git add -A && git commit -m \"auto release\" && git push && npm publish"
   },
   "repository": {
     "type": "git",
