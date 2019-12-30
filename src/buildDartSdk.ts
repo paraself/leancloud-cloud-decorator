@@ -4,6 +4,7 @@ import * as ts from "typescript";
 import * as path from 'path'
 import { Platform,CheckPlatform, GetModuleMap, platforms } from './base'
 import { PlatformString,GetJsonValueString } from './cloudMetaData'
+import CommentParser from 'comment-parser';
 
 interface DartType{
     encoding(variable:string):string
@@ -173,7 +174,8 @@ class DartInterface extends DartDeclaration{
             + members.map(e=>indent2+(e.questionToken?'':'@required ')+'this.'+getMemberName(e.name.getText())).join(',')
             + indent+'});'
         }
-        return `${GetComment(this.node)}class ${this.name}`
+        return `${GetComment(this.node)}
+class ${this.name}`
         + '\n{\n'
         + constructorText
         + members.map(e=>GetComment(e)+indent+dartTypeManager.GetPropertyType(e).name+' '+ getMemberName(e.name.getText())+';').join('\n')
@@ -233,7 +235,7 @@ class DartEnum extends DartDeclaration {
         const indent = '\n    '
         let members = this.node.members as ts.NodeArray<ts.EnumMember>
         let dartTypeManager = this.file.manager
-        return GetComment(this.node)
+        return GetComment(this.node) + '\n'
         + `enum ${this.name}{`
         + members.map(e=>GetComment(e)+indent+e.name.getText()).join(',\n')
         +'\n}'
@@ -283,7 +285,8 @@ class DartClassFunction{
         // const indent2 = indent+indent.substr(1)
         let result = dartReturnType.decoding(`(await Cloud.run("${this.file.className}.${this.name}"${parameterEncoding}))`)
         return `
-    ${GetComment(this.classFunction)}${returnType} ${this.name}(${parameter}) async {
+    ${GetComment(this.classFunction)}
+${returnType} ${this.name}(${parameter}) async {
         return ${result};
     }`
     }
@@ -675,11 +678,13 @@ function GetComment(node:ts.Node) {
     if(!range){
         return ''
     } 
-    let out = '\n'+range.map(e=>sourceText.substring(e.pos,e.end)).join('\n')
-    if(out && out[out.length-1]!='\n'){
-        out += '\n'
-    }
-    return out
+    let out = range.map(e=>
+        CommentParser(sourceText.substring(e.pos,e.end))
+            .map(c=>c.source.split('\n').map(l=>'///'+l).join('\n'))
+            .join('\n')
+    )
+    .join('\n')
+    return '\n'+ out
 }
 
 function IsExportDisabled(node:ts.Node){

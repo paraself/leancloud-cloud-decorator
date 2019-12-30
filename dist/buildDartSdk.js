@@ -6,6 +6,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = require("fs");
 const fs = __importStar(require("fs"));
@@ -13,6 +16,7 @@ const ts = __importStar(require("typescript"));
 const path = __importStar(require("path"));
 const base_1 = require("./base");
 const cloudMetaData_1 = require("./cloudMetaData");
+const comment_parser_1 = __importDefault(require("comment-parser"));
 class DartArrayDeclaration {
     constructor(params) {
         this.elementType = params.elementType;
@@ -159,7 +163,8 @@ class DartInterface extends DartDeclaration {
                     + members.map(e => indent2 + (e.questionToken ? '' : '@required ') + 'this.' + getMemberName(e.name.getText())).join(',')
                     + indent + '});';
         }
-        return `${GetComment(this.node)}class ${this.name}`
+        return `${GetComment(this.node)}
+class ${this.name}`
             + '\n{\n'
             + constructorText
             + members.map(e => GetComment(e) + indent + dartTypeManager.GetPropertyType(e).name + ' ' + getMemberName(e.name.getText()) + ';').join('\n')
@@ -212,7 +217,7 @@ class DartEnum extends DartDeclaration {
         const indent = '\n    ';
         let members = this.node.members;
         let dartTypeManager = this.file.manager;
-        return GetComment(this.node)
+        return GetComment(this.node) + '\n'
             + `enum ${this.name}{`
             + members.map(e => GetComment(e) + indent + e.name.getText()).join(',\n')
             + '\n}'
@@ -258,7 +263,8 @@ class DartClassFunction {
         // const indent2 = indent+indent.substr(1)
         let result = dartReturnType.decoding(`(await Cloud.run("${this.file.className}.${this.name}"${parameterEncoding}))`);
         return `
-    ${GetComment(this.classFunction)}${returnType} ${this.name}(${parameter}) async {
+    ${GetComment(this.classFunction)}
+${returnType} ${this.name}(${parameter}) async {
         return ${result};
     }`;
     }
@@ -627,11 +633,11 @@ function GetComment(node) {
     if (!range) {
         return '';
     }
-    let out = '\n' + range.map(e => sourceText.substring(e.pos, e.end)).join('\n');
-    if (out && out[out.length - 1] != '\n') {
-        out += '\n';
-    }
-    return out;
+    let out = range.map(e => comment_parser_1.default(sourceText.substring(e.pos, e.end))
+        .map(c => c.source.split('\n').map(l => '///' + l).join('\n'))
+        .join('\n'))
+        .join('\n');
+    return '\n' + out;
 }
 function IsExportDisabled(node) {
     return node.getFullText().includes('@lcc-export-disabled');
