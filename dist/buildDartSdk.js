@@ -24,10 +24,10 @@ class DartArrayDeclaration {
         return `${variable}.map((a)=> ${this.elementType.encoding('a')} ).toList()`;
     }
     decoding(variable) {
-        if (this.elementType instanceof DartPrimitive) {
-            return variable;
-        }
-        return `(${variable} as List<dynamic>).map((a) => ${this.elementType.decoding('a')} ).toList()`;
+        // if(this.elementType instanceof DartPrimitive){
+        //     return variable
+        // }
+        return `(${variable} as List<dynamic>).map<${this.elementType.name}>((a) => ${this.elementType.decoding('a')} ).toList()`;
     }
     get name() {
         return "List<" + this.elementType.name + ">";
