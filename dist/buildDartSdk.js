@@ -37,6 +37,17 @@ class DartArrayDeclaration {
         return "List<" + this.elementType.name + ">";
     }
 }
+class DartCloudParams {
+    encoding(variable) {
+        return '';
+    }
+    decoding(variable) {
+        return '';
+    }
+    get name() {
+        return '';
+    }
+}
 class DartPromiseDeclaration {
     constructor(params) {
         this.elementType = params.elementType;
@@ -140,7 +151,7 @@ class DartInterface extends DartDeclaration {
                 for (let t = 0; t < types.length; ++t) {
                     let name = types[t].expression.getText();
                     let dartType = manager.GetTypeByName(name);
-                    if (dartType) {
+                    if (dartType instanceof DartInterface) {
                         let superMembers = dartType.getMembers();
                         //去掉已经在 members 里的字段
                         superMembers = superMembers.filter(s => !members.find(e => e.name.getText() == s.name.getText()));
@@ -480,6 +491,7 @@ class DartTypeManager {
             new DartPrimitive('bool'),
             this.defaultType
         ]);
+        this.AddType(new DartCloudParams, 'CloudParams');
     }
     AddFile(node) {
         let file = new DartFile({
@@ -849,9 +861,9 @@ function CreatDartSdk(params) {
     createSdk(dir, exclude, params.packageName || base_1.platforms[targetPlatform].package);
 }
 exports.CreatDartSdk = CreatDartSdk;
-CreatDartSdk({
-    platform: 'dart',
-    dirroot: '/Users/zhilongchen/home/muyue/pteai-node-ts2/',
-    packageName: 'pteapp_app'
-});
+// CreatDartSdk({
+//     platform:'dart',
+//     dirroot:'/Users/zhilongchen/home/muyue/pteai-node-ts2/',
+//     packageName:'pteapp_app'
+// })
 //# sourceMappingURL=buildDartSdk.js.map

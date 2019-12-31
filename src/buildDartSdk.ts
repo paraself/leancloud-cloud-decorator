@@ -32,6 +32,17 @@ class DartArrayDeclaration implements DartType{
     }
     elementType:DartType
 }
+class DartCloudParams implements DartType{
+    encoding(variable: string): string {
+        return ''
+    }
+    decoding(variable: string): string {
+        return ''
+    }
+    get name():string{
+        return ''
+    }
+}
 class DartPromiseDeclaration implements DartType{
     encoding(variable: string): string {
         return this.elementType.encoding(variable)
@@ -149,8 +160,8 @@ class DartInterface extends DartDeclaration{
                 let types = this.node.heritageClauses![i].types;
                 for(let t=0;t<types.length;++t){
                     let name = types[t].expression.getText()
-                    let dartType = manager.GetTypeByName(name) as DartInterface
-                    if(dartType){
+                    let dartType = manager.GetTypeByName(name)
+                    if(dartType instanceof DartInterface){
                         let superMembers = dartType.getMembers()
                         //去掉已经在 members 里的字段
                         superMembers = superMembers.filter(s=>!members.find(e=>e.name.getText()==s.name.getText()))
@@ -516,6 +527,7 @@ class DartTypeManager{
             new DartPrimitive('bool'),
             this.defaultType
         ])
+        this.AddType(new DartCloudParams,'CloudParams')
     }
     
     AddFile(node:ts.SourceFile){
@@ -919,8 +931,8 @@ export function CreatDartSdk(params:{platform:string,dirroot:string,packageName?
 }
 
 
-CreatDartSdk({
-    platform:'dart',
-    dirroot:'/Users/zhilongchen/home/muyue/pteai-node-ts2/',
-    packageName:'pteapp_app'
-})
+// CreatDartSdk({
+//     platform:'dart',
+//     dirroot:'/Users/zhilongchen/home/muyue/pteai-node-ts2/',
+//     packageName:'pteapp_app'
+// })
