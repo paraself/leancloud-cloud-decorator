@@ -153,7 +153,7 @@ class DartInterface extends DartDeclaration{
                     if(dartType){
                         let superMembers = dartType.getMembers()
                         //去掉已经在 members 里的字段
-                        superMembers = superMembers.filter(e=>members.includes(e))
+                        superMembers = superMembers.filter(s=>!members.find(e=>e.name.getText()==s.name.getText()))
                         members.push(...superMembers)
                     }
                 }
@@ -173,6 +173,8 @@ class DartInterface extends DartDeclaration{
               indent+this.name+'({'
             + members.map(e=>indent2+(e.questionToken?'':'@required ')+'this.'+getMemberName(e.name.getText())).join(',')
             + indent+'});'
+        }else{
+            constructorText = indent+this.name+'();'
         }
         return `${GetComment(this.node)}
 class ${this.name}`
@@ -240,8 +242,7 @@ class DartEnum extends DartDeclaration {
         + members.map(e=>GetComment(e)+indent+e.name.getText()).join(',\n')
         +'\n}'
         + `\n${this.name} ${this.name}_decoding(dynamic value){`
-        + indent+`var text = value.toString();`
-        + members.map(e=>indent+`if(text==${e.initializer!.getText()}) return ${this.name}.${e.name.getText()};`).join('\n')
+        + members.map(e=>indent+`if(value==${e.initializer!.getText()}) return ${this.name}.${e.name.getText()};`).join('\n')
         + indent+'return null;'
         + '\n}'
         + `\ndynamic ${this.name}_encoding(${this.name} value){`
@@ -841,7 +842,7 @@ function deleteFolderRecursive(path:string) {
 
 
 
-function createSdk(dir:string[],exclude:string[]){
+function createSdk(dir:string[],exclude:string[],packageName:string){
 
         {
             let libPath = getSdkLibPath(targetPlatform)
@@ -854,7 +855,6 @@ function createSdk(dir:string[],exclude:string[]){
         }
     // }
 
-    let packageName = platforms[targetPlatform].package
     let manager = new DartTypeManager({
         packageName
     })
@@ -910,11 +910,17 @@ moduleMap['leanengine'] = moduleMap['leanengine'] || moduleMap['leancloud-storag
 
 const exclude = ['cloud.ts', 'index.ts','base.ts']
 
-export function CreatDartSdk(params:{platform:string,dirroot:string}) {
+export function CreatDartSdk(params:{platform:string,dirroot:string,packageName?:string}) {
     targetPlatform = params.platform
     _dirroot = params.dirroot
     console.log('build typescript sdk....')
     let dir = fs.readdirSync(_dirroot + 'src/cloud/')
-    createSdk(dir,exclude)
+    createSdk(dir,exclude,params.packageName || platforms[targetPlatform].package)
 }
 
+
+CreatDartSdk({
+    platform:'dart',
+    dirroot:'/Users/zhilongchen/home/muyue/pteai-node-ts2/',
+    packageName:'pteapp_app'
+})
