@@ -68,9 +68,9 @@ class DartMapDeclaration {
         this.valueType = params.valueType;
     }
     encoding(variable) {
-        // if(this.valueType instanceof DartPrimitive){
-        //     return variable
-        // }
+        if (this.valueType instanceof DartPrimitive) {
+            return variable;
+        }
         return `${variable}.map((a, b) => MapEntry(a, ${this.valueType.encoding('b')} ))`;
     }
     decoding(variable) {
