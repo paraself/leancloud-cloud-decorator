@@ -71,13 +71,13 @@ class DartMapDeclaration {
         if (this.valueType instanceof DartPrimitive) {
             return variable;
         }
-        return `(${variable} as Map<dynamic, dynamic>).map<${this.keyType.name},${this.valueType.name}>((a, b) => MapEntry(a, ${this.valueType.decoding('b')} ))`;
+        return `${variable}.map((a, b) => MapEntry(a, ${this.valueType.encoding('b')} ))`;
     }
     decoding(variable) {
         if (this.valueType instanceof DartPrimitive) {
             return variable;
         }
-        return `(${variable} as Map<String, dynamic>).map((a, b) => MapEntry(a, ${this.valueType.decoding('b')} ))`;
+        return `(${variable} as Map<dynamic, dynamic>).map<${this.keyType.name},${this.valueType.name}>((a, b) => MapEntry(a, ${this.valueType.decoding('b')} ))`;
     }
     get name() {
         return "Map<" + this.keyType.name + "," + this.valueType.name + ">";
