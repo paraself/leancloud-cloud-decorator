@@ -409,7 +409,7 @@ class DartFile{
         let valueType = indexSignature.type
         let dartValueType = dartTypeManager.GetType(valueType)
         if(!dartValueType){
-            dartValueType = this.ScanType(name,dartValueType)
+            dartValueType = this.ScanType(name,valueType!)
         }
         if(!dartValueType){
             dartValueType = dartTypeManager.defaultType
@@ -424,7 +424,7 @@ class DartFile{
         let valueType = mappedTypeNode.type
         let dartValueType = dartTypeManager.GetType(valueType)
         if(!dartValueType){
-            dartValueType = this.ScanType(name,dartValueType)
+            dartValueType = this.ScanType(name,valueType!)
         }
         if(!dartValueType){
             dartValueType = dartTypeManager.defaultType
