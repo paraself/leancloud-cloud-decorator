@@ -60,15 +60,15 @@ class DartPromiseDeclaration implements DartType{
 }
 class DartMapDeclaration implements DartType{
     encoding(variable: string): string {
-        if(this.valueType instanceof DartPrimitive){
-            return variable
-        }
+        // if(this.valueType instanceof DartPrimitive){
+        //     return variable
+        // }
         return `${variable}.map((a, b) => MapEntry(a, ${this.valueType.encoding('b')} ))`
     }
     decoding(variable: string): string {
-        if(this.valueType instanceof DartPrimitive){
-            return variable
-        }
+        // if(this.valueType instanceof DartPrimitive){
+        //     return variable
+        // }
         return `(${variable} as Map<dynamic, dynamic>).map<${this.keyType.name},${this.valueType.name}>((a, b) => MapEntry(a, ${this.valueType.decoding('b')} ))`
     }
     get name():string{
