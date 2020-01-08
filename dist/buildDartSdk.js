@@ -25,7 +25,7 @@ class DartArrayDeclaration {
         if (this.elementType instanceof DartPrimitive) {
             return variable;
         }
-        return `${variable}?.map((a)=> ${this.elementType.encoding('a')} )?.toList()`;
+        return `${variable}?.map<${this.elementType.name}>((a)=> (a!=null?(${this.elementType.encoding('a')}:null) )?.toList()`;
     }
     decoding(variable) {
         // if(this.elementType instanceof DartPrimitive){
