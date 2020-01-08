@@ -22,7 +22,7 @@ class DartArrayDeclaration implements DartType{
         // if(this.elementType instanceof DartPrimitive){
         //     return variable
         // }
-        return `(${variable} as List<dynamic>)?.map<${this.elementType.name}>((a) => ((a?=null) ? (${this.elementType.decoding('a')}) : null ))?.toList()`
+        return `(${variable} as List<dynamic>)?.map<${this.elementType.name}>((a) => ((a!=null) ? (${this.elementType.decoding('a')}) : null ))?.toList()`
     }
     get name():string{
         return "List<"+this.elementType.name+">"
