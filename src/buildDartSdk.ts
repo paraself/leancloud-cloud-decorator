@@ -16,13 +16,13 @@ class DartArrayDeclaration implements DartType{
         if(this.elementType instanceof DartPrimitive){
             return variable
         }
-        return `${variable}?.map<${this.elementType.name}>((a)=> (a!=null?(${this.elementType.encoding('a')}:null) )?.toList()`
+        return `${variable}?.map((a)=> ${this.elementType.encoding('a')} )?.toList()`
     }
     decoding(variable: string): string {
         // if(this.elementType instanceof DartPrimitive){
         //     return variable
         // }
-        return `(${variable} as List<dynamic>)?.map<${this.elementType.name}>((a) => ${this.elementType.decoding('a')} )?.toList()`
+        return `(${variable} as List<dynamic>)?.map<${this.elementType.name}>((a) => ((a?=null) ? (${this.elementType.decoding('a')}) : null ))?.toList()`
     }
     get name():string{
         return "List<"+this.elementType.name+">"
