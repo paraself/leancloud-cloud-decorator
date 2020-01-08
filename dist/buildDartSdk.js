@@ -25,13 +25,13 @@ class DartArrayDeclaration {
         if (this.elementType instanceof DartPrimitive) {
             return variable;
         }
-        return `${variable}.map((a)=> ${this.elementType.encoding('a')} ).toList()`;
+        return `${variable}?.map((a)=> ${this.elementType.encoding('a')} )?.toList()`;
     }
     decoding(variable) {
         // if(this.elementType instanceof DartPrimitive){
         //     return variable
         // }
-        return `(${variable} as List<dynamic>).map<${this.elementType.name}>((a) => ${this.elementType.decoding('a')} ).toList()`;
+        return `(${variable} as List<dynamic>)?.map<${this.elementType.name}>((a) => ${this.elementType.decoding('a')} )?.toList()`;
     }
     get name() {
         return "List<" + this.elementType.name + ">";
@@ -71,13 +71,13 @@ class DartMapDeclaration {
         if (this.valueType instanceof DartPrimitive) {
             return variable;
         }
-        return `${variable}.map((a, b) => MapEntry(a, ${this.valueType.encoding('b')} ))`;
+        return `${variable}?.map((a, b) => MapEntry(a, ${this.valueType.encoding('b')} ))`;
     }
     decoding(variable) {
         // if(this.valueType instanceof DartPrimitive){
         //     return variable
         // }
-        return `(${variable} as Map<dynamic, dynamic>).map<${this.keyType.name},${this.valueType.name}>((a, b) => MapEntry(a, ${this.valueType.decoding('b')} ))`;
+        return `(${variable} as Map<dynamic, dynamic>)?.map<${this.keyType.name},${this.valueType.name}>((a, b) => MapEntry(a, ${this.valueType.decoding('b')} ))`;
     }
     get name() {
         return "Map<" + this.keyType.name + "," + this.valueType.name + ">";
@@ -107,10 +107,10 @@ class DartDate {
         this.name = 'DateTime';
     }
     encoding(variable) {
-        return `${variable}.toIso8601String()`;
+        return `${variable}?.toIso8601String()`;
     }
     decoding(variable) {
-        return `${variable} is Map ? DateTime.parse(${variable}["iso"]): DateTime.parse(${variable})`;
+        return `${variable}!=null:(${variable} is Map ? DateTime.parse(${variable}["iso"]): DateTime.parse(${variable})):null`;
     }
 }
 class DartInterface extends DartDeclaration {
@@ -119,7 +119,7 @@ class DartInterface extends DartDeclaration {
         this.name = params.name;
     }
     encoding(variable) {
-        return variable + '.toMap()';
+        return variable + '?.toMap()';
     }
     decoding(variable) {
         return `${this.name}.fromMap(${variable})`;
@@ -271,7 +271,7 @@ class DartClassFunction {
             parameterType = dartTypeManager.GetPropertyType(this.classFunction.parameters[0]).name;
         }
         let parameter = (parameterType && `${parameterType} params`) || '';
-        let parameterEncoding = (parameter && ', params.toMap()') || ', {}';
+        let parameterEncoding = (parameter && ', params?.toMap()') || ', {}';
         // const indent = '\n    '
         // const indent2 = indent+indent.substr(1)
         let result = dartReturnType.decoding(`(await Cloud.run("${this.file.className}.${this.name}"${parameterEncoding}))`);
