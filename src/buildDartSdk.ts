@@ -115,7 +115,7 @@ class DartDate implements DartType {
     }
     readonly name = 'DateTime'
     decoding(variable: string): string {
-        return `(${variable}!=null:(${variable} is Map ? DateTime.parse(${variable}["iso"]): DateTime.parse(${variable})):null)`
+        return `(${variable}!=null?(${variable} is Map ? DateTime.parse(${variable}["iso"]): DateTime.parse(${variable})):null)`
     }
 }
 class DartInterface extends DartDeclaration{
