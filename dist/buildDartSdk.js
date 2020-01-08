@@ -101,7 +101,6 @@ class DartPrimitive {
         return variable;
     }
 }
-//todo:
 class DartDate {
     constructor() {
         this.name = 'DateTime';
@@ -110,7 +109,7 @@ class DartDate {
         return `${variable}?.toIso8601String()`;
     }
     decoding(variable) {
-        return `${variable}!=null:(${variable} is Map ? DateTime.parse(${variable}["iso"]): DateTime.parse(${variable})):null`;
+        return `(${variable}!=null:(${variable} is Map ? DateTime.parse(${variable}["iso"]): DateTime.parse(${variable})):null)`;
     }
 }
 class DartInterface extends DartDeclaration {

@@ -109,14 +109,13 @@ class DartPrimitive implements DartType {
     }
 }
 
-//todo:
 class DartDate implements DartType {
     encoding(variable: string): string {
         return `${variable}?.toIso8601String()`;
     }
     readonly name = 'DateTime'
     decoding(variable: string): string {
-        return `${variable}!=null:(${variable} is Map ? DateTime.parse(${variable}["iso"]): DateTime.parse(${variable})):null`
+        return `(${variable}!=null:(${variable} is Map ? DateTime.parse(${variable}["iso"]): DateTime.parse(${variable})):null)`
     }
 }
 class DartInterface extends DartDeclaration{
