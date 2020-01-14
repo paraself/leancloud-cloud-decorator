@@ -2,7 +2,7 @@
 export class ErrorMsg<T extends {[key:string]:string} >{
 
     constructor(params:{
-        msg:(f:T)=>{[key:string]:string} | {en:string},
+        msg:(f:T)=>{[key:string]:string} & {en:string},
         params?:T,
         code?:number
     }){
@@ -11,7 +11,7 @@ export class ErrorMsg<T extends {[key:string]:string} >{
     }
     code?:number
     params?: T
-    msg:(f:T)=>{[key:string]:string} | {en:string}
+    msg:(f:T)=>{[key:string]:string} & {en:string}
 }
 
 

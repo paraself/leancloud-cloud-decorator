@@ -4,7 +4,7 @@ export declare class ErrorMsg<T extends {
     constructor(params: {
         msg: (f: T) => {
             [key: string]: string;
-        } | {
+        } & {
             en: string;
         };
         params?: T;
@@ -14,7 +14,7 @@ export declare class ErrorMsg<T extends {
     params?: T;
     msg: (f: T) => {
         [key: string]: string;
-    } | {
+    } & {
         en: string;
     };
 }
