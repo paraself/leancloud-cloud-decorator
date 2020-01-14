@@ -11,7 +11,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/dist/buildDartSdk.js",
+            "program": "${workspaceFolder}/dist/buildCloudID.js",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ]

@@ -3,7 +3,7 @@ export * from './base';
 export * from './cloudMetaData';
 export * from './cloudHandler';
 export * from './cloudStats';
-export * from './errorInfo';
+export * from './errorMsg';
 import { CloudInvoke, CloudInvokeBefore, Listener } from './leancloud-cloud-decorator';
 import { CloudFunctionError } from './cloudHandler';
 import AV from 'leanengine';

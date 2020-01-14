@@ -6,7 +6,7 @@ export * from './base'
 export * from './cloudMetaData'
 export * from './cloudHandler'
 export * from './cloudStats'
-export * from './errorInfo'
+export * from './errorMsg'
 
 import {SetCache,CloudInvoke,CloudInvokeBefore,SetInvokeCallback,Listener, SetListener} from './leancloud-cloud-decorator'
 import {SetCloudErrorCallback,SetCloudInvokeCallback,CloudFunctionError} from './cloudHandler'

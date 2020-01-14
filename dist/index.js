@@ -13,7 +13,7 @@ __export(require("./base"));
 __export(require("./cloudMetaData"));
 __export(require("./cloudHandler"));
 __export(require("./cloudStats"));
-__export(require("./errorInfo"));
+__export(require("./errorMsg"));
 const leancloud_cloud_decorator_1 = require("./leancloud-cloud-decorator");
 const cloudHandler_1 = require("./cloudHandler");
 const ioredis_1 = __importDefault(require("ioredis"));

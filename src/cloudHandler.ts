@@ -149,7 +149,15 @@ const UNKNOW_STATS = process.env.NODE_ENV ? 'unknown' : 'local'
 AV.Cloud.define = function(
   name: string,
   optionsOrHandler: AV.Cloud.DefineOptions | AV.Cloud.CloudFunction,
-  handler: AV.Cloud.CloudFunction | null = null
+  handler: AV.Cloud.CloudFunction | null = null,
+  cloudOptions?:{  /**
+    * 模块id,可以自动生成,也可以指定
+    */
+   moduleId?:number
+   /**
+    * 云函数id,可以自动生成,也可以指定
+    */
+   functionId?:number}
 ): any {
   //@ts-ignore
   var callback: AV.Cloud.CloudFunction = handler
@@ -263,6 +271,7 @@ AV.Cloud.define = function(
         platform: apiVersion.platform,
         api: apiVersion.apiVersion,
         version: apiVersion.clientVersion,
+        cloudOptions
       }
     
       {

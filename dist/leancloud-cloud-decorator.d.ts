@@ -155,6 +155,14 @@ interface CloudOptions<T extends CloudParams, A = any> {
      * 额外自定义配置信息
      */
     customOptions?: any;
+    /**
+     * 模块id,可以自动生成,也可以指定
+     */
+    moduleId?: number;
+    /**
+     * 云函数id,可以自动生成,也可以指定
+     */
+    functionId?: number;
 }
 export interface Listener<A> {
     /**

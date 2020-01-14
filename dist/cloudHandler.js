@@ -108,7 +108,7 @@ const UNKNOW_STATS = process.env.NODE_ENV ? 'unknown' : 'local';
  * @param {*} optionsOrHandler
  * @param {*} handler
  */
-leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = null) {
+leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = null, cloudOptions) {
     //@ts-ignore
     var callback = handler;
     //@ts-ignore
@@ -225,6 +225,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                 platform: apiVersion.platform,
                 api: apiVersion.apiVersion,
                 version: apiVersion.clientVersion,
+                cloudOptions
             };
             {
                 while (error.ikkMessage) {
