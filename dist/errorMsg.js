@@ -1,9 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-class ErrorMsg {
+class ErrorMsg extends Error {
     constructor(params) {
+        super(params.msg(params.params).en);
         this.params = params.params;
         this.msg = params.msg;
+        this.error = this.error;
     }
 }
 exports.ErrorMsg = ErrorMsg;

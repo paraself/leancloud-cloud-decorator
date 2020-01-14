@@ -1,6 +1,6 @@
 export declare class ErrorMsg<T extends {
     [key: string]: string | number | boolean;
-}> {
+}> extends Error {
     constructor(params: {
         msg: (f: T) => {
             [key: string]: string;
@@ -9,6 +9,7 @@ export declare class ErrorMsg<T extends {
         };
         params?: T;
         code?: number;
+        error?: Error;
     });
     code?: number;
     params?: T;
@@ -17,4 +18,5 @@ export declare class ErrorMsg<T extends {
     } & {
         en: string;
     };
+    error?: Error;
 }
