@@ -48,11 +48,11 @@ function createSdkFile(sourceFile) {
 }
 function GetClouds(dirroot) {
     let cloudClasses = [];
-    let dir = fs.readdirSync(dirroot + 'src/cloud/');
+    let dir = fs.readdirSync(path.join(dirroot, 'src/cloud/'));
     for (let d = 0; d < dir.length; ++d) {
         let file = dir[d];
         if (path.extname(file) == '.ts') {
-            let sourceFile = ts.createSourceFile(file, fs.readFileSync(dirroot + 'src/cloud/' + file).toString(), ts.ScriptTarget.ES2015, 
+            let sourceFile = ts.createSourceFile(file, fs.readFileSync(path.join(dirroot, 'src/cloud/', file)).toString(), ts.ScriptTarget.ES2015, 
             /*setParentNodes */ true);
             //   console.log(printNode(sourceFile))
             cloudClasses.push(...createSdkFile(sourceFile));

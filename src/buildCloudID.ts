@@ -49,13 +49,13 @@ export type CloudFunctionInfos = {name:string,functions:string[]}[]
 
 export function GetClouds(dirroot:string):CloudFunctionInfos {
     let cloudClasses:CloudClass[] = []
-    let dir = fs.readdirSync(dirroot + 'src/cloud/')
+    let dir = fs.readdirSync(path.join(dirroot , 'src/cloud/') )
     for(let d=0;d<dir.length;++d){
         let file = dir[d]
         if( path.extname(file)=='.ts'){
             let sourceFile = ts.createSourceFile(
                 file,
-                fs.readFileSync(dirroot + 'src/cloud/'+file).toString(),
+                fs.readFileSync(path.join(dirroot , 'src/cloud/',file)).toString(),
                 ts.ScriptTarget.ES2015,
                 /*setParentNodes */ true
             );

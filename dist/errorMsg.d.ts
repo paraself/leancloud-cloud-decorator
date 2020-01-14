@@ -1,5 +1,5 @@
 export declare class ErrorMsg<T extends {
-    [key: string]: string;
+    [key: string]: string | number | boolean;
 }> {
     constructor(params: {
         msg: (f: T) => {

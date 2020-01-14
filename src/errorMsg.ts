@@ -1,5 +1,5 @@
 
-export class ErrorMsg<T extends {[key:string]:string} >{
+export class ErrorMsg<T extends {[key:string]:string|number|boolean} >{
 
     constructor(params:{
         msg:(f:T)=>{[key:string]:string} & {en:string},
