@@ -781,20 +781,28 @@ export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>)
           let currentUser = request && request.currentUser
           let params2 = request && request.params
           return cloudFunction({ currentUser, params:params2, noUser:true,internal:true })
-        })
+        },
+        //@ts-ignore
+        params)
         //创建别名函数
         if (params && params.optionalName) {
-          AV.Cloud.define(params.optionalName,{internal:true}, cloudFunction)
+          AV.Cloud.define(params.optionalName,{internal:true}, cloudFunction,
+            //@ts-ignore
+            params)
         }
       } else {
         let options:AV.Cloud.DefineOptions = {}
         if(params && params.noUser && !params.fetchUser){
           options.fetchUser = false
         }
-        AV.Cloud.define(functionName,options, cloudFunction)
+        AV.Cloud.define(functionName,options, cloudFunction,
+          //@ts-ignore
+          params)
         //创建别名函数
         if (params && params.optionalName) {
-          AV.Cloud.define(params.optionalName,options, cloudFunction)
+          AV.Cloud.define(params.optionalName,options, cloudFunction,
+            //@ts-ignore
+            params)
         }
       }
       descriptor.value = (params: CloudParams | undefined) => {

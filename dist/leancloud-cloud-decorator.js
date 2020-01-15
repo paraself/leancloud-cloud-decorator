@@ -528,10 +528,14 @@ function Cloud(params) {
                     let currentUser = request && request.currentUser;
                     let params2 = request && request.params;
                     return cloudFunction({ currentUser, params: params2, noUser: true, internal: true });
-                });
+                }, 
+                //@ts-ignore
+                params);
                 //创建别名函数
                 if (params && params.optionalName) {
-                    leanengine_1.default.Cloud.define(params.optionalName, { internal: true }, cloudFunction);
+                    leanengine_1.default.Cloud.define(params.optionalName, { internal: true }, cloudFunction, 
+                    //@ts-ignore
+                    params);
                 }
             }
             else {
@@ -539,10 +543,14 @@ function Cloud(params) {
                 if (params && params.noUser && !params.fetchUser) {
                     options.fetchUser = false;
                 }
-                leanengine_1.default.Cloud.define(functionName, options, cloudFunction);
+                leanengine_1.default.Cloud.define(functionName, options, cloudFunction, 
+                //@ts-ignore
+                params);
                 //创建别名函数
                 if (params && params.optionalName) {
-                    leanengine_1.default.Cloud.define(params.optionalName, options, cloudFunction);
+                    leanengine_1.default.Cloud.define(params.optionalName, options, cloudFunction, 
+                    //@ts-ignore
+                    params);
                 }
             }
             descriptor.value = (params) => {
