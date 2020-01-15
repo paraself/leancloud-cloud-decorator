@@ -18,15 +18,15 @@ interface cloudInfo {
 /**
  * 云函数缓存调用统计加1
  */
-export declare function IncrCall(info: cloudInfo): Promise<any>;
+export declare function IncrCall(info: cloudInfo): Promise<[Error | null, any][]>;
 /**
  * 云函数缓存调用统计加1
  */
-export declare function IncrCache(info: cloudInfo): Promise<any>;
+export declare function IncrCache(info: cloudInfo): Promise<[Error | null, any][]>;
 /**
  * 云函数错误统计加1
  */
-export declare function IncrError(info: cloudInfo): Promise<any> | undefined;
+export declare function IncrError(info: cloudInfo): Promise<[Error | null, any][]> | undefined;
 export interface GetStatsReturn {
     /**
      * 云函数名称

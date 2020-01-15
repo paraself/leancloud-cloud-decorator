@@ -115,6 +115,7 @@ function BuildCloudId(dirroot) {
     let cloudFunctionIDFile = path.join(dirroot, 'cloudFunctionID.json');
     let result = CombinID(GetClouds(dirroot), fs.existsSync(cloudFunctionIDFile) && JSON.parse(fs.readFileSync(cloudFunctionIDFile, 'utf8')) || {});
     fs.writeFileSync(cloudFunctionIDFile, JSON.stringify(result, null, 2));
+    console.log('BuildCloudId finish ==>' + cloudFunctionIDFile);
 }
 exports.BuildCloudId = BuildCloudId;
 // BuildCloudId('/Users/zhilongchen/home/muyue/pteai-node-ts2/')

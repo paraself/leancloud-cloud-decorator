@@ -128,6 +128,7 @@ async function BuildErrorMsgId(dirroot) {
     let result = CombinMsgConfig(GetProjectErrorMsg(dirroot), fs_1.default.existsSync(errorMsgIDFile) && JSON.parse(fs_1.default.readFileSync(errorMsgIDFile, 'utf8')) || {});
     await translateAll(result);
     fs_1.default.writeFileSync(errorMsgIDFile, JSON.stringify(result, null, 2));
+    console.log('BuildErrorMsgId finish==>' + errorMsgIDFile);
 }
 function CombinMsgConfig(msgs, config) {
     let oldEnToId = {};

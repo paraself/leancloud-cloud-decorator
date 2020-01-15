@@ -136,6 +136,7 @@ async function BuildErrorMsgId(dirroot:string) {
     let result = CombinMsgConfig( GetProjectErrorMsg(dirroot), fs.existsSync(errorMsgIDFile) && JSON.parse( fs.readFileSync(errorMsgIDFile,'utf8')) || {} )
     await translateAll(result)
     fs.writeFileSync(errorMsgIDFile,JSON.stringify(result,null,2))
+    console.log('BuildErrorMsgId finish==>'+errorMsgIDFile)
 }
 
 export type MsgIdConfig = {[key:string]:{[key in EnumLocale]?:string}&{en:string}}

@@ -391,7 +391,7 @@ export async function DeleteCloudCache(params:DeleteCacheParams){
       let cacheKey = `${prefix}:cloud:${functionName}:` + getCacheKey(cacheKeyConfig)
       pipeline.del(cacheKey)
     }
-    let result : [null,number][] = await pipeline.exec()
+    let result : [null|Error,number][] = await pipeline.exec()
     return {
       'day':result[0][1], 
       'hour':result[1][1], 
@@ -405,7 +405,7 @@ export async function DeleteCloudCache(params:DeleteCacheParams){
     keys.forEach(e=>{
       pipeline.del(e)
     })
-    let result : [null,number][] = await  pipeline.exec()
+    let result : [null|Error,number][] = await  pipeline.exec()
     let out = {}
     keys.forEach((e,i)=>{
       out[e] = result[i][1]
