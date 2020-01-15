@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 "use strict";
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
@@ -10,6 +11,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs = __importStar(require("fs"));
 const ts = __importStar(require("typescript"));
 const path = __importStar(require("path"));
+const buildIDCommon_1 = require("./buildIDCommon");
 class CloudClass {
     constructor(params) {
         this.classNode = params.classNode;
@@ -61,14 +63,11 @@ function GetClouds(dirroot) {
     return cloudClasses.map(e => ({ name: e.className, functions: e.cloudFunctions() })).filter(e => e.functions.length);
 }
 exports.GetClouds = GetClouds;
-function GetCloudInfo(config) {
-    return Object.keys(config).map(e => Object.assign({ id: parseInt(e) }, Object.assign({}, config[e], { functions: Object.keys(config[e].functions).map(f => ({ id: parseInt(f), name: config[e].functions[f] })) })));
-}
-exports.GetCloudInfo = GetCloudInfo;
+// console.log(JSON.stringify(GetClouds('/Users/zhilongchen/home/muyue/pteai-node-ts2/'), null, 2))
 function CombinID(clouds, config) {
-    let cloudConfigs = GetCloudInfo(config);
+    let cloudConfigs = buildIDCommon_1.GetCloudInfo(config);
     // 获取模块起始id
-    let moduleId = 10;
+    let moduleId = 20;
     cloudConfigs.forEach(e => {
         let id = e.id;
         if (id >= moduleId) {
@@ -114,9 +113,10 @@ function CombinID(clouds, config) {
 exports.CombinID = CombinID;
 function BuildCloudId(dirroot) {
     let cloudFunctionIDFile = path.join(dirroot, 'cloudFunctionID.json');
-    let result = CombinID(GetClouds(dirroot), fs.existsSync(cloudFunctionIDFile) && JSON.parse(fs.readFileSync(cloudFunctionIDFile, 'utf8')));
+    let result = CombinID(GetClouds(dirroot), fs.existsSync(cloudFunctionIDFile) && JSON.parse(fs.readFileSync(cloudFunctionIDFile, 'utf8')) || {});
     fs.writeFileSync(cloudFunctionIDFile, JSON.stringify(result, null, 2));
 }
 exports.BuildCloudId = BuildCloudId;
 // BuildCloudId('/Users/zhilongchen/home/muyue/pteai-node-ts2/')
+BuildCloudId('');
 //# sourceMappingURL=buildCloudID.js.map

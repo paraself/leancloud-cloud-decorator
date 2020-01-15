@@ -6,15 +6,20 @@ import {isRole,isRoles} from './base'
 import { IncrCache } from './cloudStats'
 import {SDKVersion} from './cloudHandler'
 import semver from 'semver'
+import fs from 'fs'
 
 import { Platform,getCacheKey } from './base'
 export { Platform,getCacheKey }
 
 import * as redisSetting  from './redis'
 import {SetCache} from './redis'
+import {CloudIdConfig,CloudIdInfo,GetCloudInfo,GetCloudInfoMap,CloudIdInfoMap} from './buildIDCommon'
 
 export {SetCache}
 import Redis from 'ioredis'
+
+const cloudFunctionIDFile = 'cloudFunctionID.json'
+const cloudIdInfoMap : CloudIdInfoMap = (fs.existsSync(cloudFunctionIDFile) && GetCloudInfoMap(JSON.parse( fs.readFileSync(cloudFunctionIDFile,'utf8'))))||{}
 
 let redis = redisSetting.redis
 let prefix = redisSetting.cachePrefix
@@ -703,6 +708,10 @@ export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>)
     let functionName =
       (target.name || target.constructor.name) + '.' + propertyKey
     // console.log(target.constructor.name)
+    if(params){
+      params.moduleId = params?.moduleId || cloudIdInfoMap[(target.name || target.constructor.name)]?.id
+      params.functionId = cloudIdInfoMap[(target.name || target.constructor.name)]?.functions?.[propertyKey]?.id
+    }
     let fitEnvironment = true
     //判断是否符合运行环境
     if (params && params.environment) {

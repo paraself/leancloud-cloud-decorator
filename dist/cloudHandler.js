@@ -16,6 +16,11 @@ const base_1 = require("./base");
 const cloudStats_1 = require("./cloudStats");
 const lodash_1 = __importDefault(require("lodash"));
 const redis_1 = require("./redis");
+const buildIDCommon_1 = require("./buildIDCommon");
+const fs = __importStar(require("fs"));
+const errorMsg_1 = require("./errorMsg");
+const errorMsgFile = 'errorMsg.json';
+const errorMsgInfoMap = (fs.existsSync(errorMsgFile) && buildIDCommon_1.GetMsgInfoMap(JSON.parse(fs.readFileSync(errorMsgFile, 'utf8')))) || {};
 const _define = leanengine_1.default.Cloud.define;
 const _beforeDelete = leanengine_1.default.Cloud.beforeDelete;
 const _beforeSave = leanengine_1.default.Cloud.beforeSave;
@@ -119,6 +124,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
      * @param {CloudFunction} request
      */
     var CloudHandler = function (request) {
+        var _a, _b;
         let ip;
         try {
             // var userAgent =
@@ -162,7 +168,9 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                     return e;
                 })
                     .catch(info => {
+                    var _a, _b;
                     lock.clearLock();
+                    let msg = (info instanceof errorMsg_1.ErrorMsg) && errorMsgInfoMap[info.getStringTemplate().en];
                     // let ikkError
                     let params = request.params || {};
                     let api = params._api;
@@ -177,6 +185,15 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                         api: (api && api.apiVersion) || params.api,
                         //@ts-ignore
                         version: (api && api.clientVersion) || params.version,
+                        errorMsg: {
+                            code: {
+                                moduleId: (_a = cloudOptions) === null || _a === void 0 ? void 0 : _a.moduleId,
+                                functionId: (_b = cloudOptions) === null || _b === void 0 ? void 0 : _b.functionId,
+                                msgId: msg && msg.id
+                            },
+                            messageTemplate: msg,
+                            params: (info instanceof errorMsg_1.ErrorMsg) && info.params
+                        }
                     };
                     // if (info instanceof IkkError) {
                     //   ikkError = info
@@ -217,6 +234,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
             lock.clearLock();
             // console.error(error)
             // let ikkError
+            let msg = (error instanceof errorMsg_1.ErrorMsg) && errorMsgInfoMap[error.getStringTemplate().en];
             var errorInfo = {
                 user: request.currentUser,
                 function: name,
@@ -225,7 +243,15 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                 platform: apiVersion.platform,
                 api: apiVersion.apiVersion,
                 version: apiVersion.clientVersion,
-                cloudOptions
+                errorMsg: {
+                    code: {
+                        moduleId: (_a = cloudOptions) === null || _a === void 0 ? void 0 : _a.moduleId,
+                        functionId: (_b = cloudOptions) === null || _b === void 0 ? void 0 : _b.functionId,
+                        msgId: msg && msg.id
+                    },
+                    messageTemplate: msg,
+                    params: (error instanceof errorMsg_1.ErrorMsg) && error.params
+                }
             };
             {
                 while (error.ikkMessage) {

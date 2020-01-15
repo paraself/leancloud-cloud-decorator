@@ -17,12 +17,16 @@ const moment_1 = __importDefault(require("moment"));
 const base_1 = require("./base");
 const cloudStats_1 = require("./cloudStats");
 const semver_1 = __importDefault(require("semver"));
+const fs_1 = __importDefault(require("fs"));
 const base_2 = require("./base");
 exports.getCacheKey = base_2.getCacheKey;
 const redisSetting = __importStar(require("./redis"));
 const redis_1 = require("./redis");
 exports.SetCache = redis_1.SetCache;
+const buildIDCommon_1 = require("./buildIDCommon");
 const ioredis_1 = __importDefault(require("ioredis"));
+const cloudFunctionIDFile = 'cloudFunctionID.json';
+const cloudIdInfoMap = (fs_1.default.existsSync(cloudFunctionIDFile) && buildIDCommon_1.GetCloudInfoMap(JSON.parse(fs_1.default.readFileSync(cloudFunctionIDFile, 'utf8')))) || {};
 let redis = redisSetting.redis;
 let prefix = redisSetting.cachePrefix;
 redisSetting.AddCacheUpdateCallback((params) => {
@@ -447,9 +451,14 @@ function CreateCloudCacheFunction(info) {
  */
 function Cloud(params) {
     return function (target, propertyKey, descriptor) {
+        var _a, _b, _c, _d, _e;
         const handle = descriptor.value;
         let functionName = (target.name || target.constructor.name) + '.' + propertyKey;
         // console.log(target.constructor.name)
+        if (params) {
+            params.moduleId = ((_a = params) === null || _a === void 0 ? void 0 : _a.moduleId) || ((_b = cloudIdInfoMap[(target.name || target.constructor.name)]) === null || _b === void 0 ? void 0 : _b.id);
+            params.functionId = (_e = (_d = (_c = cloudIdInfoMap[(target.name || target.constructor.name)]) === null || _c === void 0 ? void 0 : _c.functions) === null || _d === void 0 ? void 0 : _d[propertyKey]) === null || _e === void 0 ? void 0 : _e.id;
+        }
         let fitEnvironment = true;
         //判断是否符合运行环境
         if (params && params.environment) {

@@ -1,4 +1,4 @@
-export declare class ErrorMsg<T extends {
+export declare class ErrorMsg<T = {
     [key: string]: string | number | boolean;
 }> extends Error {
     constructor(params: {
@@ -19,4 +19,9 @@ export declare class ErrorMsg<T extends {
         en: string;
     };
     error?: Error;
+    getStringTemplate(): {
+        [key: string]: string;
+    } & {
+        en: string;
+    };
 }

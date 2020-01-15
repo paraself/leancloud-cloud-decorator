@@ -1,6 +1,9 @@
+#!/usr/bin/env node
+
 import * as fs from "fs";
 import * as ts from "typescript";
 import * as path from 'path'
+import {CloudIdConfig,GetCloudInfo} from './buildIDCommon'
 
 class CloudClass {
     classNode:ts.ClassDeclaration
@@ -69,27 +72,12 @@ export function GetClouds(dirroot:string):CloudFunctionInfos {
 
 // console.log(JSON.stringify(GetClouds('/Users/zhilongchen/home/muyue/pteai-node-ts2/'), null, 2))
 
-export type CloudIdConfig = {[key:string]:{name:string,functions:{[key:string]:string}}}
 
-export type CloudIdInfo = ({
-    id: number;
-    name: string;
-    functions: {
-        id: number;
-        name: string;
-    }[];
-})[]
-
-export function GetCloudInfo(config:CloudIdConfig):CloudIdInfo{
-    return Object.keys(config).map(e=>Object.assign({id:parseInt(e)},
-    Object.assign({},config[e],{functions: Object.keys(config[e].functions).map(f=>({id:parseInt(f),name:config[e].functions[f]})) }
-    )))
-}
 
 export function CombinID(clouds:CloudFunctionInfos,config:CloudIdConfig ):CloudIdConfig {
     let cloudConfigs = GetCloudInfo(config)
     // 获取模块起始id
-    let moduleId = 10
+    let moduleId = 20
     cloudConfigs.forEach(e=>{
         let id = e.id
         if(id>=moduleId){
@@ -140,7 +128,8 @@ export function CombinID(clouds:CloudFunctionInfos,config:CloudIdConfig ):CloudI
 
 export function BuildCloudId(dirroot:string) {
     let cloudFunctionIDFile = path.join(dirroot,'cloudFunctionID.json')
-    let result = CombinID( GetClouds(dirroot), fs.existsSync(cloudFunctionIDFile) && JSON.parse( fs.readFileSync(cloudFunctionIDFile,'utf8')) )
+    let result = CombinID( GetClouds(dirroot), fs.existsSync(cloudFunctionIDFile) && JSON.parse( fs.readFileSync(cloudFunctionIDFile,'utf8')) || {} )
     fs.writeFileSync(cloudFunctionIDFile,JSON.stringify(result,null,2))
 }
 // BuildCloudId('/Users/zhilongchen/home/muyue/pteai-node-ts2/')
+BuildCloudId('')

@@ -5,6 +5,12 @@ import {isRole,isRoles,getCacheKey} from './base'
 import { IncrCall, IncrError, GetStats } from './cloudStats'
 import _ from 'lodash'
 import { Lock } from './redis'
+import {MsgIdInfoMap,GetMsgInfoMap} from './buildIDCommon'
+import * as fs from 'fs'
+import {ErrorMsg} from './errorMsg'
+
+const errorMsgFile = 'errorMsg.json'
+const errorMsgInfoMap:MsgIdInfoMap = (fs.existsSync(errorMsgFile) && GetMsgInfoMap(JSON.parse( fs.readFileSync(errorMsgFile,'utf8'))))||{}
 
 export interface SDKVersion{
   platform: string ,
@@ -212,6 +218,7 @@ AV.Cloud.define = function(
           })
           .catch(info => {
             lock.clearLock()
+            let msg = (info instanceof ErrorMsg)&&errorMsgInfoMap[info.getStringTemplate().en]
             // let ikkError
             let params = request.params || {}
             let api = params._api
@@ -226,6 +233,15 @@ AV.Cloud.define = function(
               api: (api && api.apiVersion)||params.api,
               //@ts-ignore
               version: (api && api.clientVersion)||params.version,
+              errorMsg:{
+                code:{
+                  moduleId:cloudOptions?.moduleId,
+                  functionId:cloudOptions?.functionId,
+                  msgId: msg&&msg.id
+                },
+                messageTemplate:msg,
+                params:(info instanceof ErrorMsg)&&info.params
+              }
             }
             // if (info instanceof IkkError) {
             //   ikkError = info
@@ -263,6 +279,7 @@ AV.Cloud.define = function(
       lock.clearLock()
       // console.error(error)
       // let ikkError
+      let msg = (error instanceof ErrorMsg)&&errorMsgInfoMap[error.getStringTemplate().en]
       var errorInfo: any = {
         user: request.currentUser,
         function: name,
@@ -271,7 +288,15 @@ AV.Cloud.define = function(
         platform: apiVersion.platform,
         api: apiVersion.apiVersion,
         version: apiVersion.clientVersion,
-        cloudOptions
+        errorMsg:{
+          code:{
+            moduleId:cloudOptions?.moduleId,
+            functionId:cloudOptions?.functionId,
+            msgId: msg&&msg.id
+          },
+          messageTemplate:msg,
+          params:(error instanceof ErrorMsg)&&error.params
+        }
       }
     
       {

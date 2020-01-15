@@ -1,5 +1,5 @@
 
-export class ErrorMsg<T extends {[key:string]:string|number|boolean} > extends Error{
+export class ErrorMsg<T = {[key:string]:string|number|boolean} > extends Error{
 
     constructor(params:{
         msg:(f:T)=>{[key:string]:string} & {en:string},
@@ -16,6 +16,12 @@ export class ErrorMsg<T extends {[key:string]:string|number|boolean} > extends E
     params?: T
     msg:(f:T)=>{[key:string]:string} & {en:string}
     error?:Error
+
+    getStringTemplate(){
+        let params = Object.assign({},this.params)
+        Object.keys(params).forEach(e=>params[e] = `{${e}}`)
+        return this.msg(params)
+    }
 }
 
 

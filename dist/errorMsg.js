@@ -7,6 +7,11 @@ class ErrorMsg extends Error {
         this.msg = params.msg;
         this.error = this.error;
     }
+    getStringTemplate() {
+        let params = Object.assign({}, this.params);
+        Object.keys(params).forEach(e => params[e] = `{${e}}`);
+        return this.msg(params);
+    }
 }
 exports.ErrorMsg = ErrorMsg;
 new ErrorMsg({
