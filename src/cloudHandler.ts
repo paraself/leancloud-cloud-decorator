@@ -233,7 +233,7 @@ AV.Cloud.define = function(
               api: (api && api.apiVersion)||params.api,
               //@ts-ignore
               version: (api && api.clientVersion)||params.version,
-              errorMsg:{
+              errorMsg:msg&&{
                 code:{
                   moduleId:cloudOptions?.moduleId,
                   functionId:cloudOptions?.functionId,
@@ -288,7 +288,7 @@ AV.Cloud.define = function(
         platform: apiVersion.platform,
         api: apiVersion.apiVersion,
         version: apiVersion.clientVersion,
-        errorMsg:{
+        errorMsg: msg&&{
           code:{
             moduleId:cloudOptions?.moduleId,
             functionId:cloudOptions?.functionId,

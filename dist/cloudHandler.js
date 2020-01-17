@@ -185,7 +185,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                         api: (api && api.apiVersion) || params.api,
                         //@ts-ignore
                         version: (api && api.clientVersion) || params.version,
-                        errorMsg: {
+                        errorMsg: msg && {
                             code: {
                                 moduleId: (_a = cloudOptions) === null || _a === void 0 ? void 0 : _a.moduleId,
                                 functionId: (_b = cloudOptions) === null || _b === void 0 ? void 0 : _b.functionId,
@@ -243,7 +243,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                 platform: apiVersion.platform,
                 api: apiVersion.apiVersion,
                 version: apiVersion.clientVersion,
-                errorMsg: {
+                errorMsg: msg && {
                     code: {
                         moduleId: (_a = cloudOptions) === null || _a === void 0 ? void 0 : _a.moduleId,
                         functionId: (_b = cloudOptions) === null || _b === void 0 ? void 0 : _b.functionId,
