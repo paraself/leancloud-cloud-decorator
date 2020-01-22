@@ -178,7 +178,9 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                         function: name,
                         params: params,
                         ip,
-                        apiVersion,
+                        platform: apiVersion.platform,
+                        api: apiVersion.apiVersion,
+                        version: apiVersion.clientVersion,
                         errorMsg: msg && {
                             code: {
                                 moduleId: (_a = cloudOptions) === null || _a === void 0 ? void 0 : _a.moduleId,
