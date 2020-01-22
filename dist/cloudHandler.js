@@ -85,7 +85,7 @@ async function CloudHookHandler(request, handler, className, actionName) {
             errorInfo.errorInfo = error.ikkMessage;
             error = error.originalError;
         }
-        errorInfo = Object.assign(errorInfo, error);
+        // errorInfo = Object.assign(errorInfo, error)
         errorInfo.error = error;
         // ikkError = new IkkError(errorInfo)
         // }
