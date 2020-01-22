@@ -203,7 +203,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                                 errorInfo.errorInfo = info.ikkMessage;
                                 info = info.originalError;
                             }
-                            errorInfo = Object.assign(errorInfo, info);
+                            // errorInfo = Object.assign(errorInfo, info)
                             if (info.message && info.stack) {
                                 errorInfo.error = info;
                             }
@@ -247,15 +247,15 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                     params: (error instanceof errorMsg_1.ErrorMsg) && error.params
                 }
             };
-            // {
-            //   while (error.ikkMessage) {
-            //     errorInfo.errorInfo = error.ikkMessage
-            //     error = error.originalError
-            //   }
-            //   errorInfo = Object.assign(errorInfo, error)
-            //   errorInfo.error = error
-            //   // ikkError = new IkkError(errorInfo)
-            // }
+            {
+                while (error.ikkMessage) {
+                    errorInfo.errorInfo = error.ikkMessage;
+                    error = error.originalError;
+                }
+                // errorInfo = Object.assign(errorInfo, error)
+                errorInfo.error = error;
+                // ikkError = new IkkError(errorInfo)
+            }
             // console.error(ikkError)
             // ikkError.send()
             return Promise.reject(cloudErrorCallback(errorInfo));
