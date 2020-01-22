@@ -190,7 +190,7 @@ AV.Cloud.define = function(
 
     var lock = new Lock(name + ':')
     let params = request.params || {}
-    let apiVersion = params._api
+    let apiVersion = params._api!
     apiVersion = {
       platform: (apiVersion&&apiVersion.platform)||UNKNOW_STATS,
       apiVersion: (apiVersion&&(apiVersion.apiVersion||apiVersion['api']))||UNKNOW_STATS,
@@ -220,19 +220,13 @@ AV.Cloud.define = function(
             lock.clearLock()
             let msg = (info instanceof ErrorMsg)&&errorMsgInfoMap[info.getStringTemplate().en]
             // let ikkError
-            let params = request.params || {}
-            let api = params._api
+            // let api = params._api
             var errorInfo: any = {
               user: request.currentUser,
               function: name,
-              params: request.params,
+              params: params,
               ip,
-              //@ts-ignore
-              platform: (api && api.platform)|| params.platform,
-              //@ts-ignore
-              api: (api && api.apiVersion)||params.api,
-              //@ts-ignore
-              version: (api && api.clientVersion)||params.version,
+              apiVersion,
               errorMsg:msg&&{
                 code:{
                   moduleId:cloudOptions?.moduleId,
@@ -283,7 +277,7 @@ AV.Cloud.define = function(
       var errorInfo: any = {
         user: request.currentUser,
         function: name,
-        params: request.params,
+        params: params,
         ip,
         platform: apiVersion.platform,
         api: apiVersion.apiVersion,
@@ -299,15 +293,15 @@ AV.Cloud.define = function(
         }
       }
     
-      {
-        while (error.ikkMessage) {
-          errorInfo.errorInfo = error.ikkMessage
-          error = error.originalError
-        }
-        errorInfo = Object.assign(errorInfo, error)
-        errorInfo.error = error
-        // ikkError = new IkkError(errorInfo)
-      }
+      // {
+      //   while (error.ikkMessage) {
+      //     errorInfo.errorInfo = error.ikkMessage
+      //     error = error.originalError
+      //   }
+      //   errorInfo = Object.assign(errorInfo, error)
+      //   errorInfo.error = error
+      //   // ikkError = new IkkError(errorInfo)
+      // }
       // console.error(ikkError)
       // ikkError.send()
       return Promise.reject(cloudErrorCallback(errorInfo))

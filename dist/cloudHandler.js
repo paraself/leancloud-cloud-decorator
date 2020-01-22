@@ -172,19 +172,13 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                     lock.clearLock();
                     let msg = (info instanceof errorMsg_1.ErrorMsg) && errorMsgInfoMap[info.getStringTemplate().en];
                     // let ikkError
-                    let params = request.params || {};
-                    let api = params._api;
+                    // let api = params._api
                     var errorInfo = {
                         user: request.currentUser,
                         function: name,
-                        params: request.params,
+                        params: params,
                         ip,
-                        //@ts-ignore
-                        platform: (api && api.platform) || params.platform,
-                        //@ts-ignore
-                        api: (api && api.apiVersion) || params.api,
-                        //@ts-ignore
-                        version: (api && api.clientVersion) || params.version,
+                        apiVersion,
                         errorMsg: msg && {
                             code: {
                                 moduleId: (_a = cloudOptions) === null || _a === void 0 ? void 0 : _a.moduleId,
@@ -238,7 +232,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
             var errorInfo = {
                 user: request.currentUser,
                 function: name,
-                params: request.params,
+                params: params,
                 ip,
                 platform: apiVersion.platform,
                 api: apiVersion.apiVersion,
@@ -253,15 +247,15 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                     params: (error instanceof errorMsg_1.ErrorMsg) && error.params
                 }
             };
-            {
-                while (error.ikkMessage) {
-                    errorInfo.errorInfo = error.ikkMessage;
-                    error = error.originalError;
-                }
-                errorInfo = Object.assign(errorInfo, error);
-                errorInfo.error = error;
-                // ikkError = new IkkError(errorInfo)
-            }
+            // {
+            //   while (error.ikkMessage) {
+            //     errorInfo.errorInfo = error.ikkMessage
+            //     error = error.originalError
+            //   }
+            //   errorInfo = Object.assign(errorInfo, error)
+            //   errorInfo.error = error
+            //   // ikkError = new IkkError(errorInfo)
+            // }
             // console.error(ikkError)
             // ikkError.send()
             return Promise.reject(cloudErrorCallback(errorInfo));
