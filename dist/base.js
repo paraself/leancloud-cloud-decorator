@@ -123,7 +123,12 @@ function promiseExec(command) {
             if (stdout)
                 console.log(stdout);
             // resolve()
-        }).on('close', (code, signal) => resolve(code));
+        }).on('close', (code, signal) => { if (code === 0) {
+            resolve();
+        }
+        else {
+            reject();
+        } });
     });
 }
 exports.promiseExec = promiseExec;

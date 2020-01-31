@@ -2,6 +2,7 @@ import * as AV from 'leanengine'
 import _ from 'lodash'
 import Config from './config.json'
 import { exec,spawn} from 'child_process'
+
 import { string } from 'joi';
 
 const platforms :{[key:string]:
@@ -135,6 +136,6 @@ export function promiseExec(command:string){
           }
           if(stdout) console.log(stdout)
           // resolve()
-      }).on('close', (code, signal) => resolve(code))
+      }).on('close', (code, signal) =>  { if (code === 0) { resolve() } else { reject() } })
   })
 }
