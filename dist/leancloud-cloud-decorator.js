@@ -45,7 +45,7 @@ function SetListener(p) {
     listener = p || {};
 }
 exports.SetListener = SetListener;
-const NODE_ENV = process.env.NODE_ENV;
+const NODE_ENV = process.env.NODE_ENV || 'dev';
 // // Schema 测试
 // interface IKeyChoices {
 //   [key: string]: string[]
@@ -356,7 +356,7 @@ function CreateCloudCacheFunction(info) {
             cacheKeyConfig['currentUser'] = request.currentUser;
         }
         cacheKeyConfig['timeUnit'] = cache.timeUnit;
-        let cacheKey = `${redisSetting.cachePrefix}:cloud:${functionName}:` + base_2.getCacheKey(cacheKeyConfig);
+        let cacheKey = `${redisSetting.cachePrefix}:cloud:${NODE_ENV}:${functionName}:` + base_2.getCacheKey(cacheKeyConfig);
         // console.log(functionName + ' CloudImplement Cache')
         //尝试获取缓存
         let redis2 = _redis || redis;

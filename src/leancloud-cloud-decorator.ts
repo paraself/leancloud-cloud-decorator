@@ -231,7 +231,7 @@ export function SetListener(p:Listener<any>){
   listener = p || {}
 }
 
-const NODE_ENV = process.env.NODE_ENV as string
+const NODE_ENV = process.env.NODE_ENV as string || 'dev'
 
 // // Schema 测试
 // interface IKeyChoices {
@@ -608,7 +608,7 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
       cacheKeyConfig['currentUser'] = request.currentUser
     }
     cacheKeyConfig['timeUnit'] = cache.timeUnit
-    let cacheKey = `${redisSetting.cachePrefix}:cloud:${functionName}:` + getCacheKey(cacheKeyConfig)
+    let cacheKey = `${redisSetting.cachePrefix}:cloud:${NODE_ENV}:${functionName}:` + getCacheKey(cacheKeyConfig)
 
     // console.log(functionName + ' CloudImplement Cache')
     //尝试获取缓存
