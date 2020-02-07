@@ -369,6 +369,10 @@ AV.Cloud.define('Cloud.GetStats', async request => {
 interface DeleteCacheParams {
   userId?:string
   module: string,
+  /**
+   * 缓存的运行环境, 即生成缓存的进程中  process.env.NODE_ENV  环境变量的值, NODE_ENV为空时 为 'dev' 环境
+   */
+  env:string,
   function:string,
   params?: {[key:string]:any}
 }
@@ -384,7 +388,7 @@ export async function DeleteCloudCache(params:DeleteCacheParams){
     let pipeline = redis.pipeline()
     for (let i = 0; i < timeUnitList.length; ++i){
       cacheKeyConfig['timeUnit'] = timeUnitList[i]
-      let cacheKey = `${prefix}:cloud:${functionName}:` + getCacheKey(cacheKeyConfig)
+      let cacheKey = `${prefix}:cloud:${params.env}:${functionName}:` + getCacheKey(cacheKeyConfig)
       pipeline.del(cacheKey)
     }
     let result : [null|Error,number][] = await pipeline.exec()

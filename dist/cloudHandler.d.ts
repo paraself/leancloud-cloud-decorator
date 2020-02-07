@@ -45,6 +45,10 @@ export declare function SetCloudErrorCallback(callback: (error: CloudFunctionErr
 interface DeleteCacheParams {
     userId?: string;
     module: string;
+    /**
+     * 缓存的运行环境, 即生成缓存的进程中  process.env.NODE_ENV  环境变量的值, NODE_ENV为空时 为 'dev' 环境
+     */
+    env: string;
     function: string;
     params?: {
         [key: string]: any;

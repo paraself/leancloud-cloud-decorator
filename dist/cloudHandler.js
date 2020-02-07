@@ -329,7 +329,7 @@ async function DeleteCloudCache(params) {
         let pipeline = redis.pipeline();
         for (let i = 0; i < timeUnitList.length; ++i) {
             cacheKeyConfig['timeUnit'] = timeUnitList[i];
-            let cacheKey = `${prefix}:cloud:${functionName}:` + base_1.getCacheKey(cacheKeyConfig);
+            let cacheKey = `${prefix}:cloud:${params.env}:${functionName}:` + base_1.getCacheKey(cacheKeyConfig);
             pipeline.del(cacheKey);
         }
         let result = await pipeline.exec();
