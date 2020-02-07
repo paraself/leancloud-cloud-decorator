@@ -371,14 +371,16 @@ interface DeleteCacheParams {
   module: string,
   /**
    * 缓存的运行环境, 即生成缓存的进程中  process.env.NODE_ENV  环境变量的值, NODE_ENV为空时 为 'dev' 环境
+   * 默认为 process.env.NODE_ENV ,只清除当前环境所生成的缓存
    */
-  env:string,
+  env?:string|string[],
   function:string,
   params?: {[key:string]:any}
 }
 
 export async function DeleteCloudCache(params:DeleteCacheParams){
   let cacheKeyConfig = params.params
+  let env = params.env || (  process.env.NODE_ENV as string || 'dev' )
   if (cacheKeyConfig && params.userId) {
     cacheKeyConfig['currentUser'] = params.userId
   }
@@ -388,8 +390,15 @@ export async function DeleteCloudCache(params:DeleteCacheParams){
     let pipeline = redis.pipeline()
     for (let i = 0; i < timeUnitList.length; ++i){
       cacheKeyConfig['timeUnit'] = timeUnitList[i]
-      let cacheKey = `${prefix}:cloud:${params.env}:${functionName}:` + getCacheKey(cacheKeyConfig)
-      pipeline.del(cacheKey)
+      if(Array.isArray(env)){
+        env.forEach(e=>{
+          let cacheKey = `${prefix}:cloud:${e}:${functionName}:` + getCacheKey(cacheKeyConfig!)
+          pipeline.del(cacheKey)
+        })
+      }else{
+        let cacheKey = `${prefix}:cloud:${env}:${functionName}:` + getCacheKey(cacheKeyConfig)
+        pipeline.del(cacheKey)
+      }
     }
     let result : [null|Error,number][] = await pipeline.exec()
     return {
@@ -400,8 +409,15 @@ export async function DeleteCloudCache(params:DeleteCacheParams){
       'month':result[4][1]
     }
   }else{
-    var keys = await redis.keys(`${prefix}:cloud:${functionName}:*`)
     let pipeline = redis.pipeline()
+    let keys:string[] = []
+    if(Array.isArray(env)){
+      for(let e = 0;e<env.length;++e){
+        keys.push( ...await redis.keys(`${prefix}:cloud:${env[e]}:${functionName}:*`) )
+      }
+    }else{
+      keys.push( ...await redis.keys(`${prefix}:cloud:${env}:${functionName}:*`) )
+    }
     keys.forEach(e=>{
       pipeline.del(e)
     })

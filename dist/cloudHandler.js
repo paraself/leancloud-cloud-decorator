@@ -320,6 +320,7 @@ leanengine_1.default.Cloud.define('Cloud.GetStats', async (request) => {
 });
 async function DeleteCloudCache(params) {
     let cacheKeyConfig = params.params;
+    let env = params.env || (process.env.NODE_ENV || 'dev');
     if (cacheKeyConfig && params.userId) {
         cacheKeyConfig['currentUser'] = params.userId;
     }
@@ -329,8 +330,16 @@ async function DeleteCloudCache(params) {
         let pipeline = redis.pipeline();
         for (let i = 0; i < timeUnitList.length; ++i) {
             cacheKeyConfig['timeUnit'] = timeUnitList[i];
-            let cacheKey = `${prefix}:cloud:${params.env}:${functionName}:` + base_1.getCacheKey(cacheKeyConfig);
-            pipeline.del(cacheKey);
+            if (Array.isArray(env)) {
+                env.forEach(e => {
+                    let cacheKey = `${prefix}:cloud:${e}:${functionName}:` + base_1.getCacheKey(cacheKeyConfig);
+                    pipeline.del(cacheKey);
+                });
+            }
+            else {
+                let cacheKey = `${prefix}:cloud:${env}:${functionName}:` + base_1.getCacheKey(cacheKeyConfig);
+                pipeline.del(cacheKey);
+            }
         }
         let result = await pipeline.exec();
         return {
@@ -342,8 +351,16 @@ async function DeleteCloudCache(params) {
         };
     }
     else {
-        var keys = await redis.keys(`${prefix}:cloud:${functionName}:*`);
         let pipeline = redis.pipeline();
+        let keys = [];
+        if (Array.isArray(env)) {
+            for (let e = 0; e < env.length; ++e) {
+                keys.push(...await redis.keys(`${prefix}:cloud:${env[e]}:${functionName}:*`));
+            }
+        }
+        else {
+            keys.push(...await redis.keys(`${prefix}:cloud:${env}:${functionName}:*`));
+        }
         keys.forEach(e => {
             pipeline.del(e);
         });

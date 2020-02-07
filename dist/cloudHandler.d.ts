@@ -47,8 +47,9 @@ interface DeleteCacheParams {
     module: string;
     /**
      * 缓存的运行环境, 即生成缓存的进程中  process.env.NODE_ENV  环境变量的值, NODE_ENV为空时 为 'dev' 环境
+     * 默认为 process.env.NODE_ENV ,只清除当前环境所生成的缓存
      */
-    env: string;
+    env?: string | string[];
     function: string;
     params?: {
         [key: string]: any;
