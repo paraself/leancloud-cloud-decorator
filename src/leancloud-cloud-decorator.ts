@@ -158,7 +158,7 @@ interface CloudOptions<T extends CloudParams,A=any> {
   /**
    * 防抖配置
    */
-  debounce?:Array<Array<keyof T>>
+  debounce?:boolean
   /**
    * 备选名,用于让新的云函数,兼容旧的云函数调用
    */
@@ -316,7 +316,7 @@ async function CloudImplementBefore<T extends CloudParams>(cloudImplementOptions
   schema: Joi.ObjectSchema | null
   rateLimit: RateLimitOptions[] | null
   roles:string[][]|null
-  debounce:Array<Array<keyof T>>| null
+  debounce:boolean| null
 }){
   let { functionName, request, cloudOptions, schema, rateLimit,roles,debounce } = cloudImplementOptions
 
@@ -356,7 +356,7 @@ async function CloudImplementBefore<T extends CloudParams>(cloudImplementOptions
       }})
   }
   if(debounce && request.currentUser){
-    await CheckDebounce(debounce as string[][],params,request.currentUser,
+    await CheckDebounce(debounce,params,request.currentUser,
       //@ts-ignore
       request.lock as Lock)
   }
@@ -415,7 +415,7 @@ async function CloudImplement<T extends CloudParams>(cloudImplementOptions: {
   rateLimit: RateLimitOptions[] | null
   roles:string[][]|null,
   disableCheck?:true
-  debounce:Array<Array<keyof T>>| null
+  debounce:boolean| null
 }) {
   let { functionName, request, handle, cloudOptions, schema, rateLimit,roles,disableCheck,debounce } = cloudImplementOptions
   if(!disableCheck){
@@ -475,24 +475,10 @@ export class DebounceError extends Error{
   }
 }
 
-async function CheckDebounce(debounce:string[][], params: CloudParams,currentUser:AV.User,lock:Lock){
+async function CheckDebounce(debounce:boolean, params: CloudParams,currentUser:AV.User,lock:Lock){
 
-  //判断是否符合防抖条件
-  let cacheParams: string[] | null = null
-  let paramsKeys = Object.keys(ClearInternalParams(params))
-  for (let i = 0; i < debounce.length; ++i) {
-    let _cacheParams = debounce[i]
-    if (
-      _cacheParams.length == paramsKeys.length &&
-      //@ts-ignore
-      paramsKeys.every(u => _cacheParams.indexOf(u) >= 0)
-    ) {
-      //@ts-ignore
-      cacheParams = _cacheParams
-    }
-  }
-  if (cacheParams) {
-    let key = currentUser.get('objectId')+':'+cacheParams.join(',')
+  if (debounce) {
+    let key = currentUser.get('objectId')
     //符合缓存条件,记录所使用的查询keys
     if(! await lock.tryLock(key)){
       throw new DebounceError('debounce error')
@@ -538,7 +524,7 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
   cloudOptions: CloudOptions<T>,
   schema?: Joi.ObjectSchema,
   rpc?:boolean
-  debounce?:Array<Array<keyof T>>
+  debounce?:boolean
 }) {
   let { cache, handle, cloudOptions, functionName, rpc } = info
   let _redis = cache.redisUrl && new Redis(cache.redisUrl, {maxRetriesPerRequest: null})

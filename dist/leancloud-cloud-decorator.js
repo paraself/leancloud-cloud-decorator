@@ -245,20 +245,8 @@ class DebounceError extends Error {
 }
 exports.DebounceError = DebounceError;
 async function CheckDebounce(debounce, params, currentUser, lock) {
-    //判断是否符合防抖条件
-    let cacheParams = null;
-    let paramsKeys = Object.keys(ClearInternalParams(params));
-    for (let i = 0; i < debounce.length; ++i) {
-        let _cacheParams = debounce[i];
-        if (_cacheParams.length == paramsKeys.length &&
-            //@ts-ignore
-            paramsKeys.every(u => _cacheParams.indexOf(u) >= 0)) {
-            //@ts-ignore
-            cacheParams = _cacheParams;
-        }
-    }
-    if (cacheParams) {
-        let key = currentUser.get('objectId') + ':' + cacheParams.join(',');
+    if (debounce) {
+        let key = currentUser.get('objectId');
         //符合缓存条件,记录所使用的查询keys
         if (!await lock.tryLock(key)) {
             throw new DebounceError('debounce error');
