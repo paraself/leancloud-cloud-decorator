@@ -568,6 +568,35 @@ class DartTypeManager{
         // return 'dynamic'
     }
 
+
+    GetUnionDartType(prefix:string,unionType:ts.UnionTypeNode) {
+        var types = unionType.types.filter(e=>e.kind!=ts.SyntaxKind.UndefinedKeyword && e.kind!=ts.SyntaxKind.NullKeyword)
+        if(types.length==1){
+            return this.GetTypeName(prefix,types[0])
+        }
+        if(unionType.types.every(e=>{
+            if(ts.isLiteralTypeNode(e)){
+                return e.literal.kind == ts.SyntaxKind.StringLiteral
+            }
+        })) {
+            return 'String'
+        }else if(unionType.types.every(e=>{
+            if(ts.isLiteralTypeNode(e)){
+                return e.literal.kind == ts.SyntaxKind.NumericLiteral
+            }
+        })){
+            return 'num'
+        }else if(unionType.types.every(e=>{
+            if(ts.isLiteralTypeNode(e)){
+                let kind = e.literal.kind
+                return  kind== ts.SyntaxKind.FalseKeyword || kind == ts.SyntaxKind.TrueKeyword || kind == ts.SyntaxKind.BooleanKeyword 
+            }
+        })){
+            return 'bool'
+        }
+        return 'dynamic'
+    }
+
     GetTypeName(prefix:string,typeNode?:ts.TypeNode){
         if(!typeNode){
             return 'dynamic'
@@ -589,7 +618,7 @@ class DartTypeManager{
             }
             case ts.SyntaxKind.UnionType:
                 if(ts.isUnionTypeNode(typeNode)){
-                    return GetUnionDartType(typeNode)
+                    return this.GetUnionDartType(prefix,typeNode)
                 }
             case ts.SyntaxKind.LiteralType:{
                 if(ts.isLiteralTypeNode(typeNode)){
@@ -660,30 +689,6 @@ class DartTypeManager{
 }
 
 
-function GetUnionDartType(unionType:ts.UnionTypeNode) {
-    if(unionType.types.every(e=>{
-        if(ts.isLiteralTypeNode(e)){
-            return e.literal.kind == ts.SyntaxKind.StringLiteral
-        }
-    })) {
-        return 'String'
-    }else if(unionType.types.every(e=>{
-        if(ts.isLiteralTypeNode(e)){
-            return e.literal.kind == ts.SyntaxKind.NumericLiteral
-        }
-    })){
-        return 'num'
-    }else if(unionType.types.every(e=>{
-        if(ts.isLiteralTypeNode(e)){
-            let kind = e.literal.kind
-            return  kind== ts.SyntaxKind.FalseKeyword || kind == ts.SyntaxKind.TrueKeyword || kind == ts.SyntaxKind.BooleanKeyword 
-        }
-    })){
-        return 'bool'
-    }
-    return 'dynamic'
-}
-
 function GetComment(node:ts.Node) {
     let sourceText = node.getSourceFile().getText()
     let range = ts.getLeadingCommentRanges(sourceText, node.getFullStart())
@@ -720,7 +725,7 @@ function createSdkFile(file:DartFile){
             case ts.SyntaxKind.TypeAliasDeclaration:{
                 let typeAliasDeclaration = node as ts.TypeAliasDeclaration
                 if(ts.isUnionTypeNode(typeAliasDeclaration.type)){
-                    manager.AddType( manager.GetTypeByName(GetUnionDartType(typeAliasDeclaration.type)),typeAliasDeclaration.name.getText()) 
+                    manager.AddType( manager.GetTypeByName(manager.GetUnionDartType(typeAliasDeclaration.name.getText(),typeAliasDeclaration.type)),typeAliasDeclaration.name.getText()) 
                 }else{
                     file.ScanType(typeAliasDeclaration.name.getText(),typeAliasDeclaration.type)
                 }
