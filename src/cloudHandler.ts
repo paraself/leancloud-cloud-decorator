@@ -18,6 +18,32 @@ export interface SDKVersion{
   clientVersion: string,
 }
 
+/**
+ * 设备信息
+ */
+export interface DeviceInfo{
+  /**
+   * 设备名,比如 iPad iPhone Android web
+   */
+  name:string
+  /**
+   * 设备id, web版可使用设备指纹
+   */
+  id:string
+  /**
+   * 设备的具体型号, 比如 iPhone6 , xiaomi9 , web版为浏览器名
+   */
+  model:string
+  /**
+   * 设备品牌
+   */
+  BRAND:string
+  /**
+   * 系统或者浏览器版本号
+   */
+  version:string
+}
+
 const _define = AV.Cloud.define
 const _beforeDelete = AV.Cloud.beforeDelete
 const _beforeSave = AV.Cloud.beforeSave

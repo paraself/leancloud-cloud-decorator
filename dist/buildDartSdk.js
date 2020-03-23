@@ -302,15 +302,33 @@ class DartFile {
         this.classFunctions.forEach(e => e.DeepScan());
     }
     AddInterfaceDeclaration(typeNode) {
-        let declaration = new DartInterface({
-            name: typeNode.name.getText(),
-            node: typeNode,
-            file: this
-        });
-        this.interfaces.push(declaration);
-        this.manager.AddType(declaration);
-        // declaration.DeepScanMemebers()
-        return declaration;
+        let members0 = typeNode.members[0];
+        if (typeNode.members.length == 1 && ts.isIndexSignatureDeclaration(members0)) {
+            let indexSignature = members0;
+            let dartTypeManager = this.manager;
+            let valueType = indexSignature.type;
+            let dartValueType = dartTypeManager.GetType(valueType);
+            if (!dartValueType) {
+                dartValueType = this.ScanType(name, valueType);
+            }
+            if (!dartValueType) {
+                dartValueType = dartTypeManager.defaultType;
+            }
+            let dartType = new DartMapDeclaration({ valueType: dartValueType, keyType: dartTypeManager.GetType(indexSignature.parameters[0].type) });
+            dartTypeManager.AddNodeType(typeNode, dartType, name);
+            return dartType;
+        }
+        else {
+            let declaration = new DartInterface({
+                name: typeNode.name.getText(),
+                node: typeNode,
+                file: this
+            });
+            this.interfaces.push(declaration);
+            this.manager.AddType(declaration);
+            // declaration.DeepScanMemebers()
+            return declaration;
+        }
     }
     AddLiteralDeclaration(name, typeNode) {
         let declaration = new DartInterface({
@@ -728,7 +746,11 @@ function createSdkFile(file) {
                         break;
                     }
                     let interfaceNode = node;
-                    file.AddInterfaceDeclaration(interfaceNode);
+                    if (interfaceNode.members.length == 1 && interfaceNode.members[0].kind == ts.SyntaxKind.IndexSignature) {
+                    }
+                    else {
+                        file.AddInterfaceDeclaration(interfaceNode);
+                    }
                 }
                 break;
             case ts.SyntaxKind.ClassDeclaration:
@@ -864,9 +886,9 @@ function CreatDartSdk(params) {
     createSdk(dir, exclude, params.packageName || base_1.platforms[targetPlatform].package);
 }
 exports.CreatDartSdk = CreatDartSdk;
-// CreatDartSdk({
-//     platform:'dart',
-//     dirroot:'/Users/zhilongchen/home/muyue/pteai-node-ts2/',
-//     packageName:'pteapp_app'
-// })
+CreatDartSdk({
+    platform: 'dart',
+    dirroot: '/Users/zhilongchen/home/muyue/pteai-node-ts2/',
+    packageName: 'pteapp_app'
+});
 //# sourceMappingURL=buildDartSdk.js.map

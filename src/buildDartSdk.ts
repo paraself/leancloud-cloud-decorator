@@ -180,7 +180,7 @@ class DartInterface extends DartDeclaration{
         let constructorText = ''
         if(members.length>0){
             constructorText = 
-              indent+this.name+'({'
+            indent+this.name+'({'
             + members.map(e=>indent2+(e.questionToken?'':'@required ')+'this.'+getMemberName(e.name.getText())).join(',')
             + indent+'});'
         }else{
@@ -329,15 +329,34 @@ class DartFile{
         this.classFunctions.forEach(e=>e.DeepScan())
     }
     AddInterfaceDeclaration(typeNode:ts.InterfaceDeclaration){
-        let declaration = new DartInterface({
-            name:typeNode.name.getText(),
-            node:typeNode,
-            file:this
-        })
-        this.interfaces.push(declaration)
-        this.manager.AddType(declaration)
-        // declaration.DeepScanMemebers()
-        return declaration
+
+        let members0 = typeNode.members[0]
+        if(typeNode.members.length==1&& ts.isIndexSignatureDeclaration(members0)){
+            let indexSignature = members0
+            let dartTypeManager = this.manager
+            let valueType = indexSignature.type
+            let dartValueType = dartTypeManager.GetType(valueType)
+            if(!dartValueType){
+                dartValueType = this.ScanType(name,valueType!)
+            }
+            if(!dartValueType){
+                dartValueType = dartTypeManager.defaultType
+            }
+            let dartType = new DartMapDeclaration({valueType:dartValueType,keyType:dartTypeManager.GetType(indexSignature.parameters[0].type)})
+            dartTypeManager.AddNodeType(typeNode,dartType,name)
+            return dartType
+        }
+        else{
+            let declaration = new DartInterface({
+                name:typeNode.name.getText(),
+                node:typeNode,
+                file:this
+            })
+            this.interfaces.push(declaration)
+            this.manager.AddType(declaration)
+            // declaration.DeepScanMemebers()
+            return declaration
+        }
     }
     AddLiteralDeclaration(name:string,typeNode:ts.TypeLiteralNode){
         let declaration = new DartInterface({
@@ -644,7 +663,7 @@ class DartTypeManager{
     AddType(dartType:DartType,name?:string){
         this.types[name||dartType.name] = dartType
     }
-    AddNodeType(node :ts.TypeLiteralNode|ts.TypeReferenceNode|ts.ArrayTypeNode|ts.MappedTypeNode, dartType:DartType,name2?:string){
+    AddNodeType(node :ts.TypeLiteralNode|ts.TypeReferenceNode|ts.ArrayTypeNode|ts.MappedTypeNode|ts.InterfaceDeclaration, dartType:DartType,name2?:string){
         this.types[dartType.name] = dartType
         if(name2){
             this.types[name2] = dartType
@@ -778,7 +797,11 @@ function createSdkFile(file:DartFile){
                     break
                 }
                 let interfaceNode = <ts.InterfaceDeclaration>node
-                file.AddInterfaceDeclaration(interfaceNode)
+                if(interfaceNode.members.length==1&& interfaceNode.members[0].kind==ts.SyntaxKind.IndexSignature){
+
+                }else{
+                    file.AddInterfaceDeclaration(interfaceNode)
+                }
 
             }
             break
@@ -935,8 +958,8 @@ export function CreatDartSdk(params:{platform:string,dirroot:string,packageName?
 }
 
 
-// CreatDartSdk({
-//     platform:'dart',
-//     dirroot:'/Users/zhilongchen/home/muyue/pteai-node-ts2/',
-//     packageName:'pteapp_app'
-// })
+CreatDartSdk({
+    platform:'dart',
+    dirroot:'/Users/zhilongchen/home/muyue/pteai-node-ts2/',
+    packageName:'pteapp_app'
+})
