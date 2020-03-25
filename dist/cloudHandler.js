@@ -170,7 +170,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                     .catch(info => {
                     var _a, _b;
                     lock.clearLock();
-                    let msg = (info instanceof errorMsg_1.ErrorMsg) && errorMsgInfoMap[info.getStringTemplate().en];
+                    let msg = (info instanceof errorMsg_1.ErrorMsg) && errorMsgInfoMap[info.getStringTemplate().en] || (info.error instanceof errorMsg_1.ErrorMsg) && errorMsgInfoMap[info.error.getStringTemplate().en];
                     // let ikkError
                     // let api = params._api
                     var errorInfo = {
@@ -210,6 +210,10 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                                 errorInfo.error = info;
                             }
                         }
+                        if (info.description && !errorInfo.errorMsg) {
+                            errorInfo.description = info.description;
+                        }
+                        info.target && (errorInfo.target = info.target);
                         // 创建一个ikkError并记录
                         // ikkError = new IkkError(errorInfo)
                     }
