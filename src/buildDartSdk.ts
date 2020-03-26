@@ -309,7 +309,7 @@ class DartFile{
     // nodePath:string
     // dartPath:string
     imports:string[] = [
-        'leancloud_dart/cloudfunction.dart',
+        // 'leancloud_dart/cloudfunction.dart',
         'meta/meta.dart'
     ]
     localImports:string[] = []
@@ -502,6 +502,7 @@ class DartFile{
     toString():string{
         let packageName = this.manager.packageName
         return this.imports.map(e=>`import 'package:${e}';`).join('\n')+
+        `import 'package:${packageName}/cloud.dart' as Cloud;`
         '\n'+ this.localImports.map(e=>`import 'package:${packageName}/lib/${e}';`).join('\n')+
         `
 /**
@@ -926,7 +927,7 @@ function createSdk(dir:string[],exclude:string[],packageName:string){
     console.log('write ' + 'index.dart')
     fs.writeFileSync(indexPath, 
 `import "package:${packageName}/info.dart" as sdkInfo;
-import "package:leancloud_dart/cloudfunction.dart";
+import 'package:${packageName}/cloud.dart' as Cloud;
 `
 +manager.IndexFileBody()
 +`  
