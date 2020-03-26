@@ -466,7 +466,7 @@ class DartFile {
     }
     toString() {
         let packageName = this.manager.packageName;
-        return this.imports.map(e => `import 'package:${e}';`).join('\n') +
+        return this.imports.map(e => `import 'package:${e}';`).join('\n') + '\n' +
             `import 'package:${packageName}/cloud.dart' as Cloud;` +
             '\n' + this.localImports.map(e => `import 'package:${packageName}/lib/${e}';`).join('\n') +
             `
