@@ -869,6 +869,55 @@ void Init({String clientVersion}){
     Cloud.SetAPIInfo(sdkInfo.platform, sdkInfo.apiVersion, clientVersion);
 }
 `);
+    fs.writeFileSync(getSdkLibPath(targetPlatform) + '/cloud.dart', `import 'package:leancloud_storage/leancloud.dart';
+import 'package:encrypt/encrypt.dart' as Encrypt;
+import 'dart:convert';
+import 'dart:typed_data';
+
+
+String _platform = "dart";
+String _apiVersion = "0.0.0";
+String _clientVersion = "0.0.0";
+
+void SetAPIInfo(String platform,String apiVersion,String clientVersion,Uint8List key){
+  _platform = platform;
+  _apiVersion = apiVersion;
+  _clientVersion = clientVersion;
+  _key = new Encrypt.Key(key);
+}
+
+
+final Encrypt.Key _key = new Encrypt.Key(Uint8List.fromList( [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]));
+
+dynamic _decrypt(dynamic result){
+
+    if(result is Map){
+      var encryptedData = result["_encryptedData"];
+      if(encryptedData!=null){
+        var buffer = base64Decode(encryptedData);
+        var encrypted = new Encrypt.Encrypted(buffer.sublist(16));
+        var iv = new Encrypt.IV(buffer.sublist(0,16));
+        var encrypter = new Encrypt.Encrypter(new Encrypt.AES(_key,mode: Encrypt.AESMode.cbc ));
+        var decrypted = encrypter.decryptBytes(encrypted, iv: iv);
+        var decryptedString = utf8.decode(decrypted);
+        return json.decode(decryptedString);
+      }
+    }
+    return result;
+}
+
+
+Future run(String name, Map<String, dynamic> params) async {
+  params.removeWhere((k,v)=>v==null);
+  params["_api"] = {
+    "platform": _platform,
+    "apiVersion": _apiVersion,
+    "clientVersion": _clientVersion
+  };
+  var _result = await LCCloud.run(name, params:params);
+  return _decrypt(_result['result']);
+}
+`);
 }
 // let targetPlatform = CheckPlatform( process.argv[2] )
 let _dirroot = '/Users/zhilongchen/home/muyue/pteai-node-ts2/';
