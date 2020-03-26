@@ -863,6 +863,7 @@ function createSdk(dir, exclude, packageName) {
     fs.writeFileSync(indexPath, `import "package:${packageName}/info.dart" as sdkInfo;
 import 'package:${packageName}/cloud.dart' as Cloud;
 import 'package:meta/meta.dart';
+import 'dart:typed_data';
 `
         + manager.IndexFileBody()
         + `  
