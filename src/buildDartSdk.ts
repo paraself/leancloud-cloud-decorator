@@ -954,7 +954,7 @@ void SetAPIInfo(String platform,String apiVersion,String clientVersion,Uint8List
 }
 
 
-final Encrypt.Key _key = new Encrypt.Key(Uint8List.fromList( [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]));
+Encrypt.Key _key = new Encrypt.Key(Uint8List.fromList( [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]));
 
 dynamic _decrypt(dynamic result){
 
