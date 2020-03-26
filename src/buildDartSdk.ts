@@ -931,8 +931,8 @@ import 'package:${packageName}/cloud.dart' as Cloud;
 `
 +manager.IndexFileBody()
 +`  
-void Init({String clientVersion}){
-    Cloud.SetAPIInfo(sdkInfo.platform, sdkInfo.apiVersion, clientVersion);
+void Init({@required String clientVersion,@required Uint8List key}){
+    Cloud.SetAPIInfo(sdkInfo.platform, sdkInfo.apiVersion, clientVersion,key);
 }
 `)
     fs.writeFileSync(getSdkLibPath(targetPlatform) + '/cloud.dart',
