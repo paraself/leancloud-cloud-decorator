@@ -201,7 +201,7 @@ function GetTypeData(file: { [key: number]: IMetaDataParams }, name: string|unde
       isArray: true
     } 
   }
-  else if (data.type == 'reference' && data.declaration) {
+  else if (data.type == 'reflection' && data.declaration) {
     out = CreateInterfaceMetaData(file,data.declaration as InterfaceData&EnumerationData&TypeAliasData)
     if (out && name) {
       out.name = name

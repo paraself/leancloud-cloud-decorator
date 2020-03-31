@@ -29,7 +29,7 @@ function GetTypeData(file, name, data) {
             isArray: true
         };
     }
-    else if (data.type == 'reference' && data.declaration) {
+    else if (data.type == 'reflection' && data.declaration) {
         out = CreateInterfaceMetaData(file, data.declaration);
         if (out && name) {
             out.name = name;
