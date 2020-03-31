@@ -411,6 +411,9 @@ function GetEnumerationMeta(data: EnumerationData) {
 }
 
 function CreateInterfaceMetaData(file: { [key: number]: IMetaDataParams }, data: InterfaceData&EnumerationData&TypeAliasData) {
+  if(!file[data.id]){
+    file[data.id] = {}
+  }
   if (data.indexSignature) {
     Object.assign(file[data.id], Object.assign({ name: data.name }, CreateIndexSignatureMeta(file, data.indexSignature[0])))
   } else if (data.type) {

@@ -224,6 +224,9 @@ function GetEnumerationMeta(data) {
     return { types: data.children.map(e => { return { literal: e.defaultValue }; }) };
 }
 function CreateInterfaceMetaData(file, data) {
+    if (!file[data.id]) {
+        file[data.id] = {};
+    }
     if (data.indexSignature) {
         Object.assign(file[data.id], Object.assign({ name: data.name }, CreateIndexSignatureMeta(file, data.indexSignature[0])));
     }
