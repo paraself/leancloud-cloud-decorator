@@ -29,15 +29,11 @@ function GetTypeData(file, name, data) {
             isArray: true
         };
     }
-    else if (data.type == 'reference' && data.children) {
-        let memberInfos = (data.children || [])
-            .filter(e => !e.inheritedFrom);
-        let members = memberInfos.map(e => GetTypeData(file, e.name, e.type));
-        let memberComments = memberInfos.map(e => (e.comment && e.comment.shortText) || '');
-        out = {
-            members,
-            memberComments
-        };
+    else if (data.type == 'reference' && data.declaration) {
+        out = CreateInterfaceMetaData(file, data.declaration);
+        if (out && name) {
+            out.name = name;
+        }
     }
     else if (data.type == 'stringLiteral' || data.type == 'numberLiteral') {
         out = {
@@ -263,6 +259,7 @@ function CreateInterfaceMetaData(file, data) {
             memberComments
         });
     }
+    return file[data.id];
 }
 const ExcludeFile = [
     'cloud/base',

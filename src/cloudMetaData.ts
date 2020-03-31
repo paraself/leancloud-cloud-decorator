@@ -114,7 +114,7 @@ interface TypeData {
   id?: number
   elementType?: TypeData
   typeArguments: TypeData[]
-  children?: TypedocData[],
+  declaration?:TypedocData
 }
 interface ArrayTypeData {
   type: 'array'
@@ -201,16 +201,11 @@ function GetTypeData(file: { [key: number]: IMetaDataParams }, name: string|unde
       isArray: true
     } 
   }
-  else if (data.type == 'reference' && data.children) {
-    let memberInfos = (data.children||[])
-      .filter(e => !(e as PropertyData).inheritedFrom)
-    let members = memberInfos.map(e =>
-      GetTypeData(file, e.name, (e as PropertyData).type))
-    let memberComments = memberInfos.map(e => (e.comment && e.comment.shortText)||'')
-    out = {
-      members,
-      memberComments
-    } 
+  else if (data.type == 'reference' && data.declaration) {
+    out = CreateInterfaceMetaData(file,data.declaration as InterfaceData&EnumerationData&TypeAliasData)
+    if (out && name) {
+      out.name = name
+    }
   }
   else if (data.type == 'stringLiteral' || data.type == 'numberLiteral') {
     out = {
@@ -450,6 +445,7 @@ function CreateInterfaceMetaData(file: { [key: number]: IMetaDataParams }, data:
       memberComments
     })
   }
+  return file[data.id]
 }
 const ExcludeFile = [
   'cloud/base',
