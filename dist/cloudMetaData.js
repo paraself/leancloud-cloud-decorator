@@ -29,6 +29,16 @@ function GetTypeData(file, name, data) {
             isArray: true
         };
     }
+    else if (data.type == 'reference' && data.children) {
+        let memberInfos = (data.children || [])
+            .filter(e => !e.inheritedFrom);
+        let members = memberInfos.map(e => GetTypeData(file, e.name, e.type));
+        let memberComments = memberInfos.map(e => (e.comment && e.comment.shortText) || '');
+        out = {
+            members,
+            memberComments
+        };
+    }
     else if (data.type == 'stringLiteral' || data.type == 'numberLiteral') {
         out = {
             literal: data.value

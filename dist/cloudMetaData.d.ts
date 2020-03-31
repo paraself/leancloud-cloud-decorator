@@ -108,6 +108,7 @@ interface TypeData {
     id?: number;
     elementType?: TypeData;
     typeArguments: TypeData[];
+    children?: TypedocData[];
 }
 interface CommentTag {
     tag: 'deprecated';
