@@ -938,9 +938,9 @@ function CreatDartSdk(params) {
     createSdk(dir, exclude, params.packageName || base_1.platforms[targetPlatform].package);
 }
 exports.CreatDartSdk = CreatDartSdk;
-CreatDartSdk({
-    platform: 'dart',
-    dirroot: '/Users/zhilongchen/home/muyue/pteai-node-ts2/',
-    packageName: 'pteapp_app'
-});
+// CreatDartSdk({
+//     platform:'dart',
+//     dirroot:'/Users/zhilongchen/home/muyue/pteai-node-ts2/',
+//     packageName:'pteapp_app'
+// })
 //# sourceMappingURL=buildDartSdk.js.map

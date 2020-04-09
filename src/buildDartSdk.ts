@@ -1012,8 +1012,8 @@ export function CreatDartSdk(params:{platform:string,dirroot:string,packageName?
 }
 
 
-CreatDartSdk({
-    platform:'dart',
-    dirroot:'/Users/zhilongchen/home/muyue/pteai-node-ts2/',
-    packageName:'pteapp_app'
-})
+// CreatDartSdk({
+//     platform:'dart',
+//     dirroot:'/Users/zhilongchen/home/muyue/pteai-node-ts2/',
+//     packageName:'pteapp_app'
+// })
