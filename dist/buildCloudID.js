@@ -54,10 +54,13 @@ function GetClouds(dirroot) {
     for (let d = 0; d < dir.length; ++d) {
         let file = dir[d];
         if (path.extname(file) == '.ts') {
-            let sourceFile = ts.createSourceFile(file, fs.readFileSync(path.join(dirroot, 'src/cloud/', file)).toString(), ts.ScriptTarget.ES2015, 
-            /*setParentNodes */ true);
-            //   console.log(printNode(sourceFile))
-            cloudClasses.push(...createSdkFile(sourceFile));
+            let text = fs.readFileSync(path.join(dirroot, 'src/cloud/', file)).toString();
+            if (!text.includes('@lcc-ignore-file')) {
+                let sourceFile = ts.createSourceFile(file, text, ts.ScriptTarget.ES2015, 
+                /*setParentNodes */ true);
+                //   console.log(printNode(sourceFile))
+                cloudClasses.push(...createSdkFile(sourceFile));
+            }
         }
     }
     return cloudClasses.map(e => ({ name: e.className, functions: e.cloudFunctions() })).filter(e => e.functions.length);

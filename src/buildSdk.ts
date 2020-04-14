@@ -459,9 +459,13 @@ function createSdk(dir:string[],exclude:string[]){
         if( path.extname(file)=='.ts' && exclude.indexOf(file)<0){
             console.log('read '+file)
             let name = path.basename(file,'.ts')
+            let text = readFileSync(_dirroot + 'src/cloud/'+file).toString()
+            if(text.includes('@lcc-ignore-file')){
+                continue
+            }
             let sourceFile = ts.createSourceFile(
                 file,
-                readFileSync(_dirroot + 'src/cloud/'+file).toString(),
+                text,
                 ts.ScriptTarget.ES2015,
                 /*setParentNodes */ true
             );
