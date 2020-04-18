@@ -196,25 +196,31 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                     //   ikkError.setData(errorInfo)
                     // } else
                     if (info) {
-                        errorInfo.error = info;
+                        // errorInfo.error = info
                         if (typeof info === 'string') {
                             errorInfo.message = info;
                             errorInfo.description = info;
                         }
                         else if (typeof info === 'object') {
-                            while (info.ikkMessage) {
-                                errorInfo.errorInfo = info.ikkMessage;
-                                info = info.originalError;
+                            if (info.error && info.target) {
+                                errorInfo = Object.assign(info, errorInfo);
                             }
-                            // errorInfo = Object.assign(errorInfo, info)
-                            if (info.message && info.stack) {
-                                errorInfo.error = info;
+                            else {
+                                while (info.ikkMessage) {
+                                    errorInfo.errorInfo = info.ikkMessage;
+                                    info = info.originalError;
+                                }
+                                // errorInfo = Object.assign(errorInfo, info)
+                                // if (info.message && info.stack) 
+                                {
+                                    errorInfo.error = info;
+                                }
+                                if (info.description && !errorInfo.errorMsg) {
+                                    errorInfo.description = info.description;
+                                }
+                                info.target && (errorInfo.target = info.target);
                             }
                         }
-                        if (info.description && !errorInfo.errorMsg) {
-                            errorInfo.description = info.description;
-                        }
-                        info.target && (errorInfo.target = info.target);
                         // 创建一个ikkError并记录
                         // ikkError = new IkkError(errorInfo)
                     }
