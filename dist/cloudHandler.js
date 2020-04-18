@@ -196,6 +196,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                     //   ikkError.setData(errorInfo)
                     // } else
                     if (info) {
+                        errorInfo.error = info;
                         if (typeof info === 'string') {
                             errorInfo.message = info;
                             errorInfo.description = info;

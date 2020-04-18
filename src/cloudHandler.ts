@@ -270,6 +270,7 @@ AV.Cloud.define = function(
             //   ikkError.setData(errorInfo)
             // } else
               if (info) {
+                errorInfo.error = info
               if (typeof info === 'string') {
                 errorInfo.message = info
                 errorInfo.description = info
