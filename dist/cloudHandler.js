@@ -164,6 +164,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
             if (result.catch && result.then) {
                 result = await result;
                 lock.clearLock();
+                return result;
             }
             else {
                 lock.clearLock();

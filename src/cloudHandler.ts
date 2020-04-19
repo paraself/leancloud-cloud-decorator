@@ -243,6 +243,7 @@ AV.Cloud.define = function(
       if (result.catch && result.then) {
         result = await result
         lock.clearLock()
+        return result
       } else {
         lock.clearLock()
         return result
