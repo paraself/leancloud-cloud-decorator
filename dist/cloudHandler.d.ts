@@ -39,11 +39,15 @@ export interface CloudFunctionError {
      */
     user?: AV.User;
     /**
-     * 出错的模块(class名)
+     * 出错的云函数名
+     */
+    function: string;
+    /**
+     * 出错的(钩子函数)模块(class名)
      */
     module: string;
     /**
-     * 出错的行为(function名)
+     * 出错的(钩子函数)行为(function名)
      */
     action: string;
     /**
