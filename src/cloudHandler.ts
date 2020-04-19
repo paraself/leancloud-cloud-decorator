@@ -203,7 +203,7 @@ AV.Cloud.define = function(
    *
    * @param {CloudFunction} request
    */
-  var CloudHandler = function(request:AV.Cloud.CloudFunctionRequest & {params:{_api?:SDKVersion}}) {
+  var CloudHandler = async function(request:AV.Cloud.CloudFunctionRequest & {params:{_api?:SDKVersion}}) {
     let ip
     try {
       // var userAgent =
@@ -241,75 +241,8 @@ AV.Cloud.define = function(
         return
       }
       if (result.catch && result.then) {
-        return result
-          .then(e => {
-            lock.clearLock()
-            return e
-          })
-          .catch(info => {
-            lock.clearLock()
-            let msg = (info instanceof ErrorMsg)&&errorMsgInfoMap[info.getStringTemplate().en] || (info.error instanceof ErrorMsg)&&errorMsgInfoMap[info.error.getStringTemplate().en]
-            // let ikkError
-            // let api = params._api
-            var errorInfo: any = {
-              user: request.currentUser,
-              function: name,
-              params: params,
-              ip,
-              platform: apiVersion.platform,
-              api: apiVersion.apiVersion,
-              version: apiVersion.clientVersion,
-              errorMsg:msg&&{
-                code:{
-                  moduleId:cloudOptions?.moduleId,
-                  functionId:cloudOptions?.functionId,
-                  msgId: msg&&msg.id
-                },
-                messageTemplate:msg,
-                params:(info instanceof ErrorMsg)&&info.params
-              }
-            }
-            // if (info instanceof IkkError) {
-            //   ikkError = info
-            //   ikkError.setData(errorInfo)
-            // } else
-            if (info) 
-            {
-                // errorInfo.error = info
-              if (typeof info === 'string') {
-                errorInfo.message = info
-                errorInfo.description = info
-              } else if (typeof info === 'object') {
-                if(info.error && info.target){
-                  errorInfo = Object.assign(info,errorInfo)
-                }else{
-                  
-                  while (info.ikkMessage) {
-                    errorInfo.errorInfo = info.ikkMessage
-                    info = info.originalError
-                  }
-                  // errorInfo = Object.assign(errorInfo, info)
-                  // if (info.message && info.stack) 
-                  {
-                    errorInfo.error = info
-                  }
-
-                  if(info.description && !errorInfo.errorMsg){
-                    errorInfo.description = info.description
-                  }
-                  info.target && (errorInfo.target = info.target)
-                }
-              }
-              // 创建一个ikkError并记录
-              // ikkError = new IkkError(errorInfo)
-            }
-            // ikkError.send()
-            // if (typeof info === 'string') {
-            //   return Promise.reject(info)
-            // }
-            // return Promise.reject(ikkError.toClient())
-            return Promise.reject(cloudErrorCallback(errorInfo))
-          })
+        result = await result
+        lock.clearLock()
       } else {
         lock.clearLock()
         return result
@@ -338,13 +271,35 @@ AV.Cloud.define = function(
         }
       }
     
+      let info = error
+      if (info) 
       {
-        while (error.ikkMessage) {
-          errorInfo.errorInfo = error.ikkMessage
-          error = error.originalError
+          // errorInfo.error = info
+        if (typeof info === 'string') {
+          errorInfo.message = info
+          errorInfo.description = info
+        } else if (typeof info === 'object') {
+          if(info.error && info.target){
+            errorInfo = Object.assign(info,errorInfo)
+          }else{
+            
+            while (info.ikkMessage) {
+              errorInfo.errorInfo = info.ikkMessage
+              info = info.originalError
+            }
+            // errorInfo = Object.assign(errorInfo, info)
+            // if (info.message && info.stack) 
+            {
+              errorInfo.error = info
+            }
+
+            if(info.description && !errorInfo.errorMsg){
+              errorInfo.description = info.description
+            }
+            info.target && (errorInfo.target = info.target)
+          }
         }
-        // errorInfo = Object.assign(errorInfo, error)
-        errorInfo.error = error
+        // 创建一个ikkError并记录
         // ikkError = new IkkError(errorInfo)
       }
       // console.error(ikkError)

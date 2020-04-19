@@ -123,7 +123,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
      *
      * @param {CloudFunction} request
      */
-    var CloudHandler = function (request) {
+    var CloudHandler = async function (request) {
         var _a, _b;
         let ip;
         try {
@@ -162,75 +162,8 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                 return;
             }
             if (result.catch && result.then) {
-                return result
-                    .then(e => {
-                    lock.clearLock();
-                    return e;
-                })
-                    .catch(info => {
-                    var _a, _b;
-                    lock.clearLock();
-                    let msg = (info instanceof errorMsg_1.ErrorMsg) && errorMsgInfoMap[info.getStringTemplate().en] || (info.error instanceof errorMsg_1.ErrorMsg) && errorMsgInfoMap[info.error.getStringTemplate().en];
-                    // let ikkError
-                    // let api = params._api
-                    var errorInfo = {
-                        user: request.currentUser,
-                        function: name,
-                        params: params,
-                        ip,
-                        platform: apiVersion.platform,
-                        api: apiVersion.apiVersion,
-                        version: apiVersion.clientVersion,
-                        errorMsg: msg && {
-                            code: {
-                                moduleId: (_a = cloudOptions) === null || _a === void 0 ? void 0 : _a.moduleId,
-                                functionId: (_b = cloudOptions) === null || _b === void 0 ? void 0 : _b.functionId,
-                                msgId: msg && msg.id
-                            },
-                            messageTemplate: msg,
-                            params: (info instanceof errorMsg_1.ErrorMsg) && info.params
-                        }
-                    };
-                    // if (info instanceof IkkError) {
-                    //   ikkError = info
-                    //   ikkError.setData(errorInfo)
-                    // } else
-                    if (info) {
-                        // errorInfo.error = info
-                        if (typeof info === 'string') {
-                            errorInfo.message = info;
-                            errorInfo.description = info;
-                        }
-                        else if (typeof info === 'object') {
-                            if (info.error && info.target) {
-                                errorInfo = Object.assign(info, errorInfo);
-                            }
-                            else {
-                                while (info.ikkMessage) {
-                                    errorInfo.errorInfo = info.ikkMessage;
-                                    info = info.originalError;
-                                }
-                                // errorInfo = Object.assign(errorInfo, info)
-                                // if (info.message && info.stack) 
-                                {
-                                    errorInfo.error = info;
-                                }
-                                if (info.description && !errorInfo.errorMsg) {
-                                    errorInfo.description = info.description;
-                                }
-                                info.target && (errorInfo.target = info.target);
-                            }
-                        }
-                        // 创建一个ikkError并记录
-                        // ikkError = new IkkError(errorInfo)
-                    }
-                    // ikkError.send()
-                    // if (typeof info === 'string') {
-                    //   return Promise.reject(info)
-                    // }
-                    // return Promise.reject(ikkError.toClient())
-                    return Promise.reject(cloudErrorCallback(errorInfo));
-                });
+                result = await result;
+                lock.clearLock();
             }
             else {
                 lock.clearLock();
@@ -260,13 +193,34 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                     params: (error instanceof errorMsg_1.ErrorMsg) && error.params
                 }
             };
-            {
-                while (error.ikkMessage) {
-                    errorInfo.errorInfo = error.ikkMessage;
-                    error = error.originalError;
+            let info = error;
+            if (info) {
+                // errorInfo.error = info
+                if (typeof info === 'string') {
+                    errorInfo.message = info;
+                    errorInfo.description = info;
                 }
-                // errorInfo = Object.assign(errorInfo, error)
-                errorInfo.error = error;
+                else if (typeof info === 'object') {
+                    if (info.error && info.target) {
+                        errorInfo = Object.assign(info, errorInfo);
+                    }
+                    else {
+                        while (info.ikkMessage) {
+                            errorInfo.errorInfo = info.ikkMessage;
+                            info = info.originalError;
+                        }
+                        // errorInfo = Object.assign(errorInfo, info)
+                        // if (info.message && info.stack) 
+                        {
+                            errorInfo.error = info;
+                        }
+                        if (info.description && !errorInfo.errorMsg) {
+                            errorInfo.description = info.description;
+                        }
+                        info.target && (errorInfo.target = info.target);
+                    }
+                }
+                // 创建一个ikkError并记录
                 // ikkError = new IkkError(errorInfo)
             }
             // console.error(ikkError)
