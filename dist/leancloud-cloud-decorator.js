@@ -91,7 +91,9 @@ async function RateLimitCheck(params) {
             if (listener.onRateLimited) {
                 listener.onRateLimited(cloudInvokeData);
             }
-            throw new leanengine_1.default.Cloud.Error(functionName + ' user ' + user + ' run ' + count + ' over limit ' + limit.limit + ' in ' + limit.timeUnit, { code: 401 });
+            throw new RateLimitError({
+                functionName, user, count, limit: limit.limit, timeUnit: limit.timeUnit, code: 401
+            });
         }
     }
 }
@@ -244,6 +246,18 @@ class DebounceError extends Error {
     }
 }
 exports.DebounceError = DebounceError;
+class RateLimitError extends leanengine_1.default.Cloud.Error {
+    constructor(params) {
+        super(params.functionName + ' user ' + params.user + ' run ' + params.count + ' over limit ' + params.limit + ' in ' + params.timeUnit, { code: params.code });
+        this.functionName = params.functionName;
+        this.user = params.user;
+        this.count = params.count;
+        this.limit = params.limit;
+        this.timeUnit = params.timeUnit;
+        this.code = params.code;
+    }
+}
+exports.RateLimitError = RateLimitError;
 async function CheckDebounce(debounce, params, currentUser, lock) {
     if (debounce) {
         let key = currentUser.get('objectId');

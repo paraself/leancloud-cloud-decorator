@@ -178,6 +178,22 @@ export declare class SchemaError extends Error {
 export declare class DebounceError extends Error {
     constructor(message?: string);
 }
+export declare class RateLimitError extends AV.Cloud.Error {
+    functionName: string;
+    user: string;
+    count: number;
+    limit: number;
+    timeUnit: string;
+    code: number;
+    constructor(params: {
+        functionName: string;
+        user: string;
+        count: number;
+        limit: number;
+        timeUnit: string;
+        code: number;
+    });
+}
 /**
  * 将函数加入云函数中,云函数名为 ``类名.函数名``
  */

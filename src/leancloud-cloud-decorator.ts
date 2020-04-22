@@ -257,6 +257,7 @@ const NODE_ENV = process.env.NODE_ENV as string || 'dev'
 //   }
 // }
 
+
 async function RateLimitCheck(params: {functionName: string, objectId: string, ip:string, rateLimit: RateLimitOptions[], cloudInvokeData: CloudInvokeParams<any>}) {
 
   let {functionName, objectId, ip, rateLimit, cloudInvokeData} = params
@@ -281,7 +282,9 @@ async function RateLimitCheck(params: {functionName: string, objectId: string, i
       if(listener.onRateLimited){
         listener.onRateLimited(cloudInvokeData)
       }
-      throw new AV.Cloud.Error(functionName + ' user ' + user + ' run ' + count + ' over limit ' + limit.limit + ' in ' + limit.timeUnit, { code: 401 })
+      throw new RateLimitError({
+        functionName,user,count,limit:limit.limit,timeUnit:limit.timeUnit,code:401
+      })
     }
   }
 }
@@ -472,6 +475,33 @@ export class DebounceError extends Error{
   constructor(message = ''){
     super(message)
     this.name = 'DebounceError'
+  }
+}
+
+export class RateLimitError extends AV.Cloud.Error{
+  
+  functionName:string
+  user:string
+  count:number
+  limit:number
+  timeUnit:string
+  code:number
+
+  constructor(params:{
+    functionName:string,
+    user:string,
+    count:number,
+    limit:number,
+    timeUnit:string,
+    code:number
+  }){
+    super(params.functionName + ' user ' + params.user + ' run ' + params.count + ' over limit ' + params.limit + ' in ' + params.timeUnit, { code: params.code })
+    this.functionName = params.functionName
+    this.user = params.user
+    this.count = params.count
+    this.limit = params.limit
+    this.timeUnit = params.timeUnit
+    this.code = params.code
   }
 }
 
