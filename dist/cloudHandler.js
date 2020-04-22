@@ -184,6 +184,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                 platform: apiVersion.platform,
                 api: apiVersion.apiVersion,
                 version: apiVersion.clientVersion,
+                //@ts-ignore
                 errorMsg: msg && {
                     code: {
                         moduleId: (_a = cloudOptions) === null || _a === void 0 ? void 0 : _a.moduleId,
@@ -198,7 +199,9 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
             if (info) {
                 // errorInfo.error = info
                 if (typeof info === 'string') {
+                    //@ts-ignore
                     errorInfo.message = info;
+                    //@ts-ignore
                     errorInfo.description = info;
                 }
                 else if (typeof info === 'object') {
@@ -215,7 +218,9 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                         {
                             errorInfo.error = info;
                         }
+                        //@ts-ignore
                         if (info.description && !errorInfo.errorMsg) {
+                            //@ts-ignore
                             errorInfo.description = info.description;
                         }
                         info.target && (errorInfo.target = info.target);

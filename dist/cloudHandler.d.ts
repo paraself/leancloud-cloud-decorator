@@ -39,6 +39,10 @@ export interface CloudFunctionError {
      */
     user?: AV.User;
     /**
+     * 出错时前端请求的用户ip
+     */
+    ip?: string;
+    /**
      * 出错的云函数名
      */
     function: string;
@@ -46,6 +50,18 @@ export interface CloudFunctionError {
      * 出错的(钩子函数)模块(class名)
      */
     module: string;
+    /**
+     * 用户所运行的平台,需要结合前端sdk获取
+     */
+    platform?: string;
+    /**
+     * 用户所运行的api版本,需要结合前端sdk获取
+     */
+    api?: string;
+    /**
+     * 用户所运行的客户端版本,需要结合前端sdk获取
+     */
+    version?: string;
     /**
      * 出错的(钩子函数)行为(function名)
      */

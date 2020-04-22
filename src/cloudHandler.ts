@@ -87,6 +87,11 @@ export interface CloudFunctionError{
    * 出错时前端请求的用户
    */
   user?: AV.User,
+
+  /**
+   * 出错时前端请求的用户ip
+   */
+  ip?: string,
   /**
    * 出错的云函数名
    */
@@ -95,6 +100,18 @@ export interface CloudFunctionError{
    * 出错的(钩子函数)模块(class名)
    */
   module: string,
+  /**
+   * 用户所运行的平台,需要结合前端sdk获取
+   */
+  platform?: string
+  /**
+   * 用户所运行的api版本,需要结合前端sdk获取
+   */
+  api?: string
+  /**
+   * 用户所运行的客户端版本,需要结合前端sdk获取
+   */
+  version?: string,
   /**
    * 出错的(钩子函数)行为(function名)
    */
@@ -115,6 +132,10 @@ export interface CloudFunctionError{
    * 记录抛出的错误中ikkMessage字段,用于存储额外信息
    */
   errorInfo?:any
+  // /**
+  //  * 请求的request
+  //  */
+  // request: AV.Cloud.ClassHookRequest | AV.Cloud.CloudFunctionRequest
 }
 
 /**
@@ -253,7 +274,7 @@ AV.Cloud.define = function(
       // console.error(error)
       // let ikkError
       let msg = (error instanceof ErrorMsg)&&errorMsgInfoMap[error.getStringTemplate().en]
-      var errorInfo: any = {
+      var errorInfo: CloudFunctionError = {
         user: request.currentUser,
         function: name,
         params: params,
@@ -261,6 +282,7 @@ AV.Cloud.define = function(
         platform: apiVersion.platform,
         api: apiVersion.apiVersion,
         version: apiVersion.clientVersion,
+        //@ts-ignore
         errorMsg: msg&&{
           code:{
             moduleId:cloudOptions?.moduleId,
@@ -277,7 +299,9 @@ AV.Cloud.define = function(
       {
           // errorInfo.error = info
         if (typeof info === 'string') {
+          //@ts-ignore
           errorInfo.message = info
+          //@ts-ignore
           errorInfo.description = info
         } else if (typeof info === 'object') {
           if(info.error && info.target){
@@ -294,7 +318,9 @@ AV.Cloud.define = function(
               errorInfo.error = info
             }
 
+        //@ts-ignore
             if(info.description && !errorInfo.errorMsg){
+              //@ts-ignore
               errorInfo.description = info.description
             }
             info.target && (errorInfo.target = info.target)
