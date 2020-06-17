@@ -35,7 +35,7 @@ exports.AddCacheUpdateCallback = AddCacheUpdateCallback;
 function tryLock(key) {
     key = lockPrefix + key;
     //@ts-ignore
-    return exports.redis.setnxex(key, 60, 1);
+    return exports.redis.setnxex(key, 15, 1);
 }
 exports.tryLock = tryLock;
 /**

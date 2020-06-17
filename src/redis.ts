@@ -47,7 +47,7 @@ export function AddCacheUpdateCallback(callback:CacheUpdateCallback){
 export function tryLock(key) {
     key = lockPrefix + key;
     //@ts-ignore
-    return redis.setnxex(key,60, 1)
+    return redis.setnxex(key,15, 1)
   }
   
   
