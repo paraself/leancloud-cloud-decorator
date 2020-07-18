@@ -63,7 +63,7 @@ async function SetVerify(params) {
         throw new Error('Error SetVerify type ' + verifyParams.type + ' != ' + params.type);
     }
     if (verifyParams.type == 'geetest') {
-        if (params.data.geetest_challenge != verifyParams.data.challenge) {
+        if (!params.data.geetest_challenge.startsWith(verifyParams.data.challenge)) {
             throw new Error('Different geetest_challenge when SetVerify');
         }
         return geetest.SetVerification(params.data);

@@ -94,7 +94,7 @@ export async function SetVerify(params:{type:VerifyType}&SetVerifyParams):Promis
         throw new Error('Error SetVerify type '+verifyParams.type+' != '+params.type)
     }
     if(verifyParams.type=='geetest'){
-        if(params.data.geetest_challenge!=(verifyParams as VerifyGeetestParams).data.challenge){
+        if(!params.data.geetest_challenge.startsWith((verifyParams as VerifyGeetestParams).data.challenge)){
             throw new Error('Different geetest_challenge when SetVerify')
         }
         return geetest.SetVerification(params.data)
