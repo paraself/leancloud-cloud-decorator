@@ -18,7 +18,6 @@ import {CloudIdConfig,CloudIdInfo,GetCloudInfo,GetCloudInfoMap,CloudIdInfoMap} f
 export {SetCache}
 import Redis from 'ioredis'
 import { VerifyType, SetVerifyParams, SetVerify } from './verify'
-import { verify } from 'crypto'
 
 const cloudFunctionIDFile = 'cloudFunctionID.json'
 const cloudIdInfoMap : CloudIdInfoMap = (fs.existsSync(cloudFunctionIDFile) && GetCloudInfoMap(JSON.parse( fs.readFileSync(cloudFunctionIDFile,'utf8'))))||{}
