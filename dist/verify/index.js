@@ -34,7 +34,7 @@ async function GetVerifyParams(params) {
         if (!geetest) {
             throw new Error('Missing geetest when GetVerifyParams type==geetest');
         }
-        data = geetest.GetVerification(params.geetest || {});
+        data = (await geetest.GetVerification(params.geetest || {})).data;
     }
     else {
         throw new Error('Missing GetVerifyParams type ' + params.type);
