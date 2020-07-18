@@ -19,6 +19,7 @@ const redis_1 = require("./redis");
 const buildIDCommon_1 = require("./buildIDCommon");
 const fs = __importStar(require("fs"));
 const errorMsg_1 = require("./errorMsg");
+const Verify = __importStar(require("./verify"));
 const errorMsgFile = 'errorMsg.json';
 const errorMsgInfoMap = (fs.existsSync(errorMsgFile) && buildIDCommon_1.GetMsgInfoMap(JSON.parse(fs.readFileSync(errorMsgFile, 'utf8')))) || {};
 const _define = leanengine_1.default.Cloud.define;
@@ -344,7 +345,6 @@ async function DeleteCloudCache(params) {
     }
 }
 exports.DeleteCloudCache = DeleteCloudCache;
-//@ts-ignore
 leanengine_1.default.Cloud.define('Cloud.DeleteCache', async (request) => {
     if (request.currentUser && (await base_1.isRole(request.currentUser, 'Dev'))) {
         //@ts-ignore
@@ -354,5 +354,9 @@ leanengine_1.default.Cloud.define('Cloud.DeleteCache', async (request) => {
     else {
         throw new leanengine_1.default.Cloud.Error('non-administrators', { code: 400 });
     }
+});
+leanengine_1.default.Cloud.define('Cloud.GetVerifyParams', async (request) => {
+    //@ts-ignore
+    return Verify.GetVerifyParams(request.params || {});
 });
 //# sourceMappingURL=cloudHandler.js.map

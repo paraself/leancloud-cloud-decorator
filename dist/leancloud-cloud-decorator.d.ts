@@ -6,6 +6,7 @@ import { Platform, getCacheKey } from './base';
 export { Platform, getCacheKey };
 import { SetCache } from './redis';
 export { SetCache };
+import { VerifyType, SetVerifyParams } from './verify';
 export interface CloudInvokeParams<T> {
     functionName: string;
     request: AV.Cloud.CloudFunctionRequest & {
@@ -73,6 +74,20 @@ interface RateLimitOptions {
      * 时间数量
      */
     limit: number;
+    /**
+     * 时间单位
+     */
+    timeUnit: 'day' | 'hour' | 'minute' | 'second' | 'month';
+}
+export interface VerifyOptions {
+    /**
+     * 验证类型
+     */
+    type: VerifyType;
+    /**
+     * 多少次调用需要走一次验证
+     */
+    count?: number;
     /**
      * 时间单位
      */
@@ -163,6 +178,10 @@ interface CloudOptions<T extends CloudParams, A = any> {
      * 云函数id,可以自动生成,也可以指定
      */
     functionId?: number;
+    /**
+     * 是否需要验证后才能执行
+     */
+    verify?: VerifyOptions;
 }
 export interface Listener<A> {
     /**
@@ -176,6 +195,12 @@ export declare class SchemaError extends Error {
     constructor(error: Joi.ValidationError);
 }
 export declare class DebounceError extends Error {
+    constructor(message?: string);
+}
+export declare class MissingVerify extends Error {
+    constructor(message?: string);
+}
+export declare class VerifyError extends Error {
     constructor(message?: string);
 }
 export declare class RateLimitError extends AV.Cloud.Error {
@@ -236,4 +261,8 @@ export interface CloudParams {
      * 调用云函数的sdk信息
      */
     _api?: SDKVersion;
+    /**
+     * 验证参数
+     */
+    _verify?: SetVerifyParams;
 }

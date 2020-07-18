@@ -350,6 +350,8 @@ function createSdkFile(sourceFile) {
                                 let rpc = rpcText && JSON.parse(rpcText);
                                 let internalText = cloudMetaData_1.GetJsonValueString(decorator, 'internal');
                                 let internal = internalText && JSON.parse(internalText);
+                                let verifyText = cloudMetaData_1.GetJsonValueString(decorator, 'verify');
+                                let verify = internalText && JSON.parse(internalText);
                                 needSkip = false;
                                 // let parameters = sandbox.result || {}
                                 // let platforms:string[] = parameters.platforms
@@ -364,6 +366,18 @@ function createSdkFile(sourceFile) {
                                     else if (methodNode.body) {
                                         skipText(decorators[0].getStart(), decorators[decorators.length - 1].getEnd(), i);
                                         skipNode(methodNode.body, methodNode.body, i);
+                                        if (verify) {
+                                            const VerifyParamsText = `& { _verify:{sessionId:string,data:{  
+                                            geetest_challenge:string
+                                            geetest_seccode:string
+                                            geetest_validate:string
+                                          }} }`;
+                                            let text = results[i];
+                                            let lastIndex = text.lastIndexOf(')');
+                                            if (verify.type == 'geetest') {
+                                                results[i] = text.substring(0, lastIndex) + VerifyParamsText + text.substring(lastIndex);
+                                            }
+                                        }
                                         appendText(createCloudRunText(methodNode, rpc ? 'rpc' : 'run'), i);
                                     }
                                 }

@@ -7,11 +7,13 @@ export * from './cloudMetaData'
 export * from './cloudHandler'
 export * from './cloudStats'
 export * from './errorMsg'
+export * from './verify'
 
 import {SetCache,CloudInvoke,CloudInvokeBefore,SetInvokeCallback,Listener, SetListener} from './leancloud-cloud-decorator'
 import {SetCloudErrorCallback,SetCloudInvokeCallback,CloudFunctionError} from './cloudHandler'
 import AV from 'leanengine'
 import Redis from 'ioredis'
+import {InitVerifyParams,InitVerify} from './verify'
 
 interface InitParams<T> extends Listener<T> {
     /**
@@ -38,6 +40,7 @@ interface InitParams<T> extends Listener<T> {
      * 云函数调用后的回调, 可用于修改数据
      */
     afterInvoke?:CloudInvoke<T>
+    verify?:InitVerifyParams
 }
 export function init<T=undefined>(params:InitParams<T>){
     SetCache({
@@ -48,4 +51,9 @@ export function init<T=undefined>(params:InitParams<T>){
     params.errorCallback && SetCloudErrorCallback(params.errorCallback)
     params.cloudInvokeCallback && SetCloudInvokeCallback(params.cloudInvokeCallback)
     SetListener(params)
+    let verify = params.verify
+    if(verify) {
+        verify.cachePrefix = verify.cachePrefix || (params.redisPrefix+':verify')
+        InitVerify(verify)
+    }
 }

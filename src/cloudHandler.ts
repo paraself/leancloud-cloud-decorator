@@ -8,6 +8,7 @@ import { Lock } from './redis'
 import {MsgIdInfoMap,GetMsgInfoMap} from './buildIDCommon'
 import * as fs from 'fs'
 import {ErrorMsg} from './errorMsg'
+import * as Verify from './verify'
 
 const errorMsgFile = 'errorMsg.json'
 const errorMsgInfoMap:MsgIdInfoMap = (fs.existsSync(errorMsgFile) && GetMsgInfoMap(JSON.parse( fs.readFileSync(errorMsgFile,'utf8'))))||{}
@@ -454,7 +455,7 @@ export async function DeleteCloudCache(params:DeleteCacheParams){
     return out
   }
 }
-//@ts-ignore
+
 AV.Cloud.define('Cloud.DeleteCache', async request => {
   if (request.currentUser && (await isRole(request.currentUser, 'Dev'))) {
     //@ts-ignore
@@ -463,4 +464,9 @@ AV.Cloud.define('Cloud.DeleteCache', async request => {
   } else {
     throw new AV.Cloud.Error('non-administrators', { code: 400 })
   }
+})
+
+AV.Cloud.define('Cloud.GetVerifyParams', async request => {
+  //@ts-ignore
+  return Verify.GetVerifyParams(request.params||{})
 })

@@ -14,9 +14,11 @@ __export(require("./cloudMetaData"));
 __export(require("./cloudHandler"));
 __export(require("./cloudStats"));
 __export(require("./errorMsg"));
+__export(require("./verify"));
 const leancloud_cloud_decorator_1 = require("./leancloud-cloud-decorator");
 const cloudHandler_1 = require("./cloudHandler");
 const ioredis_1 = __importDefault(require("ioredis"));
+const verify_1 = require("./verify");
 function init(params) {
     leancloud_cloud_decorator_1.SetCache({
         cache: new ioredis_1.default(params.redisUrl, { maxRetriesPerRequest: null }),
@@ -26,6 +28,11 @@ function init(params) {
     params.errorCallback && cloudHandler_1.SetCloudErrorCallback(params.errorCallback);
     params.cloudInvokeCallback && cloudHandler_1.SetCloudInvokeCallback(params.cloudInvokeCallback);
     leancloud_cloud_decorator_1.SetListener(params);
+    let verify = params.verify;
+    if (verify) {
+        verify.cachePrefix = verify.cachePrefix || (params.redisPrefix + ':verify');
+        verify_1.InitVerify(verify);
+    }
 }
 exports.init = init;
 //# sourceMappingURL=index.js.map

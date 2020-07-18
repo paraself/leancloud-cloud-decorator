@@ -25,6 +25,7 @@ const redis_1 = require("./redis");
 exports.SetCache = redis_1.SetCache;
 const buildIDCommon_1 = require("./buildIDCommon");
 const ioredis_1 = __importDefault(require("ioredis"));
+const verify_1 = require("./verify");
 const cloudFunctionIDFile = 'cloudFunctionID.json';
 const cloudIdInfoMap = (fs_1.default.existsSync(cloudFunctionIDFile) && buildIDCommon_1.GetCloudInfoMap(JSON.parse(fs_1.default.readFileSync(cloudFunctionIDFile, 'utf8')))) || {};
 let redis = redisSetting.redis;
@@ -116,7 +117,7 @@ function getCacheTime(timeUnit, count = 1) {
     return { startTimestamp, expires };
 }
 async function CloudImplementBefore(cloudImplementOptions) {
-    let { functionName, request, cloudOptions, schema, rateLimit, roles, debounce } = cloudImplementOptions;
+    let { functionName, request, cloudOptions, schema, rateLimit, roles, debounce, verify } = cloudImplementOptions;
     let cloudOptions2 = cloudOptions;
     beforeInvoke && await beforeInvoke({
         functionName,
@@ -149,6 +150,11 @@ async function CloudImplementBefore(cloudImplementOptions) {
                 cloudOptions: cloudOptions2,
                 request
             } });
+    }
+    if (verify) {
+        await CheckVerify({ functionName,
+            objectId: request.currentUser && request.currentUser.get('objectId'),
+            ip: request.meta.remoteAddress, verify, params });
     }
     if (debounce && request.currentUser) {
         await CheckDebounce(debounce, params, request.currentUser, 
@@ -193,7 +199,7 @@ async function CloudImplementAfter(cloudImplementOptions) {
     return data;
 }
 async function CloudImplement(cloudImplementOptions) {
-    let { functionName, request, handle, cloudOptions, schema, rateLimit, roles, disableCheck, debounce } = cloudImplementOptions;
+    let { functionName, request, handle, cloudOptions, schema, rateLimit, roles, disableCheck, debounce, verify } = cloudImplementOptions;
     if (!disableCheck) {
         await CloudImplementBefore(cloudImplementOptions);
     }
@@ -246,6 +252,20 @@ class DebounceError extends Error {
     }
 }
 exports.DebounceError = DebounceError;
+class MissingVerify extends Error {
+    constructor(message = '') {
+        super(message);
+        this.name = 'MissingVerify';
+    }
+}
+exports.MissingVerify = MissingVerify;
+class VerifyError extends Error {
+    constructor(message = '') {
+        super(message);
+        this.name = 'VerifyError';
+    }
+}
+exports.VerifyError = VerifyError;
 class RateLimitError extends leanengine_1.default.Cloud.Error {
     constructor(params) {
         super(params.functionName + ' user ' + params.user + ' run ' + params.count + ' over limit ' + params.limit + ' in ' + params.timeUnit, { code: params.code });
@@ -258,6 +278,54 @@ class RateLimitError extends leanengine_1.default.Cloud.Error {
     }
 }
 exports.RateLimitError = RateLimitError;
+async function _CheckVerify(verify, params) {
+    if (verify) {
+        if (!params._verify) {
+            throw new MissingVerify();
+        }
+        try {
+            await verify_1.SetVerify(Object.assign({ type: verify.type }, params._verify));
+        }
+        catch (error) {
+            if (error instanceof Error) {
+                throw new VerifyError(error.message);
+            }
+            else {
+                throw new VerifyError(error);
+            }
+        }
+    }
+}
+async function CheckVerify(params) {
+    let { functionName, objectId, ip, verify } = params;
+    if (!verify)
+        return;
+    // for (let i = 0; i < rateLimit.length; ++i)
+    {
+        // let limit = rateLimit[i]
+        let timeUnit = verify.timeUnit;
+        let user = objectId || ip;
+        let { startTimestamp, expires } = getCacheTime(timeUnit);
+        let date = startTimestamp.valueOf();
+        let cacheKey = `${prefix}:verify_count:${timeUnit}-${date}:${functionName}:${user}`;
+        let countText = await redis.get(cacheKey);
+        if (!countText) {
+            await _CheckVerify(verify, params.params);
+            await redis.setex(cacheKey, expires, 1);
+        }
+        else {
+            let count = parseInt(countText);
+            if (count >= (verify.count || 1)) {
+                await _CheckVerify(verify, params.params);
+                await redis.setex(cacheKey, expires, 1);
+            }
+            else {
+                await redis.pipeline().incr(cacheKey).expire(cacheKey, expires).exec();
+            }
+        }
+        // pipeline.incr(cacheKey).expire(cacheKey, expires)
+    }
+}
 async function CheckDebounce(debounce, params, currentUser, lock) {
     if (debounce) {
         let key = currentUser.get('objectId');
@@ -303,6 +371,7 @@ function CreateCloudCacheFunction(info) {
     return async (request) => {
         let schema = info.schema || null;
         let debounce = info.debounce || null;
+        let verify = info.verify || null;
         let rateLimit = cloudOptions.rateLimit || null;
         // console.log(functionName)
         //@ts-ignore
@@ -333,7 +402,7 @@ function CreateCloudCacheFunction(info) {
             else {
                 //不符合缓存条件,直接执行云函数
                 // console.log(functionName+' CloudImplement(request, descriptor)')
-                return CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles, debounce });
+                return CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles, debounce, verify });
             }
         }
         let cloudParams = params;
@@ -346,14 +415,14 @@ function CreateCloudCacheFunction(info) {
                 throw new leanengine_1.default.Cloud.Error('non-administrators in noCache', { code: 400 });
             }
             let { startTimestamp, expires } = getCacheTime(cache.timeUnit);
-            let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles, debounce });
+            let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles, debounce, verify });
             if (typeof results === 'object') {
                 results.__timestamp = startTimestamp.valueOf();
             }
             console.log(functionName + ' CloudImplement no cache');
             return Promise.resolve(results);
         }
-        await CloudImplementBefore({ functionName, request, cloudOptions, schema, rateLimit, roles, debounce });
+        await CloudImplementBefore({ functionName, request, cloudOptions, schema, rateLimit, roles, debounce, verify });
         if (cache.currentUser) {
             cacheKeyConfig['currentUser'] = request.currentUser;
         }
@@ -397,7 +466,7 @@ function CreateCloudCacheFunction(info) {
             }
         }
         //获取缓存失败,执行原始云函数
-        let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles, disableCheck: true, debounce });
+        let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles, disableCheck: true, debounce, verify });
         let expireBy = cache.expireBy || 'request';
         let startTimestamp;
         let expires;
@@ -491,6 +560,7 @@ function Cloud(params) {
             let rateLimit = params && params.rateLimit || null;
             let roles = params && params.roles || null;
             let debounce = params && params.debounce || null;
+            let verify = params && params.verify;
             // console.log(params)
             if (params && params.cache) {
                 //缓存版本
@@ -503,13 +573,14 @@ function Cloud(params) {
                     functionName,
                     cloudOptions: params,
                     schema,
-                    rpc
+                    rpc,
+                    verify
                 });
             }
             else {
                 // console.log(functionName + ' normal cloud function')
                 //无缓存版本
-                cloudFunction = (request) => CloudImplement({ functionName, request, handle, cloudOptions: params, schema: schema || null, rateLimit, roles, debounce });
+                cloudFunction = (request) => CloudImplement({ functionName, request, handle, cloudOptions: params, schema: schema || null, rateLimit, roles, debounce, verify: verify || null });
             }
             let afterInvokes = params && params.afterInvokes;
             if (afterInvokes) {
