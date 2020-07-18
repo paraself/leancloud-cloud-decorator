@@ -351,7 +351,7 @@ function createSdkFile(sourceFile) {
                                 let internalText = cloudMetaData_1.GetJsonValueString(decorator, 'internal');
                                 let internal = internalText && JSON.parse(internalText);
                                 let verifyText = cloudMetaData_1.GetJsonValueString(decorator, 'verify');
-                                let verify = internalText && JSON.parse(internalText);
+                                let verify = verifyText && JSON.parse(verifyText);
                                 needSkip = false;
                                 // let parameters = sandbox.result || {}
                                 // let platforms:string[] = parameters.platforms

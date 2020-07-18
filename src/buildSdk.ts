@@ -361,7 +361,7 @@ function createSdkFile(sourceFile: ts.SourceFile){
                             let internalText = GetJsonValueString(decorator, 'internal')
                             let internal = internalText && JSON.parse(internalText)
                             let verifyText = GetJsonValueString(decorator, 'verify')
-                            let verify = internalText && JSON.parse(internalText) as VerifyOptions
+                            let verify = verifyText && JSON.parse(verifyText) as VerifyOptions
 
                             needSkip = false;
                             // let parameters = sandbox.result || {}
