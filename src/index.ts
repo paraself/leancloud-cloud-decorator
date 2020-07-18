@@ -40,7 +40,12 @@ interface InitParams<T> extends Listener<T> {
      * 云函数调用后的回调, 可用于修改数据
      */
     afterInvoke?:CloudInvoke<T>
-    verify?:InitVerifyParams
+    verify?:{
+        geetest?:{
+            geetest_id:string, 
+            geetest_key:string,
+        }
+    }
 }
 export function init<T=undefined>(params:InitParams<T>){
     SetCache({
@@ -53,7 +58,7 @@ export function init<T=undefined>(params:InitParams<T>){
     SetListener(params)
     let verify = params.verify
     if(verify) {
-        verify.cachePrefix = verify.cachePrefix || (params.redisPrefix+':verify')
-        InitVerify(verify)
+        // verify.cachePrefix = verify.cachePrefix || (params.redisPrefix+':verify')
+        InitVerify( Object.assign({cachePrefix:(params.redisPrefix+':verify')},verify) )
     }
 }

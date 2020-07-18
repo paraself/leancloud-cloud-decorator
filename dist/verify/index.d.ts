@@ -4,7 +4,6 @@ export interface InitVerifyParams {
     geetest?: {
         geetest_id: string;
         geetest_key: string;
-        prefix: string;
         fallbackCachePrefix: string;
     };
 }

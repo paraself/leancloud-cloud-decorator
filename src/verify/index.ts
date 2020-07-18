@@ -11,7 +11,6 @@ export interface InitVerifyParams{
     geetest?:{
         geetest_id:string, 
         geetest_key:string,
-        prefix:string,
         fallbackCachePrefix:string
     }
 }
@@ -37,7 +36,7 @@ function token(): Promise<string> {
 export function InitVerify(params:InitVerifyParams){
     cachePrefix = params.cachePrefix!
     if(params.geetest){
-        geetest = new GeetestVerify(params.geetest)
+        geetest = new GeetestVerify( Object.assign({fallbackCachePrefix:params.cachePrefix+'_fallback'},params.geetest) )
     }
 }
 export interface VerifyParams{

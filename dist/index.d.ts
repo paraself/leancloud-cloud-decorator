@@ -8,7 +8,6 @@ export * from './verify';
 import { CloudInvoke, CloudInvokeBefore, Listener } from './leancloud-cloud-decorator';
 import { CloudFunctionError } from './cloudHandler';
 import AV from 'leanengine';
-import { InitVerifyParams } from './verify';
 interface InitParams<T> extends Listener<T> {
     /**
      * redis连接地址
@@ -34,6 +33,11 @@ interface InitParams<T> extends Listener<T> {
      * 云函数调用后的回调, 可用于修改数据
      */
     afterInvoke?: CloudInvoke<T>;
-    verify?: InitVerifyParams;
+    verify?: {
+        geetest?: {
+            geetest_id: string;
+            geetest_key: string;
+        };
+    };
 }
 export declare function init<T = undefined>(params: InitParams<T>): void;

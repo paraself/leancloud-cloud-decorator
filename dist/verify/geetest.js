@@ -49,7 +49,7 @@ class GeetestVerify {
     }
     async verify(params) {
         return new Promise(async (resolve, reject) => {
-            let key = this.fallbackCachePrefix + getChallengeForSession(params.geetest_challenge);
+            let key = this.fallbackCachePrefix + ':' + getChallengeForSession(params.geetest_challenge);
             let fallback = await redis_1.redis.get(key) == '1';
             let validateParams = {
                 geetest_challenge: params.geetest_challenge,
@@ -89,7 +89,7 @@ class GeetestVerify {
                     // console.error(dataInfo)
                     // reject(new ErrorMsg({msg:params => ({en:''})}))
                     // reject(IkkErrorInfo.create(new Error(dataInfo),IkkErrorInfo.INTERNAL_ERROR))
-                    let key = this.fallbackCachePrefix + getChallengeForSession(data.challenge);
+                    let key = this.fallbackCachePrefix + ':' + getChallengeForSession(data.challenge);
                     redis_1.redis.setex(key, 60 * 10, '1').then(() => {
                         resolve(data);
                     });

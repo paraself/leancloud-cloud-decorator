@@ -11,7 +11,7 @@ import { redis } from '../redis'
 export class GeetestVerify{
     fallbackCachePrefix:string
     geetest : Geetest
-    constructor(params:{ geetest_id:string, geetest_key:string,prefix:string,fallbackCachePrefix:string }){
+    constructor(params:{ geetest_id:string, geetest_key:string,fallbackCachePrefix:string }){
         this.geetest = new Geetest(params)
         // prefix = params.prefix
         this.fallbackCachePrefix = params.fallbackCachePrefix
@@ -61,7 +61,7 @@ export class GeetestVerify{
     }): Promise<void> {
         
         return new Promise(async (resolve, reject) => {
-        let key = this.fallbackCachePrefix + getChallengeForSession(params.geetest_challenge)
+        let key = this.fallbackCachePrefix +':'+ getChallengeForSession(params.geetest_challenge)
         let fallback = await redis.get(key) == '1'
         let validateParams = {
             geetest_challenge:params.geetest_challenge,
@@ -103,7 +103,7 @@ export class GeetestVerify{
             // console.error(dataInfo)
             // reject(new ErrorMsg({msg:params => ({en:''})}))
             // reject(IkkErrorInfo.create(new Error(dataInfo),IkkErrorInfo.INTERNAL_ERROR))
-            let key = this.fallbackCachePrefix+getChallengeForSession(data.challenge)
+            let key = this.fallbackCachePrefix+':'+getChallengeForSession(data.challenge)
             redis.setex(key, 60 * 10, '1').then(() => {
                 resolve(data)
             })

@@ -5,7 +5,6 @@ export declare class GeetestVerify {
     constructor(params: {
         geetest_id: string;
         geetest_key: string;
-        prefix: string;
         fallbackCachePrefix: string;
     });
     /**

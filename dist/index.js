@@ -30,8 +30,8 @@ function init(params) {
     leancloud_cloud_decorator_1.SetListener(params);
     let verify = params.verify;
     if (verify) {
-        verify.cachePrefix = verify.cachePrefix || (params.redisPrefix + ':verify');
-        verify_1.InitVerify(verify);
+        // verify.cachePrefix = verify.cachePrefix || (params.redisPrefix+':verify')
+        verify_1.InitVerify(Object.assign({ cachePrefix: (params.redisPrefix + ':verify') }, verify));
     }
 }
 exports.init = init;

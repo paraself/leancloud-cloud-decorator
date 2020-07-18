@@ -23,7 +23,7 @@ function token() {
 function InitVerify(params) {
     cachePrefix = params.cachePrefix;
     if (params.geetest) {
-        geetest = new geetest_1.GeetestVerify(params.geetest);
+        geetest = new geetest_1.GeetestVerify(Object.assign({ fallbackCachePrefix: params.cachePrefix + '_fallback' }, params.geetest));
     }
 }
 exports.InitVerify = InitVerify;
