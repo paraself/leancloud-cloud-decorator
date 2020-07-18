@@ -549,11 +549,11 @@ export class RateLimitError extends AV.Cloud.Error{
 
 async function _CheckVerify(verify:VerifyOptions|null,params: CloudParams){
   if(verify){
-    if(!params._verify){
+    if(!params.cloudVerify){
       throw new MissingVerify()
     }
     try {
-      await SetVerify(Object.assign({type:verify.type},params._verify) )
+      await SetVerify(Object.assign({type:verify.type},params.cloudVerify) )
     } catch (error) {
       if( error instanceof Error){
         throw new VerifyError(error.message)
@@ -578,18 +578,12 @@ async function CheckVerify(params: {verify:VerifyOptions,functionName: string, o
     let { startTimestamp, expires } = getCacheTime(timeUnit)
     let date = startTimestamp.valueOf()
     let cacheKey = `${prefix}:verify_count:${timeUnit}-${date}:${functionName}:${user}`
-    let countText = await redis.get(cacheKey)
-    if(!countText){
+    let result = await redis.pipeline().incr(cacheKey).expire(cacheKey, expires).exec()
+    const i=0
+    let count = result[i*2+0][1]
+    if(count>=(verify.count||1)){
       await _CheckVerify(verify,params.params)
-      await redis.setex(cacheKey,expires,1)
-    }else{
-      let count = parseInt(countText)
-      if(count>=(verify.count||1)){
-        await _CheckVerify(verify,params.params)
-        await redis.setex(cacheKey,expires,1)
-      }else{
-        await redis.pipeline().incr(cacheKey).expire(cacheKey, expires).exec()
-      }
+      await redis.setex(cacheKey,expires,0)
     }
     // pipeline.incr(cacheKey).expire(cacheKey, expires)
   }
@@ -632,6 +626,7 @@ function ClearInternalParams(params){
   delete params2.platform
   //@ts-ignore
   delete params2.version
+  delete params2.cloudVerify
   Object.keys(params2).forEach(e=>{if(e.startsWith('_'))delete params2[e]})
   // delete params2._api
   return params2
@@ -976,5 +971,5 @@ export interface CloudParams {
   /**
    * 验证参数
    */
-  _verify?:SetVerifyParams
+  cloudVerify?:SetVerifyParams
 }

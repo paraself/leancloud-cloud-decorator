@@ -264,5 +264,5 @@ export interface CloudParams {
     /**
      * 验证参数
      */
-    _verify?: SetVerifyParams;
+    cloudVerify?: SetVerifyParams;
 }

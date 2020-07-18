@@ -280,11 +280,11 @@ class RateLimitError extends leanengine_1.default.Cloud.Error {
 exports.RateLimitError = RateLimitError;
 async function _CheckVerify(verify, params) {
     if (verify) {
-        if (!params._verify) {
+        if (!params.cloudVerify) {
             throw new MissingVerify();
         }
         try {
-            await verify_1.SetVerify(Object.assign({ type: verify.type }, params._verify));
+            await verify_1.SetVerify(Object.assign({ type: verify.type }, params.cloudVerify));
         }
         catch (error) {
             if (error instanceof Error) {
@@ -308,20 +308,12 @@ async function CheckVerify(params) {
         let { startTimestamp, expires } = getCacheTime(timeUnit);
         let date = startTimestamp.valueOf();
         let cacheKey = `${prefix}:verify_count:${timeUnit}-${date}:${functionName}:${user}`;
-        let countText = await redis.get(cacheKey);
-        if (!countText) {
+        let result = await redis.pipeline().incr(cacheKey).expire(cacheKey, expires).exec();
+        const i = 0;
+        let count = result[i * 2 + 0][1];
+        if (count >= (verify.count || 1)) {
             await _CheckVerify(verify, params.params);
-            await redis.setex(cacheKey, expires, 1);
-        }
-        else {
-            let count = parseInt(countText);
-            if (count >= (verify.count || 1)) {
-                await _CheckVerify(verify, params.params);
-                await redis.setex(cacheKey, expires, 1);
-            }
-            else {
-                await redis.pipeline().incr(cacheKey).expire(cacheKey, expires).exec();
-            }
+            await redis.setex(cacheKey, expires, 0);
         }
         // pipeline.incr(cacheKey).expire(cacheKey, expires)
     }
@@ -360,6 +352,7 @@ function ClearInternalParams(params) {
     delete params2.platform;
     //@ts-ignore
     delete params2.version;
+    delete params2.cloudVerify;
     Object.keys(params2).forEach(e => { if (e.startsWith('_'))
         delete params2[e]; });
     // delete params2._api
