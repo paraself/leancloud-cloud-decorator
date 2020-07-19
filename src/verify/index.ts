@@ -40,8 +40,17 @@ export function InitVerify(params:InitVerifyParams){
     }
 }
 export interface VerifyParams{
+    /**
+     * 验证类型
+     */
     type:VerifyType
+    /**
+     * 验证的sessionId
+     */
     sessionId:string
+    /**
+     * 前端调用第三方验证时的参数
+     */
     data:any
 }
 
@@ -72,6 +81,9 @@ export async function GetVerifyParams(params:{type:VerifyType,geetest?:GetGeetes
 export interface SetVerifyParams{
     // type:VerifyType
     sessionId:string
+    /**
+     * 第三方验证所返回的内容
+     */
     data:SetGeetestVerificationParams
 }
 

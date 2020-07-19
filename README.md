@@ -191,6 +191,49 @@ class User {
 
 ```
 
+## 验证
+可给云函数添加需要验证才能调用的条件
+
+```typescript
+//云引擎部分
+import { Cloud, CloudParams } from 'leancloud-cloud-decorator'
+
+class User {
+    @Cloud<>({
+        schema:{}
+        // 在{timeUnit}单位时间内,被用户调用{count}需要进行{type}类型的验证,目前type类型仅支持geetest
+        verify: {
+          type: 'geetest',
+          count: 2,
+          timeUnit:'day'
+        }
+    })
+    async GetTime() : Promise<string>{
+        return new Date().toString()
+    }
+}
+
+```
+前端可通过云函数 Cloud.GetVerifyParams 获取验证所需的参数, 格式为
+```typescript
+interface VerifyParams{
+    /**
+     * 验证类型
+     */
+    type:VerifyType
+    /**
+     * 验证的sessionId
+     */
+    sessionId:string
+    /**
+     * 前端调用第三方验证时的参数
+     */
+    data:any
+}
+type VerifyType = 'geetest'
+```
+后端可通过接口 GetVerifyParams 获取验证参数, 通过 SetVerify 校验前端返回的验证结果
+
 ## 自动生成前端SDK
 通过项目根目录下的 lcc-config.json 配置文件, 配置需要生成的前端SDK平台。目前暂时不支持配置registry。模块都会发布到npm官方的registry下。如需要私有模块的话，考虑先使用npm的付费版。
 ```json
