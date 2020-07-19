@@ -232,6 +232,14 @@ interface VerifyParams{
 }
 type VerifyType = 'geetest'
 ```
+生成SDK时,需要验证的云函数会添加入额外的参数. 用于填充验证所需信息
+```typescript
+{ cloudVerify? :{sessionId:string,data:{  
+                                            geetest_challenge:string
+                                            geetest_seccode:string
+                                            geetest_validate:string
+                                          }} }
+```
 后端可通过接口 GetVerifyParams 获取验证参数, 通过 SetVerify 校验前端返回的验证结果
 
 ## 自动生成前端SDK

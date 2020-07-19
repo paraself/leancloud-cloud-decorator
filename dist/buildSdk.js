@@ -367,7 +367,7 @@ function createSdkFile(sourceFile) {
                                         skipText(decorators[0].getStart(), decorators[decorators.length - 1].getEnd(), i);
                                         skipNode(methodNode.body, methodNode.body, i);
                                         if (verify) {
-                                            const VerifyParamsText = `& { cloudVerify :{sessionId:string,data:{  
+                                            const VerifyParamsText = `& { cloudVerify? :{sessionId:string,data:{  
                                             geetest_challenge:string
                                             geetest_seccode:string
                                             geetest_validate:string
