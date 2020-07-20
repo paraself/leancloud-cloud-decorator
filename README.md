@@ -196,7 +196,15 @@ class User {
 
 ```typescript
 //云引擎部分
-import { Cloud, CloudParams } from 'leancloud-cloud-decorator'
+import { Cloud, CloudParams, init } from 'leancloud-cloud-decorator'
+
+// 验证所需key添加在init中
+init({verify: {
+    geetest: {
+      geetest_id:{YOUR GEETEST_ID},
+      geetest_key: {YOUR GEETEST_KEY}
+    }
+  }})
 
 class User {
     @Cloud<>({
