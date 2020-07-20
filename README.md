@@ -162,7 +162,8 @@ class Test{
 ```
 
 ## 限流
-有时需要限制每个用户调用某个接口的频率, 以防止非正常的用户请求
+有时需要限制每个用户调用某个接口的频率, 以防止非正常的用户请求。
+
 ```typescript
 //云引擎部分
 import { Cloud, CloudParams } from 'leancloud-cloud-decorator'
@@ -192,7 +193,7 @@ class User {
 ```
 
 ## 验证
-可给云函数添加需要验证才能调用的条件
+可给云函数添加需要验证才能调用的条件。比如，Post一个表单，新建一个专辑，申请一个工单等。对于这种Post类型的接口，如果不验证调用接口是否是真人的话，很容易被坏人用脚本工具，创建大量脏数据，同时浪费服务器资源。因此，我们把行为验证功能，集成进入云函数设置中。如果设置中开启了verify选项，则必须经过行为验证，才能调用。目前仅支持[极验Geetest](https://www.geetest.com/)验证。未来可以增加更多种类的验证方式，例如短信验证，地理位置验证，声纹验证，App验证，自定义验证等方式。
 
 ```typescript
 //云引擎部分
@@ -222,7 +223,8 @@ class User {
 }
 
 ```
-前端可通过云函数 Cloud.GetVerifyParams 获取验证所需的参数, 格式为
+
+1. 前端可通过云函数 Cloud.GetVerifyParams 获取验证所需的参数, 格式为
 ```typescript
 interface VerifyParams{
     /**
@@ -240,15 +242,31 @@ interface VerifyParams{
 }
 type VerifyType = 'geetest'
 ```
-生成SDK时,需要验证的云函数会添加入额外的参数. 用于填充验证所需信息
+2. 在客户端中，集成geetest的sdk，并将Cloud.GetVerifyParams返回的数据，传入geetest的sdk中。具体如下：
+``` ts
+// 待龙哥补充
+```
+
+3. 客户端将geetest的sdk返回的数据，传入需要验证的云函数。如果客户端的sdk是自动生成的话，则对于需要验证的云函数，可以看到参数类型上有cloudVerify这个键。
+
 ```typescript
-{ cloudVerify? :{sessionId:string,data:{  
-                                            geetest_challenge:string
-                                            geetest_seccode:string
-                                            geetest_validate:string
-                                          }} }
+{
+  cloudVerify?:{
+    sessionId:string,
+    data:{  
+      geetest_challenge:string
+      geetest_seccode:string
+      geetest_validate:string
+    }
+  }
+}
 ```
 后端可通过接口 GetVerifyParams 获取验证参数, 通过 SetVerify 校验前端返回的验证结果
+
+4. 对于设置了行为验证限流的云函数，并不是每一次调用都需要设置cloudVerify。客户端可以在正常调用抛出行为验证限流错误的时候，再进行验证。流程如下：
+``` ts
+// 待龙哥补充
+```
 
 ## 自动生成前端SDK
 通过项目根目录下的 lcc-config.json 配置文件, 配置需要生成的前端SDK平台。目前暂时不支持配置registry。模块都会发布到npm官方的registry下。如需要私有模块的话，考虑先使用npm的付费版。
