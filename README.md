@@ -200,12 +200,23 @@ class User {
 import { Cloud, CloudParams, init } from 'leancloud-cloud-decorator'
 
 // 验证所需key添加在init中
-init({verify: {
+init({
+  verify: {
     geetest: {
       geetest_id:{YOUR GEETEST_ID},
       geetest_key: {YOUR GEETEST_KEY}
     }
-  }})
+  }
+  errorCallback:errorInfo => {
+    // 回调中捕获验证错误,返回自定义的错误码给前端识别
+    if (errorInfo instanceof VerifyError) {
+      return {code:411,message:'verify error'}
+    }else if (errorInfo instanceof MissingVerify) {
+      return {code:410,message:'missing verify'}
+    }
+    return errorInfo
+  }
+})
 
 class User {
     @Cloud<>({
@@ -244,7 +255,26 @@ type VerifyType = 'geetest'
 ```
 2. 在客户端中，集成geetest的sdk，并将Cloud.GetVerifyParams返回的数据，传入geetest的sdk中。具体如下：
 ``` ts
-// 待龙哥补充
+// geetest前端执行例子
+var verifyParams = await API.Cloud.GetVerifyParams({type:'geetest'})
+let geetestResult
+function TestGeetest(data)
+{
+    // 调用 initGeetest 初始化参数
+    // 参数1：配置参数
+    // 参数2：回调，回调的第一个参数验证码对象，之后可以使用它调用相应的接口
+    initGeetest({
+        gt: data.gt,
+        challenge: data.challenge,
+        new_captcha: data.new_captcha, // 用于宕机时表示是新验证码的宕机
+        offline: !data.success, // 表示用户后台检测极验服务器是否宕机，一般不需要关注
+        product: "float", // 产品形式，包括：float，popup
+        width: "100%"
+
+        // 更多配置参数请参见：http://www.geetest.com/install/sections/idx-client-sdk.html#config
+    }, captchaObj=>geetestResult = captchaObj.getValidate())
+}
+TestGeetest(verifyParams.data)
 ```
 
 3. 客户端将geetest的sdk返回的数据，传入需要验证的云函数。如果客户端的sdk是自动生成的话，则对于需要验证的云函数，可以看到参数类型上有cloudVerify这个键。
@@ -265,7 +295,17 @@ type VerifyType = 'geetest'
 
 4. 对于设置了行为验证限流的云函数，并不是每一次调用都需要设置cloudVerify。客户端可以在正常调用抛出行为验证限流错误的时候，再进行验证。流程如下：
 ``` ts
-// 待龙哥补充
+// 前端调用例子
+try{
+    await API.User.GetTime({})
+}catch(error){
+    // 后端在errorCallback回调中捕获验证错误,返回特定的错误码
+    if(error.code == 410){
+        API.User.GetTime({
+            cloudVerify:{ sessionId:verifyParams.sessionId, data:geetestResult }
+        })
+    }
+}
 ```
 
 ## 自动生成前端SDK
