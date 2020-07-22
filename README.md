@@ -197,7 +197,7 @@ class User {
 
 ```typescript
 //云引擎部分
-import { Cloud, CloudParams, init } from 'leancloud-cloud-decorator'
+import { Cloud, CloudParams, init, VerifyError, MissingVerify } from 'leancloud-cloud-decorator'
 
 // 验证所需key添加在init中
 init({
@@ -291,7 +291,47 @@ TestGeetest(verifyParams.data)
   }
 }
 ```
-后端可通过接口 GetVerifyParams 获取验证参数, 通过 SetVerify 校验前端返回的验证结果
+后端可单独调用验证接口给其他云函数使用. GetVerifyParams 获取验证参数, 通过 SetVerify 校验前端返回的验证结果
+```typescript
+// 后端例子
+import { GetVerifyParams, SetVerify, CloudParams, Cloud } from 'leancloud-cloud-decorator'
+interface RiskVerifyGeetestParams extends CloudParams {
+  sessionId:string
+  data:{
+    geetest_challenge:string
+    geetest_seccode:string
+    geetest_validate: string
+  }
+}
+class Auth {
+    /**
+     * 获取验证参数
+     */
+    @Cloud({
+        schema:{}
+    })
+    async GetVerifyParams() {
+        return GetVerifyParams({type:'geetest'})
+    }
+    /**
+     * 验证有效性
+     */
+    @Cloud<RiskVerifyGeetestParams>({
+      schema: {
+        sessionId: Joi.string().required(),
+        data: Joi.object({
+          geetest_challenge: Joi.string().required(),
+          geetest_seccode: Joi.string().required(),
+          geetest_validate: Joi.string().required(),
+        })
+      }
+    })
+    async Verify(params:RiskVerifyGeetestParams) {
+        // @ts-ignore
+        await SetVerify(Object.assign({type:'geetest'},params))
+    }
+}
+```
 
 4. 对于设置了行为验证限流的云函数，并不是每一次调用都需要设置cloudVerify。客户端可以在正常调用抛出行为验证限流错误的时候，再进行验证。流程如下：
 ``` ts
