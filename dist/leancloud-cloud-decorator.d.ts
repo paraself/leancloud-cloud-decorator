@@ -92,6 +92,10 @@ export interface VerifyOptions {
      * 时间单位
      */
     timeUnit: 'day' | 'hour' | 'minute' | 'second' | 'month';
+    /**
+     * 过期时间,单位为秒. 默认为30天
+     */
+    expire?: number;
 }
 declare type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 declare type TypedSchemaLike<T> = T extends string ? Joi.StringSchema : T extends Array<infer U> ? Joi.ArraySchema : T extends number ? Joi.NumberSchema : T extends Date ? Joi.DateSchema : T extends boolean ? Joi.BooleanSchema : T extends Buffer ? Joi.BinarySchema : T extends Object ? Joi.ObjectSchema : Joi.AnySchema;

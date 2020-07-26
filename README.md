@@ -209,9 +209,9 @@ init({
   }
   errorCallback:errorInfo => {
     // 回调中捕获验证错误,返回自定义的错误码给前端识别
-    if (errorInfo instanceof VerifyError) {
+    if (errorInfo.error instanceof VerifyError) {
       return {code:411,message:'verify error'}
-    }else if (errorInfo instanceof MissingVerify) {
+    }else if (errorInfo.error instanceof MissingVerify) {
       return {code:410,message:'missing verify'}
     }
     return errorInfo

@@ -127,6 +127,10 @@ export interface VerifyOptions{
    * 时间单位
    */
   timeUnit: 'day' | 'hour' | 'minute' | 'second' | 'month' 
+  /**
+   * 过期时间,单位为秒. 默认为30天
+   */
+  expire?:number
 }
 
 //https://stackoverflow.com/questions/48215950/exclude-property-from-type
@@ -569,11 +573,18 @@ async function CheckVerify(params: {verify:VerifyOptions,functionName: string, o
   let {functionName, objectId, ip, verify} = params
   if(!verify) return
 
+  let user = objectId||ip
+  let lockKey = `${prefix}:verify_lock:${functionName}:${user}`
+  let verified = false
+  if(await redis.get(lockKey)){
+    await _CheckVerify(verify,params.params)
+    await redis.del(lockKey)
+    verified = true
+  }
   // for (let i = 0; i < rateLimit.length; ++i)
   {
     // let limit = rateLimit[i]
     let timeUnit = verify.timeUnit
-    let user = objectId||ip
     let { startTimestamp, expires } = getCacheTime(timeUnit)
     let date = startTimestamp.valueOf()
     let cacheKey = `${prefix}:verify_count:${timeUnit}-${date}:${functionName}:${user}`
@@ -581,8 +592,15 @@ async function CheckVerify(params: {verify:VerifyOptions,functionName: string, o
     const i=0
     let count = result[i*2+0][1]
     if(count>=(verify.count||1)){
-      await _CheckVerify(verify,params.params)
-      await redis.setex(cacheKey,expires,0)
+      let pipeline = redis.pipeline()
+      pipeline.setex(cacheKey,expires,0)
+      if(verified){
+        await pipeline.exec()
+      }else{
+        await pipeline.setex(lockKey,verify.expire||3600*24*30,1).exec()
+        await _CheckVerify(verify,params.params)
+        await redis.del(lockKey)
+      }
     }
     // pipeline.incr(cacheKey).expire(cacheKey, expires)
   }
