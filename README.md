@@ -235,7 +235,7 @@ class User {
 
 ```
 
-1. 前端可通过云函数 Cloud.GetVerifyParams 获取验证所需的参数, 格式为
+1. 前端可通过云函数 Cloud.GetVerifyParams 获取验证所需的参数, 该云函数的返回值类型为：
 ```typescript
 interface VerifyParams{
     /**
@@ -264,15 +264,32 @@ function TestGeetest(data)
     // 参数1：配置参数
     // 参数2：回调，回调的第一个参数验证码对象，之后可以使用它调用相应的接口
     initGeetest({
-        gt: data.gt,
-        challenge: data.challenge,
-        new_captcha: data.new_captcha, // 用于宕机时表示是新验证码的宕机
-        offline: !data.success, // 表示用户后台检测极验服务器是否宕机，一般不需要关注
-        product: "float", // 产品形式，包括：float，popup
-        width: "100%"
-
-        // 更多配置参数请参见：http://www.geetest.com/install/sections/idx-client-sdk.html#config
-    }, captchaObj=>geetestResult = captchaObj.getValidate())
+     gt: data.gt,
+     challenge: data.challenge,
+     /* eslint-disable-next-line */
+     new_captcha: data.new_captcha, // 用于宕机时表示是新验证码的宕机
+     offline: !data.success, // 表示用户后台检测极验服务器是否宕机，一般不需要关注
+     product: 'bind', // 产品形式，包括：float，popup
+     width: '300px',
+     https: true
+     // 更多配置参数请参见：http://www.geetest.com/install/sections/idx-client-sdk.html#config
+   }, (captchaObj: any) => {
+     // 当验证实例准备就绪的时候，调用验证方法
+     captchaObj.onReady((e: any) => {
+       captchaObj.verify()
+     })
+     // 当验证成功之后，拿到验证参数继续传递给云函数
+     captchaObj.onSuccess(() => {
+       const geetestResult = captchaObj.getValidate()
+       // 拿到验证参数之后，调用云函数
+       API.User.GetTime({
+         cloudVerify:{ sessionId:verifyParams.sessionId, data:geetestResult }
+       })
+     })
+     captchaObj.onError((e: any) => {
+       console.log('gt onError', e)
+     })
+   })
 }
 TestGeetest(verifyParams.data)
 ```
