@@ -9,7 +9,7 @@ export * from './cloudStats'
 export * from './errorMsg'
 export * from './verify'
 
-import {SetCache,CloudInvoke,CloudInvokeBefore,SetInvokeCallback,Listener, SetListener} from './leancloud-cloud-decorator'
+import {SetCache,CloudInvoke,CloudInvokeBefore,SetInvokeCallback,Listener, SetListener,SetAfterVerify} from './leancloud-cloud-decorator'
 import {SetCloudErrorCallback,SetCloudInvokeCallback,CloudFunctionError} from './cloudHandler'
 import AV from 'leanengine'
 import Redis from 'ioredis'
@@ -59,6 +59,7 @@ export function init<T=undefined>(params:InitParams<T>){
     SetInvokeCallback(params)
     params.errorCallback && SetCloudErrorCallback(params.errorCallback)
     params.cloudInvokeCallback && SetCloudInvokeCallback(params.cloudInvokeCallback)
+    params.afterVerify && SetAfterVerify({afterVerify:params.afterVerify})
     SetListener(params)
     let verify = params.verify
     if(verify) {

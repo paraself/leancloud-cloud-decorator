@@ -27,6 +27,7 @@ function init(params) {
     leancloud_cloud_decorator_1.SetInvokeCallback(params);
     params.errorCallback && cloudHandler_1.SetCloudErrorCallback(params.errorCallback);
     params.cloudInvokeCallback && cloudHandler_1.SetCloudInvokeCallback(params.cloudInvokeCallback);
+    params.afterVerify && leancloud_cloud_decorator_1.SetAfterVerify({ afterVerify: params.afterVerify });
     leancloud_cloud_decorator_1.SetListener(params);
     let verify = params.verify;
     if (verify) {
