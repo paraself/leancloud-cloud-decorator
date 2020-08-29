@@ -468,5 +468,5 @@ AV.Cloud.define('Cloud.DeleteCache', async request => {
 
 AV.Cloud.define('Cloud.GetVerifyParams', async request => {
   //@ts-ignore
-  return Verify.GetVerifyParams(request.params||{})
+  return Verify.GetVerifyParams(Object.assign({user:request.currentUser},request.params||{}) )
 })

@@ -6,7 +6,7 @@ import { Platform, getCacheKey } from './base';
 export { Platform, getCacheKey };
 import { SetCache } from './redis';
 export { SetCache };
-import { VerifyType, SetVerifyParams } from './verify';
+import { VerifyType, SetVerifyParams, VerifyParams } from './verify';
 export interface CloudInvokeParams<T> {
     functionName: string;
     request: AV.Cloud.CloudFunctionRequest & {
@@ -41,6 +41,11 @@ export declare type CloudInvokeBefore<T> = CloudInvoke<T>;
 export declare function SetInvokeCallback<T>(params: {
     beforeInvoke?: CloudInvokeBefore<T>;
     afterInvoke?: CloudInvoke<T>;
+}): void;
+export declare function SetAfterVerify(params: {
+    afterVerify: (params: VerifyParams & {
+        user?: AV.User;
+    }) => Promise<void>;
 }): void;
 declare type Environment = 'production' | 'staging' | string;
 interface CacheOptions<T> {

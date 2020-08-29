@@ -82,11 +82,12 @@ class VerifyParamsMissingUserOrMobilePhoneNumber extends Error{
     }
 }
 
-export async function GetVerifyParams(params:{type:'sms',sms:{user?:AV.User,mobilePhoneNumber?:string}}):Promise<VerifySmsParams>
-export async function GetVerifyParams(params:{type:'geetest',geetest:GetGeetestVerificationParams}):Promise<VerifyGeetestParams>
-export async function GetVerifyParams(params:{type:VerifyType,geetest?:GetGeetestVerificationParams,sms?:{user?:AV.User,mobilePhoneNumber?:string}}):Promise<VerifyParams>{
+export async function GetVerifyParams(params:{type:'sms',user?:AV.User,sms:{mobilePhoneNumber?:string}}):Promise<VerifySmsParams>
+export async function GetVerifyParams(params:{type:'geetest',user?:AV.User,geetest:GetGeetestVerificationParams}):Promise<VerifyGeetestParams>
+export async function GetVerifyParams(params:{type:VerifyType,user?:AV.User,geetest?:GetGeetestVerificationParams,sms?:{mobilePhoneNumber?:string}}):Promise<VerifyParams>{
     let sessionId = await token()
     let data:any
+    const {user} = params
     if(params.type == 'geetest'){
         if(!geetest){
             throw new Error('Missing geetest when GetVerifyParams type==geetest')
@@ -94,7 +95,7 @@ export async function GetVerifyParams(params:{type:VerifyType,geetest?:GetGeetes
         data = (await geetest.GetVerification(params.geetest||{})).data
     }else if(params.type == 'sms'){
         if('sms' in params){
-            const {user,mobilePhoneNumber} = params.sms!
+            const {mobilePhoneNumber} = params.sms!
             if(!user && mobilePhoneNumber){
     
             }else if(user && mobilePhoneNumber){
@@ -136,7 +137,7 @@ export interface SetVerifyParams{
 //     data:SetGeetestVerificationParams
 // }
 
-export async function SetVerify(params:{type:VerifyType}&SetVerifyParams):Promise<void>{
+export async function SetVerify(params:{type:VerifyType}&SetVerifyParams):Promise<VerifyParams>{
     let {sessionId} = params
     let key = cachePrefix+':'+params.sessionId
     let cache = await redis.get(key)
@@ -152,10 +153,11 @@ export async function SetVerify(params:{type:VerifyType}&SetVerifyParams):Promis
         if(!data.geetest_challenge.startsWith((verifyParams as VerifyGeetestParams).data.challenge)){
             throw new Error('Different geetest_challenge when SetVerify')
         }
-        return geetest.SetVerification(data)
+        await geetest.SetVerification(data)
     }else if(verifyParams.type=='sms'){
         let data = params.data as {mobilePhoneNumber:string,smsCode:string}
         //验证手机号
-        return AV2.Cloud.verifySmsCode(data.smsCode, (verifyParams as VerifySmsParams).data.mobilePhoneNumber)
+        await AV2.Cloud.verifySmsCode(data.smsCode, (verifyParams as VerifySmsParams).data.mobilePhoneNumber)
     }
+    return verifyParams
 }

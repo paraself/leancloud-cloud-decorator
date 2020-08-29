@@ -357,6 +357,6 @@ leanengine_1.default.Cloud.define('Cloud.DeleteCache', async (request) => {
 });
 leanengine_1.default.Cloud.define('Cloud.GetVerifyParams', async (request) => {
     //@ts-ignore
-    return Verify.GetVerifyParams(request.params || {});
+    return Verify.GetVerifyParams(Object.assign({ user: request.currentUser }, request.params || {}));
 });
 //# sourceMappingURL=cloudHandler.js.map

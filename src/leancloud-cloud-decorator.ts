@@ -17,7 +17,7 @@ import {CloudIdConfig,CloudIdInfo,GetCloudInfo,GetCloudInfoMap,CloudIdInfoMap} f
 
 export {SetCache}
 import Redis from 'ioredis'
-import { VerifyType, SetVerifyParams, SetVerify } from './verify'
+import { VerifyType, SetVerifyParams, SetVerify, VerifyParams } from './verify'
 
 const cloudFunctionIDFile = 'cloudFunctionID.json'
 const cloudIdInfoMap : CloudIdInfoMap = (fs.existsSync(cloudFunctionIDFile) && GetCloudInfoMap(JSON.parse( fs.readFileSync(cloudFunctionIDFile,'utf8'))))||{}
@@ -71,6 +71,11 @@ export function SetInvokeCallback<T>(params:{
 }){
   beforeInvoke = params.beforeInvoke
   afterInvoke = params.afterInvoke
+}
+
+let afterVerify:((params:VerifyParams&{user?:AV.User})=>Promise<void>)|undefined
+export function SetAfterVerify(params:{afterVerify:(params:VerifyParams&{user?:AV.User})=>Promise<void>}){
+  afterVerify = params.afterVerify
 }
 
 type Environment = 'production' | 'staging' | string
@@ -386,7 +391,7 @@ async function CloudImplementBefore<T extends CloudParams>(cloudImplementOptions
   if(verify){
     await CheckVerify({functionName, 
       objectId: request.currentUser && request.currentUser.get('objectId'),
-      ip:request.meta.remoteAddress,verify,params})
+      ip:request.meta.remoteAddress,verify,params,user:request.currentUser})
   }
   if(debounce && request.currentUser){
     await CheckDebounce(debounce,params,request.currentUser,
@@ -550,13 +555,14 @@ export class RateLimitError extends AV.Cloud.Error{
 }
 
 
-async function _CheckVerify(verify:VerifyOptions|null,params: CloudParams){
+async function _CheckVerify(verify:VerifyOptions|null,params: CloudParams,user?:AV.User){
   if(verify){
     if(!params.cloudVerify){
       throw new MissingVerify()
     }
+    let verifyData:VerifyParams
     try {
-      await SetVerify(Object.assign({type:verify.type},params.cloudVerify) )
+      verifyData = await SetVerify(Object.assign({type:verify.type},params.cloudVerify) )
     } catch (error) {
       if( error instanceof Error){
         throw new VerifyError(error.message)
@@ -564,10 +570,13 @@ async function _CheckVerify(verify:VerifyOptions|null,params: CloudParams){
         throw new VerifyError(error)
       }
     }
+    if(afterVerify){
+      await afterVerify(Object.assign({user},verifyData))
+    }
   }
 }
 
-async function CheckVerify(params: {verify:VerifyOptions,functionName: string, objectId: string, ip:string, params: CloudParams}){
+async function CheckVerify(params: {verify:VerifyOptions,functionName: string, objectId: string, ip:string, params: CloudParams,user?:AV.User}){
   
 
   let {functionName, objectId, ip, verify} = params
@@ -577,7 +586,7 @@ async function CheckVerify(params: {verify:VerifyOptions,functionName: string, o
   let lockKey = `${prefix}:verify_lock:${functionName}:${user}`
   let verified = false
   if(await redis.get(lockKey)){
-    await _CheckVerify(verify,params.params)
+    await _CheckVerify(verify,params.params,params.user)
     await redis.del(lockKey)
     verified = true
   }
@@ -598,7 +607,7 @@ async function CheckVerify(params: {verify:VerifyOptions,functionName: string, o
         await pipeline.exec()
       }else{
         await pipeline.setex(lockKey,verify.expire||3600*24*30,1).exec()
-        await _CheckVerify(verify,params.params)
+        await _CheckVerify(verify,params.params,params.user)
         await redis.del(lockKey)
       }
     }

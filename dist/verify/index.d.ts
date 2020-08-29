@@ -40,13 +40,14 @@ export interface VerifySmsParams {
 }
 export declare function GetVerifyParams(params: {
     type: 'sms';
+    user?: AV.User;
     sms: {
-        user?: AV.User;
         mobilePhoneNumber?: string;
     };
 }): Promise<VerifySmsParams>;
 export declare function GetVerifyParams(params: {
     type: 'geetest';
+    user?: AV.User;
     geetest: GetGeetestVerificationParams;
 }): Promise<VerifyGeetestParams>;
 export interface SetVerifyParams {
@@ -61,4 +62,4 @@ export interface SetVerifyParams {
 }
 export declare function SetVerify(params: {
     type: VerifyType;
-} & SetVerifyParams): Promise<void>;
+} & SetVerifyParams): Promise<VerifyParams>;

@@ -13,7 +13,7 @@ import {SetCache,CloudInvoke,CloudInvokeBefore,SetInvokeCallback,Listener, SetLi
 import {SetCloudErrorCallback,SetCloudInvokeCallback,CloudFunctionError} from './cloudHandler'
 import AV from 'leanengine'
 import Redis from 'ioredis'
-import {InitVerifyParams,InitVerify} from './verify'
+import {InitVerifyParams,InitVerify, VerifyParams} from './verify'
 
 interface InitParams<T> extends Listener<T> {
     /**
@@ -40,6 +40,10 @@ interface InitParams<T> extends Listener<T> {
      * 云函数调用后的回调, 可用于修改数据
      */
     afterInvoke?:CloudInvoke<T>
+    /**
+     * 验证成功后的回调
+     */
+    afterVerify?: (params:VerifyParams&{user?:AV.User})=>Promise<void>
     verify?:{
         geetest?:{
             geetest_id:string, 

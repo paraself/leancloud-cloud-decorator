@@ -41,6 +41,11 @@ function SetInvokeCallback(params) {
     afterInvoke = params.afterInvoke;
 }
 exports.SetInvokeCallback = SetInvokeCallback;
+let afterVerify;
+function SetAfterVerify(params) {
+    afterVerify = params.afterVerify;
+}
+exports.SetAfterVerify = SetAfterVerify;
 let listener = {};
 function SetListener(p) {
     listener = p || {};
@@ -154,7 +159,7 @@ async function CloudImplementBefore(cloudImplementOptions) {
     if (verify) {
         await CheckVerify({ functionName,
             objectId: request.currentUser && request.currentUser.get('objectId'),
-            ip: request.meta.remoteAddress, verify, params });
+            ip: request.meta.remoteAddress, verify, params, user: request.currentUser });
     }
     if (debounce && request.currentUser) {
         await CheckDebounce(debounce, params, request.currentUser, 
@@ -278,13 +283,14 @@ class RateLimitError extends leanengine_1.default.Cloud.Error {
     }
 }
 exports.RateLimitError = RateLimitError;
-async function _CheckVerify(verify, params) {
+async function _CheckVerify(verify, params, user) {
     if (verify) {
         if (!params.cloudVerify) {
             throw new MissingVerify();
         }
+        let verifyData;
         try {
-            await verify_1.SetVerify(Object.assign({ type: verify.type }, params.cloudVerify));
+            verifyData = await verify_1.SetVerify(Object.assign({ type: verify.type }, params.cloudVerify));
         }
         catch (error) {
             if (error instanceof Error) {
@@ -293,6 +299,9 @@ async function _CheckVerify(verify, params) {
             else {
                 throw new VerifyError(error);
             }
+        }
+        if (afterVerify) {
+            await afterVerify(Object.assign({ user }, verifyData));
         }
     }
 }
@@ -304,7 +313,7 @@ async function CheckVerify(params) {
     let lockKey = `${prefix}:verify_lock:${functionName}:${user}`;
     let verified = false;
     if (await redis.get(lockKey)) {
-        await _CheckVerify(verify, params.params);
+        await _CheckVerify(verify, params.params, params.user);
         await redis.del(lockKey);
         verified = true;
     }
@@ -326,7 +335,7 @@ async function CheckVerify(params) {
             }
             else {
                 await pipeline.setex(lockKey, verify.expire || 3600 * 24 * 30, 1).exec();
-                await _CheckVerify(verify, params.params);
+                await _CheckVerify(verify, params.params, params.user);
                 await redis.del(lockKey);
             }
         }

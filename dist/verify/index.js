@@ -47,6 +47,7 @@ class VerifyParamsMissingUserOrMobilePhoneNumber extends Error {
 async function GetVerifyParams(params) {
     let sessionId = await token();
     let data;
+    const { user } = params;
     if (params.type == 'geetest') {
         if (!geetest) {
             throw new Error('Missing geetest when GetVerifyParams type==geetest');
@@ -55,7 +56,7 @@ async function GetVerifyParams(params) {
     }
     else if (params.type == 'sms') {
         if ('sms' in params) {
-            const { user, mobilePhoneNumber } = params.sms;
+            const { mobilePhoneNumber } = params.sms;
             if (!user && mobilePhoneNumber) {
             }
             else if (user && mobilePhoneNumber) {
@@ -107,13 +108,14 @@ async function SetVerify(params) {
         if (!data.geetest_challenge.startsWith(verifyParams.data.challenge)) {
             throw new Error('Different geetest_challenge when SetVerify');
         }
-        return geetest.SetVerification(data);
+        await geetest.SetVerification(data);
     }
     else if (verifyParams.type == 'sms') {
         let data = params.data;
         //验证手机号
-        return leancloud_storage_1.default.Cloud.verifySmsCode(data.smsCode, verifyParams.data.mobilePhoneNumber);
+        await leancloud_storage_1.default.Cloud.verifySmsCode(data.smsCode, verifyParams.data.mobilePhoneNumber);
     }
+    return verifyParams;
 }
 exports.SetVerify = SetVerify;
 //# sourceMappingURL=index.js.map
