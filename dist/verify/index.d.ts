@@ -1,3 +1,4 @@
+import AV from 'leanengine';
 import { GeetestRegisterReturn, GetGeetestVerificationParams, SetGeetestVerificationParams } from './geetest';
 export interface InitVerifyParams {
     cachePrefix?: string;
@@ -7,7 +8,7 @@ export interface InitVerifyParams {
         fallbackCachePrefix: string;
     };
 }
-export declare type VerifyType = 'geetest';
+export declare type VerifyType = 'geetest' | 'sms';
 export declare function InitVerify(params: InitVerifyParams): void;
 export interface VerifyParams {
     /**
@@ -21,23 +22,42 @@ export interface VerifyParams {
     /**
      * 前端调用第三方验证时的参数
      */
-    data: any;
+    data: {
+        mobilePhoneNumber: any;
+    } | GeetestRegisterReturn;
 }
 export interface VerifyGeetestParams {
     type: 'geetest';
     sessionId: string;
     data: GeetestRegisterReturn;
 }
+export interface VerifySmsParams {
+    type: 'sms';
+    sessionId: string;
+    data: {
+        mobilePhoneNumber: string;
+    };
+}
+export declare function GetVerifyParams(params: {
+    type: 'sms';
+    sms: {
+        user?: AV.User;
+        mobilePhoneNumber?: string;
+    };
+}): Promise<VerifySmsParams>;
 export declare function GetVerifyParams(params: {
     type: 'geetest';
-    geetest?: GetGeetestVerificationParams;
+    geetest: GetGeetestVerificationParams;
 }): Promise<VerifyGeetestParams>;
 export interface SetVerifyParams {
     sessionId: string;
     /**
      * 第三方验证所返回的内容
      */
-    data: SetGeetestVerificationParams;
+    data: SetGeetestVerificationParams | {
+        mobilePhoneNumber: string;
+        smsCode: string;
+    };
 }
 export declare function SetVerify(params: {
     type: VerifyType;

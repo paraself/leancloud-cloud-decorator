@@ -1,5 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+const leanengine_1 = __importDefault(require("leanengine"));
+const leancloud_storage_1 = __importDefault(require("leancloud-storage"));
 const redis_1 = require("../redis");
 const geetest_1 = require("./geetest");
 const crypto_1 = require("crypto");
@@ -27,6 +32,18 @@ function InitVerify(params) {
     }
 }
 exports.InitVerify = InitVerify;
+class VerifyParamsMobileNumberUsedError extends Error {
+    constructor() {
+        super('MobilePhoneNumberUsedError');
+        this.name = 'MobilePhoneNumberUsedError';
+    }
+}
+class VerifyParamsMissingUserOrMobilePhoneNumber extends Error {
+    constructor() {
+        super('VerifyParamsMissingUserOrMobilePhoneNumber');
+        this.name = 'VerifyParamsMissingUserOrMobilePhoneNumber';
+    }
+}
 async function GetVerifyParams(params) {
     let sessionId = await token();
     let data;
@@ -35,6 +52,30 @@ async function GetVerifyParams(params) {
             throw new Error('Missing geetest when GetVerifyParams type==geetest');
         }
         data = (await geetest.GetVerification(params.geetest || {})).data;
+    }
+    else if (params.type == 'sms') {
+        if ('sms' in params) {
+            const { user, mobilePhoneNumber } = params.sms;
+            if (!user && mobilePhoneNumber) {
+            }
+            else if (user && mobilePhoneNumber) {
+                let phoneUser = await new leanengine_1.default.Query('_User').equalTo('mobilePhoneNumber', mobilePhoneNumber).first();
+                if (phoneUser && phoneUser.get('objectId') != user.get('objectId')) {
+                    throw new VerifyParamsMobileNumberUsedError();
+                }
+                await leancloud_storage_1.default.Cloud.requestSmsCode(mobilePhoneNumber);
+            }
+            else if (user && user.getMobilePhoneNumber()) {
+                await leancloud_storage_1.default.Cloud.requestSmsCode(user.getMobilePhoneNumber());
+            }
+            else {
+                throw new VerifyParamsMissingUserOrMobilePhoneNumber();
+            }
+            data = { mobilePhoneNumber };
+        }
+        else {
+            throw new Error('Missing sms when GetVerifyParams type==sms');
+        }
     }
     else {
         throw new Error('Missing GetVerifyParams type ' + params.type);
@@ -50,9 +91,8 @@ exports.GetVerifyParams = GetVerifyParams;
 //     sessionId:string
 //     data:SetGeetestVerificationParams
 // }
-// async function SetVerify(params:SetVerifyGeetestParams):Promise<{}>
 async function SetVerify(params) {
-    let { sessionId, data } = params;
+    let { sessionId } = params;
     let key = cachePrefix + ':' + params.sessionId;
     let cache = await redis_1.redis.get(key);
     if (!cache) {
@@ -63,10 +103,16 @@ async function SetVerify(params) {
         throw new Error('Error SetVerify type ' + verifyParams.type + ' != ' + params.type);
     }
     if (verifyParams.type == 'geetest') {
-        if (!params.data.geetest_challenge.startsWith(verifyParams.data.challenge)) {
+        let data = params.data;
+        if (!data.geetest_challenge.startsWith(verifyParams.data.challenge)) {
             throw new Error('Different geetest_challenge when SetVerify');
         }
-        return geetest.SetVerification(params.data);
+        return geetest.SetVerification(data);
+    }
+    else if (verifyParams.type == 'sms') {
+        let data = params.data;
+        //验证手机号
+        return leancloud_storage_1.default.Cloud.verifySmsCode(data.smsCode, verifyParams.data.mobilePhoneNumber);
     }
 }
 exports.SetVerify = SetVerify;

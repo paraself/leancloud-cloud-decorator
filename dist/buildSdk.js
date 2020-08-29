@@ -367,14 +367,23 @@ function createSdkFile(sourceFile) {
                                         skipText(decorators[0].getStart(), decorators[decorators.length - 1].getEnd(), i);
                                         skipNode(methodNode.body, methodNode.body, i);
                                         if (verify) {
-                                            const VerifyParamsText = `& { cloudVerify? :{sessionId:string,data:{  
-                                            geetest_challenge:string
-                                            geetest_seccode:string
-                                            geetest_validate:string
-                                          }} }`;
                                             let text = results[i];
                                             let lastIndex = text.lastIndexOf(')');
+                                            let VerifyParamsText = '';
                                             if (verify.type == 'geetest') {
+                                                VerifyParamsText = `& { cloudVerify? :{sessionId:string,data:{  
+                                                geetest_challenge:string
+                                                geetest_seccode:string
+                                                geetest_validate:string
+                                              }} }`;
+                                            }
+                                            else if (verify.type == 'sms') {
+                                                VerifyParamsText = `& { cloudVerify? :{sessionId:string,data:{  
+                                                mobilePhoneNumber:string
+                                                smsCode:string
+                                              }} }`;
+                                            }
+                                            if (VerifyParamsText) {
                                                 results[i] = text.substring(0, lastIndex) + VerifyParamsText + text.substring(lastIndex);
                                             }
                                         }
