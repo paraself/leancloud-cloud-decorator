@@ -58,6 +58,7 @@ async function GetVerifyParams(params) {
         if ('sms' in params) {
             const { mobilePhoneNumber } = params.sms;
             if (!user && mobilePhoneNumber) {
+                await leancloud_storage_1.default.Cloud.requestSmsCode(mobilePhoneNumber);
             }
             else if (user && mobilePhoneNumber) {
                 let phoneUser = await new leanengine_1.default.Query('_User').equalTo('mobilePhoneNumber', mobilePhoneNumber).first();

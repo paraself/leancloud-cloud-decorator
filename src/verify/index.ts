@@ -97,7 +97,7 @@ export async function GetVerifyParams(params:{type:VerifyType,user?:AV.User,geet
         if('sms' in params){
             const {mobilePhoneNumber} = params.sms!
             if(!user && mobilePhoneNumber){
-    
+                await AV2.Cloud.requestSmsCode(mobilePhoneNumber)
             }else if(user && mobilePhoneNumber){
                 let phoneUser = await new AV.Query<AV.User>('_User').equalTo('mobilePhoneNumber', mobilePhoneNumber).first()
                 if (phoneUser && phoneUser.get('objectId')!=user.get('objectId')) {
