@@ -38,6 +38,12 @@ export interface VerifySmsParams {
         mobilePhoneNumber: string;
     };
 }
+export declare class VerifyParamsMobileNumberUsedError extends Error {
+    constructor();
+}
+export declare class VerifyParamsMissingUserOrMobilePhoneNumberError extends Error {
+    constructor();
+}
 export declare function GetVerifyParams(params: {
     type: 'sms';
     user?: AV.User;

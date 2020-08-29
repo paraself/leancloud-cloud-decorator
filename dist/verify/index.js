@@ -38,12 +38,14 @@ class VerifyParamsMobileNumberUsedError extends Error {
         this.name = 'MobilePhoneNumberUsedError';
     }
 }
-class VerifyParamsMissingUserOrMobilePhoneNumber extends Error {
+exports.VerifyParamsMobileNumberUsedError = VerifyParamsMobileNumberUsedError;
+class VerifyParamsMissingUserOrMobilePhoneNumberError extends Error {
     constructor() {
         super('VerifyParamsMissingUserOrMobilePhoneNumber');
         this.name = 'VerifyParamsMissingUserOrMobilePhoneNumber';
     }
 }
+exports.VerifyParamsMissingUserOrMobilePhoneNumberError = VerifyParamsMissingUserOrMobilePhoneNumberError;
 async function GetVerifyParams(params) {
     let sessionId = await token();
     let data;
@@ -71,7 +73,7 @@ async function GetVerifyParams(params) {
                 await leancloud_storage_1.default.Cloud.requestSmsCode(user.getMobilePhoneNumber());
             }
             else {
-                throw new VerifyParamsMissingUserOrMobilePhoneNumber();
+                throw new VerifyParamsMissingUserOrMobilePhoneNumberError();
             }
             data = { mobilePhoneNumber };
         }

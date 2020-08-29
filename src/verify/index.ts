@@ -68,14 +68,14 @@ export interface VerifySmsParams{
     data:{ mobilePhoneNumber : string}
 }
 
-class VerifyParamsMobileNumberUsedError extends Error{
+export class VerifyParamsMobileNumberUsedError extends Error{
     constructor(){
         super('MobilePhoneNumberUsedError')
         this.name = 'MobilePhoneNumberUsedError'
     }
 }
 
-class VerifyParamsMissingUserOrMobilePhoneNumber extends Error{
+export class VerifyParamsMissingUserOrMobilePhoneNumberError extends Error{
     constructor(){
         super('VerifyParamsMissingUserOrMobilePhoneNumber')
         this.name = 'VerifyParamsMissingUserOrMobilePhoneNumber'
@@ -107,7 +107,7 @@ export async function GetVerifyParams(params:{type:VerifyType,user?:AV.User,geet
             }else if(user && user.getMobilePhoneNumber()){
                 await AV2.Cloud.requestSmsCode(user.getMobilePhoneNumber())
             }else{
-                throw new VerifyParamsMissingUserOrMobilePhoneNumber()
+                throw new VerifyParamsMissingUserOrMobilePhoneNumberError()
             }
             data = {mobilePhoneNumber}
         }else{
