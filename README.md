@@ -193,7 +193,15 @@ class User {
 ```
 
 ## 验证
-可给云函数添加需要验证才能调用的条件。比如，Post一个表单，新建一个专辑，申请一个工单等。对于这种Post类型的接口，如果不验证调用接口是否是真人的话，很容易被坏人用脚本工具，创建大量脏数据，同时浪费服务器资源。因此，我们把行为验证功能，集成进入云函数设置中。如果设置中开启了verify选项，则必须经过行为验证，才能调用。目前仅支持[极验Geetest](https://www.geetest.com/)验证。未来可以增加更多种类的验证方式，例如短信验证，地理位置验证，声纹验证，App验证，自定义验证等方式。
+可给云函数添加需要验证才能调用的条件。比如，Post一个表单，新建一个专辑，申请一个工单等。对于这种Post类型的接口，如果不验证调用接口是否是真人的话，很容易被坏人用脚本工具，创建大量脏数据，同时浪费服务器资源。因此，我们把行为验证功能，集成进入云函数设置中。如果设置中开启了verify选项，则必须经过行为验证，才能调用。目前支持[极验Geetest](https://www.geetest.com/)与leancloud的短信验证码验证。未来可以增加更多种类的验证方式，例如地理位置验证，声纹验证，App验证，自定义验证等方式。
+
+ `Cloud.GetVerifyParams` 用于返回短信验证码时
+  - 有登录态
+      - 该用户信息有mobilePhoneNumber字段。则直接给该电话号码发验证码，该接口返回值类型：`{ type: sms, sessionId, data: { mobilePhoneNumber }}`
+          - 如果用户已经不再使用之前的手机号码，则前端需要次级引导用户填入新的电话号码，将电话号码传入`Cloud.GetVerifyParams`
+      - 用户信息上没有mobilePhoneNumber字段。则**返回报错**，需要错误码和错误信息。这时候，请求的时候，需要向`Cloud.GetVerifyParams`传入电话号码。对于这种情况，前端需要在请求之前，尽量检查本地用户登陆状态上是否有保存电话，如果没有的话，直接在设计上就需要引导用户填入电话号码。以避免出现报错的情况。
+  - 没有登录态
+      - 没有登录态的时候，则每次发请求必须带上电话号码。如果没有电话号码，则返回报错。
 
 ```typescript
 //云引擎部分
@@ -213,6 +221,12 @@ init({
       return {code:411,message:'verify error'}
     }else if (errorInfo.error instanceof MissingVerify) {
       return {code:410,message:'missing verify'}
+    } else if (ikkError.error instanceof VerifyParamsMobileNumberUsedError) {
+      // 手机号已被使用
+      return {code:412,message:'MobilePhoneNumber have been used'}
+    } else if (ikkError.error instanceof VerifyParamsMissingUserOrMobilePhoneNumberError) {
+      // 手机号缺失
+      return {code:413,message:'missing user or mobilePhoneNumber'}
     }
     return errorInfo
   }
@@ -229,6 +243,18 @@ class User {
         }
     })
     async GetTime() : Promise<string>{
+        return new Date().toString()
+    }
+    @Cloud<>({
+        schema:{}
+        // 在{timeUnit}单位时间内,被用户调用{count}需要进行{type}类型的验证,目前type类型仅支持geetest
+        verify: {
+          type: 'sms',
+          count: 2,
+          timeUnit:'day'
+        }
+    })
+    async GetTime2() : Promise<string>{
         return new Date().toString()
     }
 }
@@ -249,11 +275,22 @@ interface VerifyParams{
     /**
      * 前端调用第三方验证时的参数
      */
-    data:any
+    data:{ mobilePhoneNumber }|GeetestRegisterReturn
 }
-type VerifyType = 'geetest'
+type VerifyType = 'geetest' | 'sms'
+
+
+export interface GeetestRegisterReturn{
+  gt: string
+  /**
+   * 正常时长度为32位,fallback时长度为34位.存储时, 统一只存32位长度
+   */
+  challenge: string
+  new_captcha: boolean
+  success:number
+}
 ```
-2. 在客户端中，集成geetest的sdk，并将Cloud.GetVerifyParams返回的数据，传入geetest的sdk中。具体如下：
+2. geetest验时. 在客户端中，集成geetest的sdk，并将Cloud.GetVerifyParams返回的数据，传入geetest的sdk中。具体如下：
 ``` ts
 // geetest前端执行例子
 var verifyParams = await API.Cloud.GetVerifyParams({type:'geetest'})
@@ -295,6 +332,7 @@ TestGeetest(verifyParams.data)
 ```
 
 3. 客户端将geetest的sdk返回的数据，传入需要验证的云函数。如果客户端的sdk是自动生成的话，则对于需要验证的云函数，可以看到参数类型上有cloudVerify这个键。
+若为sms短信验证, data内容为手机号与验证码
 
 ```typescript
 {
@@ -304,7 +342,7 @@ TestGeetest(verifyParams.data)
       geetest_challenge:string
       geetest_seccode:string
       geetest_validate:string
-    }
+    }| {mobilePhoneNumber:string,smsCode:string}
   }
 }
 ```
