@@ -415,7 +415,7 @@ function createSdkFile(sourceFile: ts.SourceFile){
         /**
          * 使用缓存后,远端请求报错时,调用此回调
          */
-        onError?: (data) => void)
+        onError?: (data) => void
     }
                                         `+text.substring(lastIndex)
                                     }
