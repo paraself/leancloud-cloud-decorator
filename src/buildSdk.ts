@@ -43,13 +43,13 @@ function createCloudRunText(node:ts.MethodDeclaration,method = 'run',clientCache
     let functionName = getFunctionName(node)
     if(clientCache){
         let keyPath = `
-        ${functionName}_${version}`
+        "${functionName}_${version}"`
         if(clientCache.trim()!='true'){
             let clientCacheConfig = JSON.parse(clientCache) as {
                 keyPath:string[]
             }
             if(clientCacheConfig.keyPath){
-                keyPath = keyPath+'?' + JSON.stringify(clientCacheConfig.keyPath) + '.filter(e=>params[e]).map(e=>`${e}=encodeURIComponent(${params[e]})`).join(\'&\')'
+                keyPath = keyPath+'+"?"+' + JSON.stringify(clientCacheConfig.keyPath) + '.filter(e=>params[e]).map(e=>`${e}=${encodeURIComponent(params[e])}`).join(\'&\')'
             }
         }
         keyPath+=`
