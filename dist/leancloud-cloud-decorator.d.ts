@@ -194,7 +194,9 @@ interface CloudOptions<T extends CloudParams, A = any> {
     /**
      * 服务端 标记哪些云函数可以进行客户端缓存，并把该标记发布到sdk
      */
-    clientCache?: true;
+    clientCache?: true | {
+        keyPath: (keyof T)[];
+    };
     /**
      * 服务端设定每个云函数的版本号，每当schema变更的时候，记得修改这个版本号，该版本号记得发布到sdk
      */
