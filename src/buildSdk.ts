@@ -44,9 +44,9 @@ function createCloudRunText(node:ts.MethodDeclaration,method = 'run',clientCache
     if(clientCache){
         if(node.parameters.length>0){
             let parameterName = node.parameters[0].name.getText()
-            return `{return API.${method}('${functionName}',${parameterName},null,true,${version},options.onData,,options.onError) }`
+            return `{return API.${method}('${functionName}',${parameterName},undefined,true,${version},options.onData,,options.onError) }`
         }
-        return `{return  API.${method}('${functionName}',undefine,null,true,${version},options.onData,,options.onError) }`
+        return `{return  API.${method}('${functionName}',undefine,undefined,true,${version},options.onData,,options.onError) }`
     }
     if(node.parameters.length>0){
         let parameterName = node.parameters[0].name.getText()
@@ -416,8 +416,7 @@ function createSdkFile(sourceFile: ts.SourceFile){
          * 使用缓存后,远端请求报错时,调用此回调
          */
         onError?: (data) => void
-    }
-                                        `+text.substring(lastIndex)
+    }`+text.substring(lastIndex)
                                     }
                                     appendText(createCloudRunText(methodNode,rpc?'rpc':'run',clientCache,version),i)
                                 }
