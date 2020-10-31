@@ -46,7 +46,7 @@ function createCloudRunText(node, method = 'run', clientCache, version) {
     let functionName = getFunctionName(node);
     if (clientCache) {
         let keyPath = `
-        "${functionName}_${version}"`;
+        "${functionName}${version ? ('_' + version) : ''}"`;
         if (clientCache.trim() != 'true') {
             let clientCacheConfig = JSON.parse(clientCache);
             if (clientCacheConfig.keyPath) {
