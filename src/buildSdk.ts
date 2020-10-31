@@ -39,8 +39,15 @@ function getFunctionName(node:ts.MethodDeclaration){
     return functionName
 }
 
-function createCloudRunText(node:ts.MethodDeclaration,method = 'run'){
+function createCloudRunText(node:ts.MethodDeclaration,method = 'run',clientCache?:string,version?:string){
     let functionName = getFunctionName(node)
+    if(clientCache){
+        if(node.parameters.length>0){
+            let parameterName = node.parameters[0].name.getText()
+            return `{return API.${method}('${functionName}',${parameterName},null,true,${version},options.onData,,options.onError) }`
+        }
+        return `{return  API.${method}('${functionName}',undefine,null,true,${version},options.onData,,options.onError) }`
+    }
     if(node.parameters.length>0){
         let parameterName = node.parameters[0].name.getText()
         return `{return API.${method}('${functionName}',${parameterName}) }`
@@ -362,6 +369,8 @@ function createSdkFile(sourceFile: ts.SourceFile){
                             let internal = internalText && JSON.parse(internalText)
                             let verifyText = GetJsonValueString(decorator, 'verify')
                             let verify = verifyText && JSON.parse(verifyText) as VerifyOptions
+                            let clientCache = GetJsonValueString(decorator, 'clientCache') as string
+                            let version = GetJsonValueString(decorator, 'version') as string
 
                             needSkip = false;
                             // let parameters = sandbox.result || {}
@@ -376,9 +385,9 @@ function createSdkFile(sourceFile: ts.SourceFile){
                                 }else if(methodNode.body){
                                     skipText(decorators[0].getStart(),decorators[decorators.length-1].getEnd(),i)
                                     skipNode(methodNode.body,methodNode.body,i)
+                                    let text = results[i]
+                                    let lastIndex  = text.lastIndexOf(')')
                                     if(verify){
-                                        let text = results[i]
-                                        let lastIndex  = text.lastIndexOf(')')
                                         let VerifyParamsText = ''
                                         if(verify.type == 'geetest'){
                                             VerifyParamsText = `& { cloudVerify? :{sessionId:string,data:{  
@@ -396,7 +405,21 @@ function createSdkFile(sourceFile: ts.SourceFile){
                                             results[i] = text.substring(0,lastIndex)+VerifyParamsText+text.substring(lastIndex)
                                         }
                                     }
-                                    appendText(createCloudRunText(methodNode,rpc?'rpc':'run'),i)
+                                    if(clientCache){
+                                        results[i] = text.substring(0,lastIndex)+`,options:{
+        /**
+         * 云引擎返回数据调用此函数
+         */
+        onData?: (data) => void
+    
+        /**
+         * 使用缓存后,远端请求报错时,调用此回调
+         */
+        onError?: (data) => void)
+    }
+                                        `+text.substring(lastIndex)
+                                    }
+                                    appendText(createCloudRunText(methodNode,rpc?'rpc':'run',clientCache,version),i)
                                 }
                             }
                             break

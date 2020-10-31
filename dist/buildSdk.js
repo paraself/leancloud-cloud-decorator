@@ -42,8 +42,15 @@ function getFunctionName(node) {
     let functionName = classNode.name.getText() + '.' + node.name.getText();
     return functionName;
 }
-function createCloudRunText(node, method = 'run') {
+function createCloudRunText(node, method = 'run', clientCache, version) {
     let functionName = getFunctionName(node);
+    if (clientCache) {
+        if (node.parameters.length > 0) {
+            let parameterName = node.parameters[0].name.getText();
+            return `{return API.${method}('${functionName}',${parameterName},null,true,${version},options.onData,,options.onError) }`;
+        }
+        return `{return  API.${method}('${functionName}',undefine,null,true,${version},options.onData,,options.onError) }`;
+    }
     if (node.parameters.length > 0) {
         let parameterName = node.parameters[0].name.getText();
         return `{return API.${method}('${functionName}',${parameterName}) }`;
@@ -352,6 +359,8 @@ function createSdkFile(sourceFile) {
                                 let internal = internalText && JSON.parse(internalText);
                                 let verifyText = cloudMetaData_1.GetJsonValueString(decorator, 'verify');
                                 let verify = verifyText && JSON.parse(verifyText);
+                                let clientCache = cloudMetaData_1.GetJsonValueString(decorator, 'clientCache');
+                                let version = cloudMetaData_1.GetJsonValueString(decorator, 'version');
                                 needSkip = false;
                                 // let parameters = sandbox.result || {}
                                 // let platforms:string[] = parameters.platforms
@@ -366,9 +375,9 @@ function createSdkFile(sourceFile) {
                                     else if (methodNode.body) {
                                         skipText(decorators[0].getStart(), decorators[decorators.length - 1].getEnd(), i);
                                         skipNode(methodNode.body, methodNode.body, i);
+                                        let text = results[i];
+                                        let lastIndex = text.lastIndexOf(')');
                                         if (verify) {
-                                            let text = results[i];
-                                            let lastIndex = text.lastIndexOf(')');
                                             let VerifyParamsText = '';
                                             if (verify.type == 'geetest') {
                                                 VerifyParamsText = `& { cloudVerify? :{sessionId:string,data:{  
@@ -387,7 +396,21 @@ function createSdkFile(sourceFile) {
                                                 results[i] = text.substring(0, lastIndex) + VerifyParamsText + text.substring(lastIndex);
                                             }
                                         }
-                                        appendText(createCloudRunText(methodNode, rpc ? 'rpc' : 'run'), i);
+                                        if (clientCache) {
+                                            results[i] = text.substring(0, lastIndex) + `,options:{
+        /**
+         * 云引擎返回数据调用此函数
+         */
+        onData?: (data) => void
+    
+        /**
+         * 使用缓存后,远端请求报错时,调用此回调
+         */
+        onError?: (data) => void)
+    }
+                                        ` + text.substring(lastIndex);
+                                        }
+                                        appendText(createCloudRunText(methodNode, rpc ? 'rpc' : 'run', clientCache, version), i);
                                     }
                                 }
                                 break;
