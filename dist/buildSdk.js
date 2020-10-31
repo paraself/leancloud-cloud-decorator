@@ -397,7 +397,7 @@ function createSdkFile(sourceFile) {
                                             }
                                         }
                                         if (clientCache) {
-                                            results[i] = text.substring(0, lastIndex) + `,options:{
+                                            results[i] = text.substring(0, lastIndex) + `,options?:{
         /**
          * 云引擎返回数据调用此函数
          */
