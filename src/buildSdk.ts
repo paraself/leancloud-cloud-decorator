@@ -39,6 +39,10 @@ function getFunctionName(node:ts.MethodDeclaration){
     return functionName
 }
 
+function getReturnTypeDeclare(node:ts.MethodDeclaration){
+    return ((node.type as ts.NodeWithTypeArguments)?.typeArguments?.[0]?.getText()) || 'any'
+}
+
 function createCloudRunText(node:ts.MethodDeclaration,method = 'run',clientCache?:string,version?:string){
     let functionName = getFunctionName(node)
     if(clientCache){
@@ -422,7 +426,7 @@ function createSdkFile(sourceFile: ts.SourceFile){
         /**
          * 云引擎返回数据调用此函数
          */
-        onData?: (data) => void
+        onData?: (data : ${getReturnTypeDeclare(methodNode)}) => void
     
         /**
          * 使用缓存后,远端请求报错时,调用此回调

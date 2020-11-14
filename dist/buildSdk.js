@@ -42,6 +42,10 @@ function getFunctionName(node) {
     let functionName = classNode.name.getText() + '.' + node.name.getText();
     return functionName;
 }
+function getReturnTypeDeclare(node) {
+    var _a, _b, _c;
+    return ((_c = (_b = (_a = node.type) === null || _a === void 0 ? void 0 : _a.typeArguments) === null || _b === void 0 ? void 0 : _b[0]) === null || _c === void 0 ? void 0 : _c.getText()) || 'any';
+}
 function createCloudRunText(node, method = 'run', clientCache, version) {
     let functionName = getFunctionName(node);
     if (clientCache) {
@@ -411,7 +415,7 @@ function createSdkFile(sourceFile) {
         /**
          * 云引擎返回数据调用此函数
          */
-        onData?: (data) => void
+        onData?: (data : ${getReturnTypeDeclare(methodNode)}) => void
     
         /**
          * 使用缓存后,远端请求报错时,调用此回调
