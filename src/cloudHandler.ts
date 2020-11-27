@@ -419,10 +419,16 @@ export async function DeleteCloudCache(params:DeleteCacheParams){
       if(Array.isArray(env)){
         env.forEach(e=>{
           let cacheKey = `${prefix}:cloud:${e}:${functionName}:` + getCacheKey(cacheKeyConfig!)
+          if(process.env.DEBUG_CACHE){
+            console.log('del '+cacheKey)
+          }
           pipeline.del(cacheKey)
         })
       }else{
         let cacheKey = `${prefix}:cloud:${env}:${functionName}:` + getCacheKey(cacheKeyConfig)
+        if(process.env.DEBUG_CACHE){
+          console.log('del '+cacheKey)
+        }
         pipeline.del(cacheKey)
       }
     }
@@ -435,24 +441,41 @@ export async function DeleteCloudCache(params:DeleteCacheParams){
       'month':result[4][1]
     }
   }else{
-    let pipeline = redis.pipeline()
-    let keys:string[] = []
+    let matches:string[] = []
     if(Array.isArray(env)){
       for(let e = 0;e<env.length;++e){
-        keys.push( ...await redis.keys(`${prefix}:cloud:${env[e]}:${functionName}:*`) )
+        matches.push( ...await redis.keys(`${prefix}:cloud:${env[e]}:${functionName}:*`) )
       }
     }else{
-      keys.push( ...await redis.keys(`${prefix}:cloud:${env}:${functionName}:*`) )
+      matches.push( ...await redis.keys(`${prefix}:cloud:${env}:${functionName}:*`) )
     }
-    keys.forEach(e=>{
-      pipeline.del(e)
-    })
-    let result : [null|Error,number][] = await  pipeline.exec()
-    let out = {}
-    keys.forEach((e,i)=>{
-      out[e] = result[i][1]
-    })
-    return out
+    for(let i=0;i<matches.length;++i){
+      await new Promise((resolve,reject)=>{
+        let stream = redis.scanStream({
+          match:matches[i]
+        })
+        stream.on('data',async function (keys) {
+          // `keys` is an array of strings representing key names
+          if (keys.length) {
+            var pipeline = redis.pipeline();
+            keys.forEach(function (key) {
+              if(process.env.DEBUG_CACHE){
+                console.log('del '+key)
+              }
+              pipeline.del(key);
+            });
+            await pipeline.exec();
+          }
+        });
+        stream.on('end', function () {
+          resolve()
+        });
+        stream.on('error', function (err) {
+          reject(err)
+        });
+      })
+    }
+    return 
   }
 }
 

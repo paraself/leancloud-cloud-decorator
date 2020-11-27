@@ -100,5 +100,11 @@ interface DeleteCacheParams {
         [key: string]: any;
     };
 }
-export declare function DeleteCloudCache(params: DeleteCacheParams): Promise<{}>;
+export declare function DeleteCloudCache(params: DeleteCacheParams): Promise<{
+    'day': number;
+    'hour': number;
+    'minute': number;
+    'second': number;
+    'month': number;
+} | undefined>;
 export {};
