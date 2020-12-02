@@ -46,17 +46,13 @@ function getReturnTypeDeclare(node:ts.MethodDeclaration){
 function createCloudRunText(node:ts.MethodDeclaration,method = 'run',clientCache?:string,version?:string){
     let functionName = getFunctionName(node)
     if(clientCache){
-        let keyPath = `
-        "${functionName}${version?('_'+version):''}"`
-        if(clientCache.trim()!='true'){
-            let clientCacheConfig = JSON.parse(clientCache) as {
-                keyPath:string[]
-            }
-            if(clientCacheConfig.keyPath){
-                keyPath = keyPath+'+"?"+' + JSON.stringify(clientCacheConfig.keyPath) + '.filter(e=>params[e]).map(e=>`${e}=${encodeURIComponent(params[e])}`).join(\'&\')'
-            }
+        let clientCacheConfig = JSON.parse(clientCache) as {
+            keyPath:string[][]
         }
-        keyPath+=`
+        let keyPath = `
+        (${JSON.stringify(clientCacheConfig.keyPath)}.findIndex(e => e.every(e => Object.keys(params).includes(e)) && Object.keys(params).every(e2 => e.includes(e2))) >= 0) ?
+        "${functionName}${version?('_'+version):''}"+"?"+`+"+Object.keys(params).map(e=>`${e}=${encodeURIComponent(params[e])}`).join('&')"+`
+        :undefined
         `
         if(node.parameters.length>0){
             let parameterName = node.parameters[0].name.getText()
