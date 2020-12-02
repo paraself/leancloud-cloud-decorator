@@ -250,6 +250,9 @@ interface CloudOptions<T extends CloudParams,A=any> {
    * 服务端 标记哪些云函数可以进行客户端缓存，并把该标记发布到sdk 
    */
   clientCache?:{
+    /**
+     * 配置存储的key, 以及符合配置条件的请求才会被缓存
+     */
     keyPath:(keyof T)[][]
   },
   
