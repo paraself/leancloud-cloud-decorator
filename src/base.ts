@@ -70,10 +70,40 @@ export function isRoles (avUser: AV.User, roleArray:string[]) {
 }
 
 
-
-function getQueryValueForCache(
+function _getQueryValueForCache(
   value: string | number | AV.Object | boolean | Date
 ): string {
+  switch (typeof value) {
+    case 'string':
+      return encodeURIComponent(value)
+    case 'number':
+    case 'boolean':
+      return '' + value
+    case 'object': {
+      if (value instanceof AV.Object) {
+        return value.get('objectId')
+      }
+      if (value instanceof Date) {
+        return value.getTime().toString()
+      }
+      throw new Error(
+        'unsupported query cache value object ' + JSON.stringify(value)
+      )
+    }
+    case 'undefined':
+      return ''
+    default: {
+      throw new Error('unsupported query cache value type ' + typeof value)
+    }
+  }
+}
+
+function getQueryValueForCache(
+  value: string | number | AV.Object | boolean | Date | any[]
+): string {
+  if(Array.isArray(value)){
+    return value.map(e=>_getQueryValueForCache(e)).join(',')
+  }
   switch (typeof value) {
     case 'string':
       return encodeURIComponent(value)
