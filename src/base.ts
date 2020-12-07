@@ -102,7 +102,7 @@ function getQueryValueForCache(
   value: string | number | AV.Object | boolean | Date | any[]
 ): string {
   if(Array.isArray(value)){
-    return value.map(e=>_getQueryValueForCache(e)).join(',')
+    return value.map(e=>_getQueryValueForCache(e)).join('|')
   }
   switch (typeof value) {
     case 'string':
