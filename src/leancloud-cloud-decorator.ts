@@ -2,7 +2,7 @@ import AV, { request } from 'leanengine'
 import AV2 from 'leancloud-storage'
 import Joi, { any, object } from 'joi'
 import moment from 'moment'
-import {isRole,isRoles} from './base'
+import {isRole,isRoles,cloudPrefix} from './base'
 import { IncrCache } from './cloudStats'
 import {SDKVersion} from './cloudHandler'
 import semver from 'semver'
@@ -922,8 +922,8 @@ export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>)
         }
       }
       if (params && params.internal) {
-        console.log('internal function '+functionName)
-        AV.Cloud.define(functionName,{internal:true}, (request) =>{
+        console.log('internal function '+cloudPrefix+functionName)
+        AV.Cloud.define(cloudPrefix+functionName,{internal:true}, (request) =>{
           let currentUser = request && request.currentUser
           let params2 = request && request.params
           return cloudFunction({ currentUser, params:params2, noUser:true,internal:true })
@@ -932,7 +932,7 @@ export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>)
         params)
         //创建别名函数
         if (params && params.optionalName) {
-          AV.Cloud.define(params.optionalName,{internal:true}, cloudFunction,
+          AV.Cloud.define(cloudPrefix+params.optionalName,{internal:true}, cloudFunction,
             //@ts-ignore
             params)
         }
@@ -941,12 +941,12 @@ export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>)
         if(params && params.noUser && !params.fetchUser){
           options.fetchUser = false
         }
-        AV.Cloud.define(functionName,options, cloudFunction,
+        AV.Cloud.define(cloudPrefix+functionName,options, cloudFunction,
           //@ts-ignore
           params)
         //创建别名函数
         if (params && params.optionalName) {
-          AV.Cloud.define(params.optionalName,options, cloudFunction,
+          AV.Cloud.define(cloudPrefix+params.optionalName,options, cloudFunction,
             //@ts-ignore
             params)
         }

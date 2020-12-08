@@ -613,8 +613,8 @@ function Cloud(params) {
                 }
             }
             if (params && params.internal) {
-                console.log('internal function ' + functionName);
-                leanengine_1.default.Cloud.define(functionName, { internal: true }, (request) => {
+                console.log('internal function ' + base_1.cloudPrefix + functionName);
+                leanengine_1.default.Cloud.define(base_1.cloudPrefix + functionName, { internal: true }, (request) => {
                     let currentUser = request && request.currentUser;
                     let params2 = request && request.params;
                     return cloudFunction({ currentUser, params: params2, noUser: true, internal: true });
@@ -623,7 +623,7 @@ function Cloud(params) {
                 params);
                 //创建别名函数
                 if (params && params.optionalName) {
-                    leanengine_1.default.Cloud.define(params.optionalName, { internal: true }, cloudFunction, 
+                    leanengine_1.default.Cloud.define(base_1.cloudPrefix + params.optionalName, { internal: true }, cloudFunction, 
                     //@ts-ignore
                     params);
                 }
@@ -633,12 +633,12 @@ function Cloud(params) {
                 if (params && params.noUser && !params.fetchUser) {
                     options.fetchUser = false;
                 }
-                leanengine_1.default.Cloud.define(functionName, options, cloudFunction, 
+                leanengine_1.default.Cloud.define(base_1.cloudPrefix + functionName, options, cloudFunction, 
                 //@ts-ignore
                 params);
                 //创建别名函数
                 if (params && params.optionalName) {
-                    leanengine_1.default.Cloud.define(params.optionalName, options, cloudFunction, 
+                    leanengine_1.default.Cloud.define(base_1.cloudPrefix + params.optionalName, options, cloudFunction, 
                     //@ts-ignore
                     params);
                 }

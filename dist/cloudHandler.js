@@ -282,7 +282,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
 //   }
 // })
 //@ts-ignore
-leanengine_1.default.Cloud.define('Cloud.GetStats', async (request) => {
+leanengine_1.default.Cloud.define(base_1.cloudPrefix + 'Cloud.GetStats', async (request) => {
     if (request.currentUser && (await base_1.isRole(request.currentUser, 'Dev'))) {
         return cloudStats_1.GetStats();
     }
@@ -368,7 +368,7 @@ async function DeleteCloudCache(params) {
     }
 }
 exports.DeleteCloudCache = DeleteCloudCache;
-leanengine_1.default.Cloud.define('Cloud.DeleteCache', async (request) => {
+leanengine_1.default.Cloud.define(base_1.cloudPrefix + 'Cloud.DeleteCache', async (request) => {
     if (request.currentUser && (await base_1.isRole(request.currentUser, 'Dev'))) {
         //@ts-ignore
         let params = request.params;
@@ -378,7 +378,7 @@ leanengine_1.default.Cloud.define('Cloud.DeleteCache', async (request) => {
         throw new leanengine_1.default.Cloud.Error('non-administrators', { code: 400 });
     }
 });
-leanengine_1.default.Cloud.define('Cloud.GetVerifyParams', async (request) => {
+leanengine_1.default.Cloud.define(base_1.cloudPrefix + 'Cloud.GetVerifyParams', async (request) => {
     //@ts-ignore
     return Verify.GetVerifyParams(Object.assign({ user: request.currentUser }, request.params || {}));
 });

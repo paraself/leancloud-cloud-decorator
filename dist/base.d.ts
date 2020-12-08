@@ -11,7 +11,8 @@ declare const platforms: {
         };
     };
 };
-export { platforms };
+declare const cloudPrefix: string;
+export { platforms, cloudPrefix };
 export declare type Platform = keyof typeof platforms;
 export declare function CheckPlatform(platform: string): Platform;
 export declare function GetModuleMap(platform: Platform): {

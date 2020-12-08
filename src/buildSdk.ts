@@ -5,7 +5,7 @@ import { readFileSync } from "fs";
 import * as fs from "fs";
 import * as ts from "typescript";
 import * as path from 'path'
-import { Platform,CheckPlatform, GetModuleMap, platforms } from './base'
+import { Platform,CheckPlatform, GetModuleMap, platforms,cloudPrefix } from './base'
 import { PlatformString,GetJsonValueString } from './cloudMetaData'
 import {CreatDartSdk} from './buildDartSdk'
 import { VerifyOptions } from "./leancloud-cloud-decorator";
@@ -35,7 +35,7 @@ function getFunctionName(node:ts.MethodDeclaration){
     let classNode = <ts.ClassLikeDeclaration>node.parent
     if(!classNode.name || ! node.name)
         throw new Error('missing classNode.name or node.name')
-    let functionName = classNode.name.getText() +'.'+ node.name.getText()
+    let functionName = cloudPrefix+classNode.name.getText() +'.'+ node.name.getText()
     return functionName
 }
 

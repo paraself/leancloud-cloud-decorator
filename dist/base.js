@@ -16,6 +16,9 @@ const config_json_1 = __importDefault(require("./config.json"));
 const child_process_1 = require("child_process");
 const platforms = config_json_1.default.platforms;
 exports.platforms = platforms;
+const cloudPrefix = config_json_1.default.cloudPrefix || '';
+exports.cloudPrefix = cloudPrefix;
+process.env.LCC_CLOUD_PREFIX = cloudPrefix;
 function CheckPlatform(platform) {
     if (platforms[platform]) {
         return platform;

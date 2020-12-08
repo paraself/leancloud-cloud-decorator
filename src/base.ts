@@ -13,7 +13,9 @@ const platforms :{[key:string]:
     devDependencies?:{[key:string]:string},
   }
 }= Config.platforms
-export {platforms}
+const cloudPrefix = Config.cloudPrefix || ''
+process.env.LCC_CLOUD_PREFIX = cloudPrefix
+export {platforms,cloudPrefix}
 
 export type Platform = keyof typeof platforms
 

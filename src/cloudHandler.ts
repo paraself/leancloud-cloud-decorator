@@ -1,6 +1,6 @@
 import AV from 'leanengine'
 import * as redisSetting from './redis'
-import {isRole,isRoles,getCacheKey} from './base'
+import {isRole,isRoles,getCacheKey,cloudPrefix} from './base'
 
 import { IncrCall, IncrError, GetStats } from './cloudStats'
 import _ from 'lodash'
@@ -384,7 +384,7 @@ AV.Cloud.define = function(
 // })
 
 //@ts-ignore
-AV.Cloud.define('Cloud.GetStats', async request => {
+AV.Cloud.define(cloudPrefix+'Cloud.GetStats', async request => {
   if (request.currentUser && (await isRole(request.currentUser, 'Dev'))) {
     return GetStats()
   } else {
@@ -479,7 +479,7 @@ export async function DeleteCloudCache(params:DeleteCacheParams){
   }
 }
 
-AV.Cloud.define('Cloud.DeleteCache', async request => {
+AV.Cloud.define(cloudPrefix+'Cloud.DeleteCache', async request => {
   if (request.currentUser && (await isRole(request.currentUser, 'Dev'))) {
     //@ts-ignore
     let params = request.params as DeleteCacheParams
@@ -489,7 +489,7 @@ AV.Cloud.define('Cloud.DeleteCache', async request => {
   }
 })
 
-AV.Cloud.define('Cloud.GetVerifyParams', async request => {
+AV.Cloud.define(cloudPrefix+'Cloud.GetVerifyParams', async request => {
   //@ts-ignore
   return Verify.GetVerifyParams(Object.assign({user:request.currentUser},request.params||{}) )
 })
