@@ -1,9 +1,19 @@
 import * as AV from 'leanengine'
 import _ from 'lodash'
+import fs from 'fs'
 import Config from './config.json'
 import { exec,spawn} from 'child_process'
 
-import { string } from 'joi';
+const _dirroot = __dirname+'/../../../'
+
+const configFilePath = _dirroot+'/lcc-config.json'
+// console.log(fs.readdirSync('./'))
+if(fs.existsSync(configFilePath)){
+    // @ts-ignore
+    Config = JSON.parse(fs.readFileSync(configFilePath,'utf8')) 
+}else{
+    console.log(configFilePath+' does\'t exist')
+}
 
 const platforms :{[key:string]:
   {
