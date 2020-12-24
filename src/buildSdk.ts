@@ -415,10 +415,11 @@ function createSdkFile(sourceFile: ts.SourceFile){
                                         }
                                         if(VerifyParamsText){
                                             let text2 = text.substring(0,lastIndex)
-                                            if(!text2.substring(text2.indexOf('(')+1)){
+                                            let params = text2.substring(text2.lastIndexOf('(')+1).trim()
+                                            if(!params){
                                                 text2 += 'params:{}|undefined'
-                                            }else{
-                                                text2 = text2.replace('CloudParams','{}|undefined')
+                                            }else if(params.includes('CloudParams')){
+                                                text2 = text2.substring(0,text2.lastIndexOf('(')+1) + 'params:{}|undefined'
                                             }
                                             results[i] = text2+VerifyParamsText+text.substring(lastIndex)
                                         }
