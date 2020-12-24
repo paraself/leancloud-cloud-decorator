@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import AV from 'leancloud-storage';
+import AV from 'leanengine';
 import { EnumLocale } from './buildIDCommon';
 export declare type MsgIdConfig = {
     [key: string]: {

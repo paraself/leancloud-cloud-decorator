@@ -3,7 +3,7 @@
 import ts from "typescript"
 import fs from 'fs'
 import path from 'path'
-import AV from 'leancloud-storage'
+import AV from 'leanengine'
 import retry from 'async-retry'
 import {EnumLocale} from './buildIDCommon'
 require('dotenv').config()
@@ -16,7 +16,7 @@ function GetStringFromTemplateSpan(node:ts.TemplateSpan):string {
     return node.literal.text
 }
 function GetStringFromTemplate(node:ts.TemplateExpression):string {
-    return node.head.text+node.templateSpans.map(e=>GetStringFromTemplateSpan(e))
+    return node.head.text+node.templateSpans.map(e=>GetStringFromTemplateSpan(e)).join('')
 }
 function GetStringFromBinaryExpression(node:ts.BinaryExpression):string {
     return GetString(node.left) + GetString(node.right)
@@ -184,11 +184,13 @@ async function translate(config:MsgIdConfig, target : EnumLocale) {
     })
 }
 
+AV.setServerURLs(process.env.LC_SERVER_URL as string)
 AV.init({
     appId: process.env.LC_APP_ID!,
     appKey: process.env.LC_APP_KEY!,
-    production: false,
-    serverURLs: 'https://api.pte-ai.com'
+    masterKey: process.env.LC_APP_MASTER_KEY!,
+    // production: false,
+    // serverURLs: 'https://api.pte-ai.com'
   })
   AV.setProduction(false)
 
@@ -251,7 +253,7 @@ async function translateRequest(text:string[],target : EnumLocale):Promise<strin
     let count = 0
     let res:string[] = await retry(async (bail, _count) => {
         count = _count
-        return await AV.Cloud.run('Util.GetTranslate', _params, { user })
+        return await AV.Cloud.run('Util.GetTranslate', _params, { user, remote: true })
       }, {onRetry: error => {
         console.log('----------------------------------');
         // console.error(`${text.join('\n')}: 

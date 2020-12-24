@@ -7,7 +7,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const typescript_1 = __importDefault(require("typescript"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
-const leancloud_storage_1 = __importDefault(require("leancloud-storage"));
+const leanengine_1 = __importDefault(require("leanengine"));
 const async_retry_1 = __importDefault(require("async-retry"));
 const buildIDCommon_1 = require("./buildIDCommon");
 require('dotenv').config();
@@ -19,7 +19,7 @@ function GetStringFromTemplateSpan(node) {
     return node.literal.text;
 }
 function GetStringFromTemplate(node) {
-    return node.head.text + node.templateSpans.map(e => GetStringFromTemplateSpan(e));
+    return node.head.text + node.templateSpans.map(e => GetStringFromTemplateSpan(e)).join('');
 }
 function GetStringFromBinaryExpression(node) {
     return GetString(node.left) + GetString(node.right);
@@ -168,19 +168,19 @@ async function translate(config, target) {
         msgs2[i][target] = v;
     });
 }
-leancloud_storage_1.default.init({
+leanengine_1.default.setServerURLs(process.env.LC_SERVER_URL);
+leanengine_1.default.init({
     appId: process.env.LC_APP_ID,
     appKey: process.env.LC_APP_KEY,
-    production: false,
-    serverURLs: 'https://api.pte-ai.com'
+    masterKey: process.env.LC_APP_MASTER_KEY,
 });
-leancloud_storage_1.default.setProduction(false);
+leanengine_1.default.setProduction(false);
 exports.currentUser = undefined;
 async function getUser() {
     if (exports.currentUser)
         return exports.currentUser;
     else {
-        let user = await leancloud_storage_1.default.User.logIn(process.env.LC_EMAIL, process.env.LC_PASSWORD);
+        let user = await leanengine_1.default.User.logIn(process.env.LC_EMAIL, process.env.LC_PASSWORD);
         exports.currentUser = user;
         return exports.currentUser;
     }
@@ -229,7 +229,7 @@ async function translateRequest(text, target) {
     let count = 0;
     let res = await async_retry_1.default(async (bail, _count) => {
         count = _count;
-        return await leancloud_storage_1.default.Cloud.run('Util.GetTranslate', _params, { user });
+        return await leanengine_1.default.Cloud.run('Util.GetTranslate', _params, { user, remote: true });
     }, { onRetry: error => {
             console.log('----------------------------------');
             // console.error(`${text.join('\n')}: 
