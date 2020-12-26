@@ -1,6 +1,6 @@
 {
   "name": "leancloud-cloud-decorator",
-  "version": "1.52.27",
+  "version": "1.52.28",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
