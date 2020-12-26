@@ -403,19 +403,11 @@ function createSdkFile(sourceFile) {
                                               }} }`;
                                             }
                                             if (VerifyParamsText) {
-                                                let text2 = text.substring(0, lastIndex);
-                                                let params = text2.substring(text2.lastIndexOf('(') + 1).trim();
-                                                if (!params) {
-                                                    text2 += 'params:{}|undefined';
-                                                }
-                                                else if (params.includes('CloudParams')) {
-                                                    text2 = text2.substring(0, text2.lastIndexOf('(') + 1) + 'params:{}|undefined';
-                                                }
-                                                results[i] = text2 + VerifyParamsText + text.substring(lastIndex);
+                                                results[i] = ClipParamsText(text.substring(0, lastIndex)) + VerifyParamsText + text.substring(lastIndex);
                                             }
                                         }
                                         if (clientCache) {
-                                            results[i] = text.substring(0, lastIndex) + `,options?:{
+                                            results[i] = ClipParamsText(text.substring(0, lastIndex)) + `,options?:{
         /**
          * 云引擎返回数据调用此函数
          */
@@ -451,6 +443,16 @@ function createSdkFile(sourceFile) {
     results[i] += sourceText.substring(lastPositions[i], sourceFile.getEnd());
     // }
     return results;
+}
+function ClipParamsText(text2) {
+    let params = text2.substring(text2.lastIndexOf('(') + 1).trim();
+    if (!params) {
+        text2 += 'params:{}|undefined';
+    }
+    else if (params.includes('CloudParams')) {
+        text2 = text2.substring(0, text2.lastIndexOf('(') + 1) + 'params:{}|undefined';
+    }
+    return text2;
 }
 function deleteFolderRecursive(path) {
     if (fs.existsSync(path)) {
