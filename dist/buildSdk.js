@@ -51,7 +51,7 @@ function createCloudRunText(node, method = 'run', clientCache, version) {
     if (clientCache) {
         let clientCacheConfig = JSON.parse(clientCache);
         let keyPath = `
-        (${JSON.stringify(clientCacheConfig.keyPath)}.findIndex(e => e.every(e => Object.keys(params||{}).includes(e)) && Object.keys(params||{}).every(e2 => e.includes(e2))) >= 0) ?
+        (${JSON.stringify(clientCacheConfig.keyPath)}.findIndex((e:string[]) => e.every(e => Object.keys(params||{}).includes(e)) && Object.keys(params||{}).every(e2 => e.includes(e2))) >= 0) ?
         "${functionName}${version ? ('_' + version) : ''}"+"?"+` + "Object.keys(params||{}).map(e=>`${e}=${encodeURIComponent(params![e])}`).join('&')" + `
         :undefined
         `;
