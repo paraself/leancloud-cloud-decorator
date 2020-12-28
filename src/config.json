@@ -1,5 +1,5 @@
 {
-    "cloudPrefix":"XXXX",
+    "cloudPrefix":"",
     "platforms": {
         "web_test": {
             "package": "@test",
