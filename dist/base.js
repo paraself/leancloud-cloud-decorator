@@ -169,7 +169,7 @@ function promiseExec(command) {
             resolve();
         }
         else {
-            reject();
+            process.exit(code);
         } });
     });
 }
