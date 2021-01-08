@@ -16,5 +16,5 @@ child_process_1.exec(command, { maxBuffer: 1024 * 800 }, (err, stdout, stderr) =
         return;
     }
     console.log(stdout);
-}).on('close', (code, signal) => console.log(code + ' ' + signal));
+}).on('close', (code, signal) => { console.log(code + ' ' + signal); process.exit(code); });
 //# sourceMappingURL=lcc.js.map

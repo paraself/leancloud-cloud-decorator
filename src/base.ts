@@ -165,8 +165,10 @@ export function getCacheKey(
 
 export function promiseExec(command:string){
   return new Promise((resolve,reject)=>{
+    let _err:any
       exec(command, { maxBuffer: 1024 * 800 }, (err, stdout, stderr) => {
           if (err) {
+              _err = err
               console.log(command)
               console.log('\x1b[31m')
               if(stdout) console.log(stdout)
@@ -178,6 +180,6 @@ export function promiseExec(command:string){
           }
           if(stdout) console.log(stdout)
           // resolve()
-      }).on('close', (code, signal) =>  { if (code === 0) { resolve() } else { reject() } })
+      }).on('close', (code, signal) =>  { if (code === 0 && !_err) { resolve() } else { reject() } })
   })
 }

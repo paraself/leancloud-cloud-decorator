@@ -147,8 +147,10 @@ function getCacheKey(equalToConditions, cacheKey = '', symbol = '=') {
 exports.getCacheKey = getCacheKey;
 function promiseExec(command) {
     return new Promise((resolve, reject) => {
+        let _err;
         child_process_1.exec(command, { maxBuffer: 1024 * 800 }, (err, stdout, stderr) => {
             if (err) {
+                _err = err;
                 console.log(command);
                 console.log('\x1b[31m');
                 if (stdout)
@@ -163,7 +165,7 @@ function promiseExec(command) {
             if (stdout)
                 console.log(stdout);
             // resolve()
-        }).on('close', (code, signal) => { if (code === 0) {
+        }).on('close', (code, signal) => { if (code === 0 && !_err) {
             resolve();
         }
         else {
