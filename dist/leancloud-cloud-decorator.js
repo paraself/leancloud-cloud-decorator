@@ -623,7 +623,7 @@ function Cloud(params) {
                 params);
                 //创建别名函数
                 if (params && params.optionalName) {
-                    leanengine_1.default.Cloud.define(base_1.cloudPrefix + params.optionalName, { internal: true }, cloudFunction, 
+                    leanengine_1.default.Cloud.define(params.optionalName, { internal: true }, cloudFunction, 
                     //@ts-ignore
                     params);
                 }
@@ -638,7 +638,7 @@ function Cloud(params) {
                 params);
                 //创建别名函数
                 if (params && params.optionalName) {
-                    leanengine_1.default.Cloud.define(base_1.cloudPrefix + params.optionalName, options, cloudFunction, 
+                    leanengine_1.default.Cloud.define(params.optionalName, options, cloudFunction, 
                     //@ts-ignore
                     params);
                 }

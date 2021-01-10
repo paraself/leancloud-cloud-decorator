@@ -932,7 +932,7 @@ export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>)
         params)
         //创建别名函数
         if (params && params.optionalName) {
-          AV.Cloud.define(cloudPrefix+params.optionalName,{internal:true}, cloudFunction,
+          AV.Cloud.define(params.optionalName,{internal:true}, cloudFunction,
             //@ts-ignore
             params)
         }
@@ -946,7 +946,7 @@ export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>)
           params)
         //创建别名函数
         if (params && params.optionalName) {
-          AV.Cloud.define(cloudPrefix+params.optionalName,options, cloudFunction,
+          AV.Cloud.define(params.optionalName,options, cloudFunction,
             //@ts-ignore
             params)
         }
