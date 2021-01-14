@@ -655,7 +655,14 @@ async function CheckDebounce(debounce:boolean | string[][], params: CloudParams,
         }
       }
       if (cacheParams) {
-        let key = currentUser.get('objectId')+':'+cacheParams.join(',')
+        let cacheKeyConfig = {}
+        //符合缓存条件,记录所使用的查询keys
+        for (let i = 0; i < cacheParams.length; ++i) {
+          let key = cacheParams[i]
+          cacheKeyConfig[key] = params[key]
+        }
+        cacheKeyConfig['currentUser'] = currentUser.get('objectId')
+        let key = getCacheKey(cacheKeyConfig)
         //符合缓存条件,记录所使用的查询keys
         if(! await lock.tryLock(key)){
           throw new DebounceError('debounce error')
