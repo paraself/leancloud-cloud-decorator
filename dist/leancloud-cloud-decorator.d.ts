@@ -127,7 +127,7 @@ interface CloudOptions<T extends CloudParams, A = any> {
     /**
      * 防抖配置
      */
-    debounce?: boolean;
+    debounce?: boolean | Array<Array<keyof T>>;
     /**
      * 备选名,用于让新的云函数,兼容旧的云函数调用
      */

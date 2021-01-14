@@ -183,7 +183,7 @@ interface CloudOptions<T extends CloudParams,A=any> {
   /**
    * 防抖配置
    */
-  debounce?:boolean
+  debounce?:boolean | Array<Array<keyof T>>
   /**
    * 备选名,用于让新的云函数,兼容旧的云函数调用
    */
@@ -363,7 +363,7 @@ async function CloudImplementBefore<T extends CloudParams>(cloudImplementOptions
   schema: Joi.ObjectSchema | null
   rateLimit: RateLimitOptions[] | null
   roles:string[][]|null
-  debounce:boolean| null
+  debounce:boolean | Array<Array<keyof T>> | null
   verify:VerifyOptions|null
 }){
   let { functionName, request, cloudOptions, schema, rateLimit,roles,debounce,verify } = cloudImplementOptions
@@ -409,7 +409,7 @@ async function CloudImplementBefore<T extends CloudParams>(cloudImplementOptions
       ip:request.meta.remoteAddress,verify,params,user:request.currentUser})
   }
   if(debounce && request.currentUser){
-    await CheckDebounce(debounce,params,request.currentUser,
+    await CheckDebounce(debounce as string[][],params,request.currentUser,
       //@ts-ignore
       request.lock as Lock)
   }
@@ -468,7 +468,7 @@ async function CloudImplement<T extends CloudParams>(cloudImplementOptions: {
   rateLimit: RateLimitOptions[] | null
   roles:string[][]|null,
   disableCheck?:true
-  debounce:boolean| null
+  debounce:boolean | Array<Array<keyof T>> | null
   verify:VerifyOptions|null
 }) {
   let { functionName, request, handle, cloudOptions, schema, rateLimit,roles,disableCheck,debounce,verify } = cloudImplementOptions
@@ -630,13 +630,37 @@ async function CheckVerify(params: {verify:VerifyOptions,functionName: string, o
   }
 }
 
-async function CheckDebounce(debounce:boolean, params: CloudParams,currentUser:AV.User,lock:Lock){
+async function CheckDebounce(debounce:boolean | string[][], params: CloudParams,currentUser:AV.User,lock:Lock){
 
   if (debounce) {
-    let key = currentUser.get('objectId')
-    //符合缓存条件,记录所使用的查询keys
-    if(! await lock.tryLock(key)){
-      throw new DebounceError('debounce error')
+    if(debounce==true){
+      let key = currentUser.get('objectId')
+      //符合缓存条件,记录所使用的查询keys
+      if(! await lock.tryLock(key)){
+        throw new DebounceError('debounce error')
+      }
+    }else if(Array.isArray(debounce)){
+      //判断是否符合防抖条件
+      let cacheParams: string[] | null = null
+      let paramsKeys = Object.keys(ClearInternalParams(params))
+      for (let i = 0; i < debounce.length; ++i) {
+        let _cacheParams = debounce[i]
+        if (
+          _cacheParams.length == paramsKeys.length &&
+          //@ts-ignore
+          paramsKeys.every(u => _cacheParams.indexOf(u) >= 0)
+        ) {
+          //@ts-ignore
+          cacheParams = _cacheParams
+        }
+      }
+      if (cacheParams) {
+        let key = currentUser.get('objectId')+':'+cacheParams.join(',')
+        //符合缓存条件,记录所使用的查询keys
+        if(! await lock.tryLock(key)){
+          throw new DebounceError('debounce error')
+        }
+      }
     }
   }
 }
