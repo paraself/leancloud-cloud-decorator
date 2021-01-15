@@ -6,6 +6,7 @@ import path from 'path'
 import AV from 'leanengine'
 import retry from 'async-retry'
 import {EnumLocale} from './buildIDCommon'
+import Config from './config.json'
 require('dotenv').config()
 
 function GetStringFromTemplateSpan(node:ts.TemplateSpan):string {
@@ -253,7 +254,7 @@ async function translateRequest(text:string[],target : EnumLocale):Promise<strin
     let count = 0
     let res:string[] = await retry(async (bail, _count) => {
         count = _count
-        return await AV.Cloud.run('Util.GetTranslate', _params, { user, remote: true })
+        return await AV.Cloud.run(Config.translate || ((Config.cloudPrefix||'')+'Util.GetTranslate'), _params, { user, remote: true })
       }, {onRetry: error => {
         console.log('----------------------------------');
         // console.error(`${text.join('\n')}: 

@@ -1,5 +1,6 @@
 {
     "cloudPrefix":"",
+    "translate":"Util.GetTranslate",
     "platforms": {
         "web_test": {
             "package": "@test",
