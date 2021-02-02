@@ -39,7 +39,7 @@ function getFunctionName(node) {
     let classNode = node.parent;
     if (!classNode.name || !node.name)
         throw new Error('missing classNode.name or node.name');
-    let functionName = base_1.cloudPrefix + classNode.name.getText() + '.' + node.name.getText();
+    let functionName = classNode.name.getText() + '.' + node.name.getText();
     return functionName;
 }
 function getReturnTypeDeclare(node) {
