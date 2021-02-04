@@ -86,7 +86,22 @@ function PlatformString(text) {
     return value;
 }
 exports.PlatformString = PlatformString;
+function RemoveComma(text) {
+    text = text.trim();
+    if (text[0] == ',') {
+        return text.substring(1);
+    }
+    if (text[text.length - 1] == ',') {
+        return text.substring(0, text.length - 1);
+    }
+    return text;
+}
 function GetJsonValueString(text, key, remove, startIndex) {
+    let lastCommon = text.lastIndexOf(',');
+    let lastToken = text.lastIndexOf('}');
+    if (lastCommon && lastToken && !text.substring(lastCommon + 1, lastToken).trim()) {
+        text = text.substring(0, lastCommon) + text.substring(lastCommon + 1);
+    }
     text = text.replace(/(\/\*([\s\S]*?)\*\/)|(\/\/(.*)$)/gm, ''); //移除注释
     let start = startIndex || text.indexOf(key);
     if (start < 0) {
@@ -120,12 +135,15 @@ function GetJsonValueString(text, key, remove, startIndex) {
         index += 1;
     }
     let text1 = text.substring(valueStart, index);
+    if (remove) {
+        let result2 = RemoveComma(text.substring(0, start - 1)) + RemoveComma(text.substring(index));
+        result2 = result2.replace(/'/g, '"') //将单引号换成双引号
+            .replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": '); //给key加双引号
+        return [RemoveComma(text1), result2];
+    }
     let result = text1
         .replace(/'/g, '"') //将单引号换成双引号
         .replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": '); //给key加双引号
-    if (remove) {
-        return [result, text.substring(0, start) + result, text.substring(index)];
-    }
     return result;
 }
 exports.GetJsonValueString = GetJsonValueString;

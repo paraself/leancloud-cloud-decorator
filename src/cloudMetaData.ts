@@ -259,10 +259,26 @@ export function PlatformString(text: string) :string|null {
   // }
   return value
 }
+
+function RemoveComma(text:string) {
+    text = text.trim()
+    if (text[0] == ',') {
+        return text.substring(1)
+    }
+    if (text[text.length-1] == ',') {
+        return text.substring(0,text.length-1)
+    }
+    return text
+}
 export function GetJsonValueString(text: string, key: string,remove : true) :[string,string]
 export function GetJsonValueString(text: string, key: string) : string
 export function GetJsonValueString(text: string, key: string,remove : false,startIndex:number) : string
 export function GetJsonValueString(text: string, key: string,remove?:boolean,startIndex?:number) {
+  let lastCommon = text.lastIndexOf(',')
+  let lastToken = text.lastIndexOf('}')
+  if(lastCommon&&lastToken&&!text.substring(lastCommon+1,lastToken).trim()){
+    text = text.substring(0,lastCommon) + text.substring(lastCommon+1)
+  }
   text = text.replace(/(\/\*([\s\S]*?)\*\/)|(\/\/(.*)$)/gm, '');//移除注释
   let start = startIndex || text.indexOf(key)
   if (start < 0){ 
@@ -295,14 +311,17 @@ export function GetJsonValueString(text: string, key: string,remove?:boolean,sta
     }
     index+=1
   }
-  let text1 = text.substring(valueStart, index)
-  let result = text1
-  .replace(/'/g, '"')//将单引号换成双引号
-  .replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ') //给key加双引号
-  if(remove){
-    return [result,text.substring(0,start)+result,text.substring(index)]
+  let text1 = text.substring(valueStart, index);
+  if (remove) {
+      let result2 = RemoveComma( text.substring(0, start-1) )+ RemoveComma(text.substring(index))
+      result2 = result2.replace(/'/g, '"') //将单引号换成双引号
+      .replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": '); //给key加双引号
+      return [RemoveComma(text1), result2];
   }
-  return result
+  let result = text1
+      .replace(/'/g, '"') //将单引号换成双引号
+      .replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": '); //给key加双引号
+  return result;
 }
 // export function JsonString(text: string,key:string) {
 //   text = text.replace(/(\/\*([\s\S]*?)\*\/)|(\/\/(.*)$)/gm, '');//移除注释

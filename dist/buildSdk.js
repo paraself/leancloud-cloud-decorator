@@ -50,7 +50,7 @@ function createCloudRunText(node, method = 'run', clientCache, versionCb) {
     let functionName = getFunctionName(node);
     if (clientCache) {
         let clientCacheConfig = JSON.parse(clientCache);
-        let versionString = 'let version = ' + (versionCb ? `(${versionCb})(options!.clientCacheVersionParams)` : '');
+        let versionString = 'let version = ' + (versionCb ? `(${versionCb})(options!.clientCacheVersionParams)` : '') + '\n';
         let keyPath = `
         (${JSON.stringify(clientCacheConfig.keyPath)}.findIndex((e:string[]) => e.every(e => Object.keys(params||{}).includes(e)) && Object.keys(params||{}).every(e2 => e.includes(e2))) >= 0) ?
         "${functionName}"+(version&&("_"+version)||"")+"?"+` + "Object.keys(params||{}).map(e=>`${e}=${encodeURIComponent(params![e])}`).join('&')" + `
@@ -58,9 +58,9 @@ function createCloudRunText(node, method = 'run', clientCache, versionCb) {
         `;
         if (node.parameters.length > 0) {
             let parameterName = node.parameters[0].name.getText();
-            return `{return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},options?.onData,options?.onError) }`;
+            return `{return ${versionString} API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},options?.onData,options?.onError) }`;
         }
-        return `{return  API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},options?.onData,options?.onError) }`;
+        return `{return ${versionString} API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},options?.onData,options?.onError) }`;
     }
     if (node.parameters.length > 0) {
         let parameterName = node.parameters[0].name.getText();
