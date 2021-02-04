@@ -202,7 +202,7 @@ interface CloudOptions<T extends CloudParams, A = any> {
         /**
          * 版本标记。当前端升级api模块之后，调用接口时生成的clientCacheVersion也不同。会把返回的version加入到缓存的key path里。
          */
-        versionCb?: (params: any) => string;
+        versionCb?: (params: any) => number | string;
     };
 }
 export interface Listener<A> {

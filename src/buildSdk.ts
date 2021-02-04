@@ -385,7 +385,7 @@ function createSdkFile(sourceFile: ts.SourceFile){
                             let clientCache = GetJsonValueString(decorator, 'clientCache')
                             let versionCb:string
                             [versionCb,clientCache] = GetJsonValueString(clientCache, 'versionCb',true)
-                            let clientCacheVersionParams = versionCb && GetJsonValueString(versionCb,'',false,0)
+                            let clientCacheVersionParams = versionCb && versionCb.indexOf(":")>=0 && GetJsonValueString(versionCb,'',false,0)
 
                             needSkip = false;
                             // let parameters = sandbox.result || {}
