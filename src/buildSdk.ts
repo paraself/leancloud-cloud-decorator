@@ -383,8 +383,10 @@ function createSdkFile(sourceFile: ts.SourceFile){
                             let verifyText = GetJsonValueString(decorator, 'verify')
                             let verify = verifyText && JSON.parse(verifyText) as VerifyOptions
                             let clientCache = GetJsonValueString(decorator, 'clientCache')
-                            let versionCb:string
-                            [versionCb,clientCache] = GetJsonValueString(clientCache, 'versionCb',true)
+                            let versionCb:string|undefined = undefined
+                            if(clientCache){
+                                [versionCb,clientCache] = GetJsonValueString(clientCache, 'versionCb',true)
+                            }
                             let clientCacheVersionParams = versionCb && versionCb.indexOf(":")>=0 && GetJsonValueString(versionCb,'',false,0)
 
                             needSkip = false;

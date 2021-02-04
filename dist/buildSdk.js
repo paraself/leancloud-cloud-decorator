@@ -371,8 +371,10 @@ function createSdkFile(sourceFile) {
                                 let verifyText = cloudMetaData_1.GetJsonValueString(decorator, 'verify');
                                 let verify = verifyText && JSON.parse(verifyText);
                                 let clientCache = cloudMetaData_1.GetJsonValueString(decorator, 'clientCache');
-                                let versionCb;
-                                [versionCb, clientCache] = cloudMetaData_1.GetJsonValueString(clientCache, 'versionCb', true);
+                                let versionCb = undefined;
+                                if (clientCache) {
+                                    [versionCb, clientCache] = cloudMetaData_1.GetJsonValueString(clientCache, 'versionCb', true);
+                                }
                                 let clientCacheVersionParams = versionCb && versionCb.indexOf(":") >= 0 && cloudMetaData_1.GetJsonValueString(versionCb, '', false, 0);
                                 needSkip = false;
                                 // let parameters = sandbox.result || {}
