@@ -43,22 +43,23 @@ function getReturnTypeDeclare(node:ts.MethodDeclaration){
     return ((node.type as ts.NodeWithTypeArguments)?.typeArguments?.[0]?.getText()) || 'any'
 }
 
-function createCloudRunText(node:ts.MethodDeclaration,method = 'run',clientCache?:string,version?:string){
+function createCloudRunText(node:ts.MethodDeclaration,method = 'run',clientCache?:string,versionCb?:string){
     let functionName = getFunctionName(node)
     if(clientCache){
         let clientCacheConfig = JSON.parse(clientCache) as {
             keyPath:string[][]
         }
+        let versionString = 'let version = '+(versionCb?`(${versionCb})(options!.clientCacheVersionParams)`:'')
         let keyPath = `
         (${JSON.stringify(clientCacheConfig.keyPath)}.findIndex((e:string[]) => e.every(e => Object.keys(params||{}).includes(e)) && Object.keys(params||{}).every(e2 => e.includes(e2))) >= 0) ?
-        "${functionName}${version?('_'+version):''}"+"?"+`+"Object.keys(params||{}).map(e=>`${e}=${encodeURIComponent(params![e])}`).join('&')"+`
+        "${functionName}"+(version&&("_"+version)||"")+"?"+`+"Object.keys(params||{}).map(e=>`${e}=${encodeURIComponent(params![e])}`).join('&')"+`
         :undefined
         `
         if(node.parameters.length>0){
             let parameterName = node.parameters[0].name.getText()
-            return `{return API.${method}('${functionName}',${parameterName},undefined,true,${version}||undefined,${keyPath},options?.onData,options?.onError) }`
+            return `{return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},options?.onData,options?.onError) }`
         }
-        return `{return  API.${method}('${functionName}',undefined,undefined,true,${version}||undefined,${keyPath},options?.onData,options?.onError) }`
+        return `{return  API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},options?.onData,options?.onError) }`
     }
     if(node.parameters.length>0){
         let parameterName = node.parameters[0].name.getText()
@@ -381,8 +382,10 @@ function createSdkFile(sourceFile: ts.SourceFile){
                             let internal = internalText && JSON.parse(internalText)
                             let verifyText = GetJsonValueString(decorator, 'verify')
                             let verify = verifyText && JSON.parse(verifyText) as VerifyOptions
-                            let clientCache = GetJsonValueString(decorator, 'clientCache') as string
-                            let version = GetJsonValueString(decorator, 'version') as string
+                            let clientCache = GetJsonValueString(decorator, 'clientCache')
+                            let versionCb:string
+                            [versionCb,clientCache] = GetJsonValueString(clientCache, 'versionCb',true)
+                            let clientCacheVersionParams = versionCb && GetJsonValueString(versionCb,'',false,0)
 
                             needSkip = false;
                             // let parameters = sandbox.result || {}
@@ -428,9 +431,11 @@ function createSdkFile(sourceFile: ts.SourceFile){
          * 使用缓存后,远端请求报错时,调用此回调
          */
         onError?: (data) => void
+
+        ${clientCacheVersionParams?"clientCacheVersionParams:"+clientCacheVersionParams:""}
     }`+text.substring(lastIndex)
                                     }
-                                    appendText(createCloudRunText(methodNode,rpc?'rpc':'run',clientCache,version),i)
+                                    appendText(createCloudRunText(methodNode,rpc?'rpc':'run',clientCache,versionCb),i)
                                 }
                             }
                             break

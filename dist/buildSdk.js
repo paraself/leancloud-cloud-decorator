@@ -46,20 +46,21 @@ function getReturnTypeDeclare(node) {
     var _a, _b, _c;
     return ((_c = (_b = (_a = node.type) === null || _a === void 0 ? void 0 : _a.typeArguments) === null || _b === void 0 ? void 0 : _b[0]) === null || _c === void 0 ? void 0 : _c.getText()) || 'any';
 }
-function createCloudRunText(node, method = 'run', clientCache, version) {
+function createCloudRunText(node, method = 'run', clientCache, versionCb) {
     let functionName = getFunctionName(node);
     if (clientCache) {
         let clientCacheConfig = JSON.parse(clientCache);
+        let versionString = 'let version = ' + (versionCb ? `(${versionCb})(options!.clientCacheVersionParams)` : '');
         let keyPath = `
         (${JSON.stringify(clientCacheConfig.keyPath)}.findIndex((e:string[]) => e.every(e => Object.keys(params||{}).includes(e)) && Object.keys(params||{}).every(e2 => e.includes(e2))) >= 0) ?
-        "${functionName}${version ? ('_' + version) : ''}"+"?"+` + "Object.keys(params||{}).map(e=>`${e}=${encodeURIComponent(params![e])}`).join('&')" + `
+        "${functionName}"+(version&&("_"+version)||"")+"?"+` + "Object.keys(params||{}).map(e=>`${e}=${encodeURIComponent(params![e])}`).join('&')" + `
         :undefined
         `;
         if (node.parameters.length > 0) {
             let parameterName = node.parameters[0].name.getText();
-            return `{return API.${method}('${functionName}',${parameterName},undefined,true,${version}||undefined,${keyPath},options?.onData,options?.onError) }`;
+            return `{return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},options?.onData,options?.onError) }`;
         }
-        return `{return  API.${method}('${functionName}',undefined,undefined,true,${version}||undefined,${keyPath},options?.onData,options?.onError) }`;
+        return `{return  API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},options?.onData,options?.onError) }`;
     }
     if (node.parameters.length > 0) {
         let parameterName = node.parameters[0].name.getText();
@@ -370,7 +371,9 @@ function createSdkFile(sourceFile) {
                                 let verifyText = cloudMetaData_1.GetJsonValueString(decorator, 'verify');
                                 let verify = verifyText && JSON.parse(verifyText);
                                 let clientCache = cloudMetaData_1.GetJsonValueString(decorator, 'clientCache');
-                                let version = cloudMetaData_1.GetJsonValueString(decorator, 'version');
+                                let versionCb;
+                                [versionCb, clientCache] = cloudMetaData_1.GetJsonValueString(clientCache, 'versionCb', true);
+                                let clientCacheVersionParams = versionCb && cloudMetaData_1.GetJsonValueString(versionCb, '', false, 0);
                                 needSkip = false;
                                 // let parameters = sandbox.result || {}
                                 // let platforms:string[] = parameters.platforms
@@ -417,9 +420,11 @@ function createSdkFile(sourceFile) {
          * 使用缓存后,远端请求报错时,调用此回调
          */
         onError?: (data) => void
+
+        ${clientCacheVersionParams ? "clientCacheVersionParams:" + clientCacheVersionParams : ""}
     }` + text.substring(lastIndex);
                                         }
-                                        appendText(createCloudRunText(methodNode, rpc ? 'rpc' : 'run', clientCache, version), i);
+                                        appendText(createCloudRunText(methodNode, rpc ? 'rpc' : 'run', clientCache, versionCb), i);
                                     }
                                 }
                                 break;

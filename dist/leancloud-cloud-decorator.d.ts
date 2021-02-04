@@ -201,9 +201,9 @@ interface CloudOptions<T extends CloudParams, A = any> {
         keyPath: (keyof T)[][];
     };
     /**
-     * 服务端设定每个云函数的版本号，每当schema变更的时候，记得修改这个版本号，该版本号记得发布到sdk
+     * 版本标记。当前端升级api模块之后，调用接口时生成的clientCacheVersion也不同。会把返回的version加入到缓存的key path里。
      */
-    version?: string;
+    clientCacheVersionParams?: (params: any) => string;
 }
 export interface Listener<A> {
     /**

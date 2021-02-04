@@ -86,46 +86,47 @@ function PlatformString(text) {
     return value;
 }
 exports.PlatformString = PlatformString;
-function GetJsonValueString(text, key) {
+function GetJsonValueString(text, key, remove, startIndex) {
     text = text.replace(/(\/\*([\s\S]*?)\*\/)|(\/\/(.*)$)/gm, ''); //移除注释
-    let start = text.indexOf(key);
-    if (start < 0)
+    let start = startIndex || text.indexOf(key);
+    if (start < 0) {
+        if (remove) {
+            return [null, text];
+        }
         return null;
-    let braceTokenCount = 0;
-    let squareTokenCount = 0;
+    }
+    let tokenCount = 0;
     let valueStart = text.indexOf(':', start) + 1;
     let index = valueStart;
     let end = text.length;
     while (index <= end) {
         let token = text[index];
-        if (token == '[') {
-            squareTokenCount += 1;
+        if (token == '[' || token == '{' || token == '(') {
+            tokenCount += 1;
             // console.log(index + ' [ ' + tokenCount)
         }
-        else if (token == ']') {
-            squareTokenCount -= 1;
+        else if (token == ']' || token == '}' || token == ')') {
+            tokenCount -= 1;
             // console.log(index + ' ] ' + tokenCount)
         }
-        if (token == '{') {
-            braceTokenCount += 1;
-        }
-        else if (token == '}') {
-            braceTokenCount -= 1;
-        }
-        if (braceTokenCount == -1) {
+        if (tokenCount == -1) {
             // index -= 1
             break;
         }
-        if (token == ',' && braceTokenCount == 0 && squareTokenCount == 0) {
+        if (token == ',' && tokenCount == 0) {
             // index -= 1
             break;
         }
         index += 1;
     }
     let text1 = text.substring(valueStart, index);
-    return text1
+    let result = text1
         .replace(/'/g, '"') //将单引号换成双引号
         .replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": '); //给key加双引号
+    if (remove) {
+        return [result, text.substring(0, start) + result, text.substring(index)];
+    }
+    return result;
 }
 exports.GetJsonValueString = GetJsonValueString;
 // export function JsonString(text: string,key:string) {

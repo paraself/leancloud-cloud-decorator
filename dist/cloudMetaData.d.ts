@@ -129,6 +129,8 @@ interface ParameterData extends TypedocData {
     type: TypeData;
 }
 export declare function PlatformString(text: string): string | null;
-export declare function GetJsonValueString(text: string, key: string): string | null;
+export declare function GetJsonValueString(text: string, key: string, remove: true): [string, string];
+export declare function GetJsonValueString(text: string, key: string): string;
+export declare function GetJsonValueString(text: string, key: string, remove: false, startIndex: number): string;
 export declare function CreateCloudMetaData(datas: TypedocData[]): IMetaData[];
 export {};
