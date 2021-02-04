@@ -60,7 +60,7 @@ function createCloudRunText(node:ts.MethodDeclaration,method = 'run',clientCache
             let parameterName = node.parameters[0].name.getText()
             return `{
                 ${versionString}
-                return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},${clientCacheConfig.revalidate||'undefined'},,options?.onData,options?.onError) }`
+                return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},${clientCacheConfig.revalidate||'undefined'},options?.onData,options?.onError) }`
         }
         return `{
             ${versionString}
