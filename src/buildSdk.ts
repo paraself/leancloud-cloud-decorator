@@ -47,7 +47,8 @@ function createCloudRunText(node:ts.MethodDeclaration,method = 'run',clientCache
     let functionName = getFunctionName(node)
     if(clientCache){
         let clientCacheConfig = JSON.parse(clientCache) as {
-            keyPath:string[][]
+            keyPath:string[][],
+            revalidate?:boolean
         }
         let versionString = 'let version = '+(versionCb?`(${versionCb})(options!.clientCacheVersionParams).toString()`:'""')
         let keyPath = `
@@ -59,11 +60,11 @@ function createCloudRunText(node:ts.MethodDeclaration,method = 'run',clientCache
             let parameterName = node.parameters[0].name.getText()
             return `{
                 ${versionString}
-                return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},options?.onData,options?.onError) }`
+                return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},${clientCacheConfig.revalidate||'undefined'},,options?.onData,options?.onError) }`
         }
         return `{
             ${versionString}
-            return API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},options?.onData,options?.onError) }`
+            return API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},${clientCacheConfig.revalidate||'undefined'},options?.onData,options?.onError) }`
     }
     if(node.parameters.length>0){
         let parameterName = node.parameters[0].name.getText()

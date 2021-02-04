@@ -60,11 +60,11 @@ function createCloudRunText(node, method = 'run', clientCache, versionCb) {
             let parameterName = node.parameters[0].name.getText();
             return `{
                 ${versionString}
-                return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},options?.onData,options?.onError) }`;
+                return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},${clientCacheConfig.revalidate || 'undefined'},,options?.onData,options?.onError) }`;
         }
         return `{
             ${versionString}
-            return API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},options?.onData,options?.onError) }`;
+            return API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},${clientCacheConfig.revalidate || 'undefined'},options?.onData,options?.onError) }`;
     }
     if (node.parameters.length > 0) {
         let parameterName = node.parameters[0].name.getText();
