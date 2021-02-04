@@ -199,11 +199,11 @@ interface CloudOptions<T extends CloudParams, A = any> {
          * 配置存储的key, 以及符合配置条件的请求才会被缓存
          */
         keyPath: (keyof T)[][];
+        /**
+         * 版本标记。当前端升级api模块之后，调用接口时生成的clientCacheVersion也不同。会把返回的version加入到缓存的key path里。
+         */
+        versionCb?: (params: any) => string;
     };
-    /**
-     * 版本标记。当前端升级api模块之后，调用接口时生成的clientCacheVersion也不同。会把返回的version加入到缓存的key path里。
-     */
-    clientCacheVersionParams?: (params: any) => string;
 }
 export interface Listener<A> {
     /**
