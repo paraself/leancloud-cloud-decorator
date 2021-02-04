@@ -318,7 +318,7 @@ export function GetJsonValueString(text: string, key: string,remove?:boolean,sta
       .replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": '); //给key加双引号
       return [RemoveComma(text1), result2];
   }
-  let result = text1
+  let result = text1.includes('(') ?text1 : text1
       .replace(/'/g, '"') //将单引号换成双引号
       .replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": '); //给key加双引号
   return result;
