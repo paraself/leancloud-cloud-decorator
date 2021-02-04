@@ -263,7 +263,7 @@ interface CloudOptions<T extends CloudParams,A=any> {
     /**
      * 是否开启延迟访问数据，并更新本地缓存，默认关闭 
      */
-    revalidate?: false
+    revalidate?: boolean
   }
 }
 
