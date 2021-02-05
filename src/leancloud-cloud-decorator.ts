@@ -518,6 +518,15 @@ async function CheckPermission(currentUser?:AV.User, noUser?:true|null,roles?:st
   }
 }
 
+/**
+ * 客户端版本错误
+ */
+export class ClientApiVersionError extends Error{
+  constructor(message = ''){
+    super(message)
+    this.name = 'ClientApiVersionError'
+  }
+}
 export class SchemaError extends Error{
   validationError: Joi.ValidationError
   constructor(error: Joi.ValidationError){

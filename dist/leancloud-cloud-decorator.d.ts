@@ -216,6 +216,12 @@ export interface Listener<A> {
     onRateLimited?: CloudInvoke<A>;
 }
 export declare function SetListener(p: Listener<any>): void;
+/**
+ * 客户端版本错误
+ */
+export declare class ClientApiVersionError extends Error {
+    constructor(message?: string);
+}
 export declare class SchemaError extends Error {
     validationError: Joi.ValidationError;
     constructor(error: Joi.ValidationError);

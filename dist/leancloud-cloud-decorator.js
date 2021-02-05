@@ -242,6 +242,16 @@ async function CheckPermission(currentUser, noUser, roles) {
         }
     }
 }
+/**
+ * 客户端版本错误
+ */
+class ClientApiVersionError extends Error {
+    constructor(message = '') {
+        super(message);
+        this.name = 'ClientApiVersionError';
+    }
+}
+exports.ClientApiVersionError = ClientApiVersionError;
 class SchemaError extends Error {
     constructor(error) {
         super(error.message);
