@@ -14,20 +14,21 @@ const AV = __importStar(require("leanengine"));
 const lodash_1 = __importDefault(require("lodash"));
 const fs_1 = __importDefault(require("fs"));
 const config_json_1 = __importDefault(require("./config.json"));
+const Config = config_json_1.default;
 const child_process_1 = require("child_process");
 const _dirroot = __dirname + '/../../../';
 const configFilePath = _dirroot + '/lcc-config.json';
 // console.log(fs.readdirSync('./'))
 if (fs_1.default.existsSync(configFilePath)) {
     // @ts-ignore
-    config_json_1.default = JSON.parse(fs_1.default.readFileSync(configFilePath, 'utf8'));
+    Config = JSON.parse(fs_1.default.readFileSync(configFilePath, 'utf8'));
 }
 else {
     console.log(configFilePath + ' does\'t exist');
 }
-const platforms = config_json_1.default.platforms;
+const platforms = Config.platforms || {};
 exports.platforms = platforms;
-const cloudPrefix = config_json_1.default.cloudPrefix || '';
+const cloudPrefix = Config.cloudPrefix || '';
 exports.cloudPrefix = cloudPrefix;
 process.env.LCC_CLOUD_PREFIX = cloudPrefix;
 function CheckPlatform(platform) {

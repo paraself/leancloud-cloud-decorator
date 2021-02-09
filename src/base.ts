@@ -1,7 +1,17 @@
 import * as AV from 'leanengine'
 import _ from 'lodash'
 import fs from 'fs'
-import Config from './config.json'
+import _Config from './config.json'
+const Config = _Config as {
+  "cloudPrefix"?:string,
+  "translate"?:string,
+  "platforms"?: {[key:string]:{
+    package: string,
+    type?:string,
+    module:{[key:string]:string},
+    devDependencies?:{[key:string]:string},
+}}
+}
 import { exec,spawn} from 'child_process'
 
 const _dirroot = __dirname+'/../../../'
@@ -22,7 +32,7 @@ const platforms :{[key:string]:
     module?:{[key:string]:string},
     devDependencies?:{[key:string]:string},
   }
-}= Config.platforms
+}= Config.platforms || {}
 const cloudPrefix = Config.cloudPrefix || ''
 process.env.LCC_CLOUD_PREFIX = cloudPrefix
 export {platforms,cloudPrefix}
