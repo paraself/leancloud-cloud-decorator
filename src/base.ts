@@ -2,7 +2,7 @@ import * as AV from 'leanengine'
 import _ from 'lodash'
 import fs from 'fs'
 import _Config from './config.json'
-const Config = _Config as {
+let Config = _Config as {
   "cloudPrefix"?:string,
   "translate"?:string,
   "platforms"?: {[key:string]:{
