@@ -2,13 +2,13 @@ import * as AV from 'leanengine'
 import _ from 'lodash'
 import fs from 'fs'
 import _Config from './config.json'
-let Config = _Config as {
+let Config = _Config as unknown as {
   "cloudPrefix"?:string,
   "translate"?:string,
   "platforms"?: {[key:string]:{
     package: string,
     type?:string,
-    module:{[key:string]:string},
+    module?:{[key:string]:string},
     devDependencies?:{[key:string]:string},
 }}
 }
