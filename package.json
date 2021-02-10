@@ -4,7 +4,6 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "postinstall": "node dist/copyConfig.js",
     "build": "npx tsc -p . ",
     "release-minor": "npm run build && git add -A && git commit -m \"auto release\" && npm version minor -f && git push && npm publish",
     "release-patch": "npm run build && git add -A && git commit -m \"auto release\" && npm version patch -f && git push && npm publish"
