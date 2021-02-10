@@ -1,4 +1,20 @@
 import * as AV from 'leanengine';
+export declare let Config: {
+    "cloudPrefix"?: string | undefined;
+    "translate"?: string | undefined;
+    "platforms"?: {
+        [key: string]: {
+            package: string;
+            type?: string | undefined;
+            module?: {
+                [key: string]: string;
+            } | undefined;
+            devDependencies?: {
+                [key: string]: string;
+            } | undefined;
+        };
+    } | undefined;
+};
 declare const platforms: {
     [key: string]: {
         package: string;

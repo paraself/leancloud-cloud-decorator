@@ -10,7 +10,7 @@ const path_1 = __importDefault(require("path"));
 const leanengine_1 = __importDefault(require("leanengine"));
 const async_retry_1 = __importDefault(require("async-retry"));
 const buildIDCommon_1 = require("./buildIDCommon");
-const config_json_1 = __importDefault(require("./config.json"));
+const base_1 = require("./base");
 require('dotenv').config();
 function GetStringFromTemplateSpan(node) {
     if (typescript_1.default.isPropertyAccessExpression(node.expression)) {
@@ -230,7 +230,7 @@ async function translateRequest(text, target) {
     let count = 0;
     let res = await async_retry_1.default(async (bail, _count) => {
         count = _count;
-        return await leanengine_1.default.Cloud.run(config_json_1.default.translate || ((config_json_1.default.cloudPrefix || '') + 'Util.GetTranslate'), _params, { user, remote: true });
+        return await leanengine_1.default.Cloud.run(base_1.Config.translate || ((base_1.Config.cloudPrefix || '') + 'Util.GetTranslate'), _params, { user, remote: true });
     }, { onRetry: error => {
             console.log('----------------------------------');
             // console.error(`${text.join('\n')}: 

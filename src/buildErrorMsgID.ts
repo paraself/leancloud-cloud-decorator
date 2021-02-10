@@ -6,7 +6,7 @@ import path from 'path'
 import AV from 'leanengine'
 import retry from 'async-retry'
 import {EnumLocale} from './buildIDCommon'
-import Config from './config.json'
+import {Config} from './base'
 require('dotenv').config()
 
 function GetStringFromTemplateSpan(node:ts.TemplateSpan):string {
