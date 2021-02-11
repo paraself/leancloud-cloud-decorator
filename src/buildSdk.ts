@@ -8,7 +8,7 @@ import * as path from 'path'
 import { Platform,CheckPlatform, GetModuleMap, platforms } from './base'
 import { PlatformString,GetJsonValueString } from './cloudMetaData'
 import {CreatDartSdk} from './buildDartSdk'
-import { VerifyOptions } from "./leancloud-cloud-decorator";
+import { VerifyOptions, IClientCacheMode } from "./leancloud-cloud-decorator";
 // import * as vm from 'vm'
 // require('./cloud/index')
 
@@ -48,8 +48,11 @@ function createCloudRunText(node:ts.MethodDeclaration,method = 'run',clientCache
     if(clientCache){
         let clientCacheConfig = JSON.parse(clientCache) as {
             keyPath:string[][],
-            revalidate?:boolean
+            mode?:IClientCacheMode,
+            offlineDefaultCache?:any
         }
+        let defaultCache = clientCacheConfig.offlineDefaultCache
+        let defaultCacheText = defaultCache?JSON.stringify(defaultCache,null,2):'undefined'
         let versionString = 'let version = '+(versionCb?`options?.clientCacheVersionParams && (${versionCb})(options!.clientCacheVersionParams).toString() || ''`:'""')
         let keyPath = `
         (${JSON.stringify(clientCacheConfig.keyPath)}.findIndex((e:string[]) => e.every(e => Object.keys(params||{}).includes(e)) && Object.keys(params||{}).every(e2 => e.includes(e2))) >= 0) ?
@@ -60,11 +63,11 @@ function createCloudRunText(node:ts.MethodDeclaration,method = 'run',clientCache
             let parameterName = node.parameters[0].name.getText()
             return `{
                 ${versionString}
-                return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},${clientCacheConfig.revalidate||'undefined'},options?.onData,options?.onError) }`
+                return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},"${clientCacheConfig.mode||'remote'}",${defaultCacheText},options?.onData,options?.onError) }`
         }
         return `{
             ${versionString}
-            return API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},${clientCacheConfig.revalidate||'undefined'},options?.onData,options?.onError) }`
+            return API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},"${clientCacheConfig.mode||'remote'}",${defaultCacheText},options?.onData,options?.onError) }`
     }
     if(node.parameters.length>0){
         let parameterName = node.parameters[0].name.getText()

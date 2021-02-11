@@ -104,10 +104,11 @@ export interface VerifyOptions {
 }
 declare type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 declare type TypedSchemaLike<T> = T extends string ? Joi.StringSchema : T extends Array<infer U> ? Joi.ArraySchema : T extends number ? Joi.NumberSchema : T extends Date ? Joi.DateSchema : T extends boolean ? Joi.BooleanSchema : T extends Buffer ? Joi.BinarySchema : T extends Object ? Joi.ObjectSchema : Joi.AnySchema;
+export declare type IClientCacheMode = 'remote' | 'local' | 'localFirst' | 'remoteFirst';
 /**
  * T为云函数的参数类型
  */
-interface CloudOptions<T extends CloudParams, A = any> {
+interface CloudOptions<T extends CloudParams, R = any> {
     /**
      * 自动生成SDK的平台
      */
@@ -165,16 +166,16 @@ interface CloudOptions<T extends CloudParams, A = any> {
     /**
      * 云函数调用前的回调, 可用于修改数据. 在全局beforeInvoke之后执行
      */
-    beforeInvoke?: CloudInvoke<A>;
+    beforeInvoke?: CloudInvoke<any>;
     /**
      * @deprecated
      * 云函数调用后的回调, 可用于修改数据, 在全局afterInvoke之前执行
      */
-    afterInvoke?: CloudInvoke<A>;
+    afterInvoke?: CloudInvoke<any>;
     /**
      * 云函数调用后的回调, 可用于修改数据, 在全局afterInvoke之前执行
      */
-    afterInvokes?: SemverCloudInvoke<A>[];
+    afterInvokes?: SemverCloudInvoke<any>[];
     /**
      * 额外自定义配置信息
      */
@@ -196,6 +197,10 @@ interface CloudOptions<T extends CloudParams, A = any> {
      */
     clientCache?: {
         /**
+         * 缓存没有数据时的默认返回内容
+         */
+        offlineDefaultCache?: R;
+        /**
          * 配置存储的key, 以及符合配置条件的请求才会被缓存
          */
         keyPath: (keyof T)[][];
@@ -204,9 +209,33 @@ interface CloudOptions<T extends CloudParams, A = any> {
          */
         versionCb?: (params: any) => number | string;
         /**
-         * 是否开启延迟访问数据，并更新本地缓存，默认关闭
+         * - 远程模式 remote：完全不使用任何客户端缓存。每次调用都访问远程云函数。如果在离线模式下调用的话，就会直接报错 `new Error('App is offline, cannot call remote func: ' + 云函数名称)`
+         *
+         *     在线模式: 访问远程→返回远程结果
+         *
+         *     离线模式: 报错
+         *
+         * - 本地模式 local：如果有本地缓存，则返回本地缓存，否则访问远程云函数，并将结果缓存。如果在离线模式下，有本地缓存则返回缓存，没有本地缓存则看是否设置了offlineDefaultCache，有则返回，无则报错`new Error('App is offline and no local cache is found for local func: ' + 云函数名称)`
+         *
+         *     在线模式: 返回本地缓存 / 访问远程→缓存结果→返回远程结果
+         *
+         *     离线模式: 返回本地缓存 / 返回offlineDefaultCache / 报错
+         *
+         * - 本地优先模式 localFirst：如果有本地缓存，则先返回本地缓存，如果没有则等待远程结果返回。每次调用先返回本地数据，如果远程拿到了结果，在用onData回调进行更新。进入离线模式之后，有本地缓存则返回缓存，没有本地缓存则看是否设置了offlineDefaultCache，有则返回，无则报错`new Error('App is offline and no local cache is found for localFirst func: ' + 云函数名称)`
+         *
+         *     在线模式: 返回本地缓存→访问远程→缓存结果
+         *
+         *     离线模式: 返回本地缓存 / 返回offlineDefaultCache / 报错
+         *
+         * - 远程优先模式 remoteFirst：先返回远程数据，然后每次都把远程数据缓存，一旦进入离线模式，直接返回本地数据，如果没有本地数据，看是否有offlineDefaultCache，有则返回，无则像上面那样报错`new Error('App is offline and no local cache is found for remoteFirst func: ' + 云函数名称)`
+         *
+         *     在线模式: 访问远程→缓存结果→返回远程结果
+         *
+         *     离线模式: 返回本地缓存 / 返回offlineDefaultCache / 报错
+         *
+         * 默认是remote
          */
-        revalidate?: boolean;
+        mode?: IClientCacheMode;
     };
 }
 export interface Listener<A> {
