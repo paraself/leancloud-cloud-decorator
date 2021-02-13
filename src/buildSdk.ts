@@ -46,7 +46,7 @@ function getReturnTypeDeclare(node:ts.MethodDeclaration){
 function createCloudRunText(node:ts.MethodDeclaration,method = 'run',clientCache?:string,versionCb?:string){
     let functionName = getFunctionName(node)
     if(clientCache){
-        let clientCacheConfig = JSON.parse(clientCache) as {
+        let clientCacheConfig = JSON.parse(clientCache.replace('undefined','""')) as {
             keyPath:string[][],
             mode?:IClientCacheMode,
             offlineDefaultCache?:any

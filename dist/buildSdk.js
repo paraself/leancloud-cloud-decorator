@@ -49,7 +49,7 @@ function getReturnTypeDeclare(node) {
 function createCloudRunText(node, method = 'run', clientCache, versionCb) {
     let functionName = getFunctionName(node);
     if (clientCache) {
-        let clientCacheConfig = JSON.parse(clientCache);
+        let clientCacheConfig = JSON.parse(clientCache.replace('undefined', '""'));
         let defaultCache = clientCacheConfig.offlineDefaultCache;
         let defaultCacheText = defaultCache ? JSON.stringify(defaultCache, null, 2) : 'undefined';
         let versionString = 'let version = ' + (versionCb ? `options?.clientCacheVersionParams && (${versionCb})(options!.clientCacheVersionParams).toString() || ''` : '""');
