@@ -63,11 +63,11 @@ function createCloudRunText(node:ts.MethodDeclaration,method = 'run',clientCache
             let parameterName = node.parameters[0].name.getText()
             return `{
                 ${versionString}
-                return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},"${clientCacheConfig.mode||'remote'}",${defaultCacheText},options?.onData,options?.onError) }`
+                return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},"${clientCacheConfig.mode||'remote'}",${defaultCacheText},options?.onData,options?.onError,options?.onInvokeCallback) }`
         }
         return `{
             ${versionString}
-            return API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},"${clientCacheConfig.mode||'remote'}",${defaultCacheText},options?.onData,options?.onError) }`
+            return API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},"${clientCacheConfig.mode||'remote'}",${defaultCacheText},options?.onData,options?.onError,options?.onInvokeCallback) }`
     }
     if(node.parameters.length>0){
         let parameterName = node.parameters[0].name.getText()
