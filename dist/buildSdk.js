@@ -428,6 +428,15 @@ function createSdkFile(sourceFile) {
          * 使用缓存后,远端请求报错时,调用此回调
          */
         onError?: (data) => void
+    
+        /**
+         * onData的同级回调,目前仅用于调试用
+         */
+        onInvokeCallback?: (params: {
+            mode: 'remote' | 'local' | 'localFirst' | 'remoteFirst'
+            function: string
+            params: any
+          }) => void
 
         ${clientCacheVersionParams ? "clientCacheVersionParams:" + clientCacheVersionParams : ""}
     }` + text.substring(lastIndex);
