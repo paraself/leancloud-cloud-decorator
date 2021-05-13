@@ -62,11 +62,11 @@ function createCloudRunText(node, method = 'run', clientCache, versionCb) {
             let parameterName = node.parameters[0].name.getText();
             return `{
                 ${versionString}
-                return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},"${clientCacheConfig.mode || 'remote'}",${defaultCacheText},options?.onData,options?.onError,options?.onInvokeCallback) }`;
+                return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},options?.mode||"${clientCacheConfig.mode || 'remote'}",${defaultCacheText},options?.onData,options?.onError,options?.onInvokeCallback) }`;
         }
         return `{
             ${versionString}
-            return API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},"${clientCacheConfig.mode || 'remote'}",${defaultCacheText},options?.onData,options?.onError,options?.onInvokeCallback) }`;
+            return API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},options?.mode||"${clientCacheConfig.mode || 'remote'}",${defaultCacheText},options?.onData,options?.onError,options?.onInvokeCallback) }`;
     }
     if (node.parameters.length > 0) {
         let parameterName = node.parameters[0].name.getText();
@@ -419,6 +419,13 @@ function createSdkFile(sourceFile) {
                                         }
                                         if (clientCache) {
                                             results[i] = ClipParamsText(text.substring(0, lastIndex)) + `,options?:{
+
+        /**
+         * 覆盖默认的访问模式
+         */
+        mode?: 'remote' | 'local' | 'localFirst' | 'remoteFirst'  
+        
+        
         /**
          * 云引擎返回数据调用此函数
          */
