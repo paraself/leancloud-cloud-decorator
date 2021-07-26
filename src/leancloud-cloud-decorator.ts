@@ -106,6 +106,14 @@ interface CacheOptions<T> {
    * redis 地址, 不填则使用默认redis
    */
   redisUrl?:string
+  /**
+   * 过期时间的随机偏移量,单位为秒
+   */  
+  offset?: {
+    min: number,
+    max: number
+  }
+
 }
 
 interface RateLimitOptions {
@@ -370,14 +378,22 @@ async function RateLimitCheck(params: {functionName: string, objectId: string, i
   }
 }
 
-function getTimeLength(timeUnit?: 'day' | 'hour' | 'minute' | 'month'| 'second',count=1) {
-  return moment.duration(count,timeUnit||'minute').asSeconds()
+function getTimeLength(timeUnit?: 'day' | 'hour' | 'minute' | 'month'| 'second',count=1,offset?: {
+  min: number,
+  max: number
+}) {
+  let offsetCount = offset && Math.floor(Math.random() * (offset.max - offset.min) + offset.min) || 0; 
+  return moment.duration(count,timeUnit||'minute').asSeconds() + offsetCount
 }
 
-function getCacheTime(timeUnit?: 'day' | 'hour' | 'minute' | 'second' | 'month',count=1) {
+function getCacheTime(timeUnit?: 'day' | 'hour' | 'minute' | 'second' | 'month',count=1,offset?: {
+  min: number,
+  max: number
+}) {
 
   let startTimestamp = moment().startOf('day')
   let expires = 60 * 60 * 24
+  let offsetCount = offset && Math.floor(Math.random() * (offset.max - offset.min) + offset.min) || 0; 
   if (timeUnit) {
     startTimestamp = moment().startOf(timeUnit)
     // cacheKeyConfig['cacheTime'] = startTimestamp.toDate()
@@ -388,6 +404,7 @@ function getCacheTime(timeUnit?: 'day' | 'hour' | 'minute' | 'second' | 'month',
     expires =
       Math.floor((expireTimestamp.valueOf() - moment().valueOf()) / 1000)
   }
+  expires += offsetCount
   return { startTimestamp, expires }
 }
 
@@ -874,16 +891,16 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
     let expires: number
   
     if (expireBy === 'timeUnit') {
-      let result = getCacheTime(cache.timeUnit,cache.count)
+      let result = getCacheTime(cache.timeUnit,cache.count,cache.offset)
       startTimestamp = result.startTimestamp
       expires = result.expires
     } else if (expireBy === 'request') {
       startTimestamp = moment()
-      expires = getTimeLength(cache.timeUnit,cache.count)
+      expires = getTimeLength(cache.timeUnit,cache.count,cache.offset)
     } else {
       console.error('error expireBy ' + expireBy)
       startTimestamp = moment()
-      expires = getTimeLength(cache.timeUnit,cache.count)
+      expires = getTimeLength(cache.timeUnit,cache.count,cache.offset)
     }
     
     let timestamp = startTimestamp.valueOf()

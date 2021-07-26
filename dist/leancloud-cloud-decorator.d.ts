@@ -73,6 +73,13 @@ interface CacheOptions<T> {
      * redis 地址, 不填则使用默认redis
      */
     redisUrl?: string;
+    /**
+     * 过期时间的随机偏移量,单位为秒
+     */
+    offset?: {
+        min: number;
+        max: number;
+    };
 }
 interface RateLimitOptions {
     /**

@@ -103,12 +103,14 @@ async function RateLimitCheck(params) {
         }
     }
 }
-function getTimeLength(timeUnit, count = 1) {
-    return moment_1.default.duration(count, timeUnit || 'minute').asSeconds();
+function getTimeLength(timeUnit, count = 1, offset) {
+    let offsetCount = offset && Math.floor(Math.random() * (offset.max - offset.min) + offset.min) || 0;
+    return moment_1.default.duration(count, timeUnit || 'minute').asSeconds() + offsetCount;
 }
-function getCacheTime(timeUnit, count = 1) {
+function getCacheTime(timeUnit, count = 1, offset) {
     let startTimestamp = moment_1.default().startOf('day');
     let expires = 60 * 60 * 24;
+    let offsetCount = offset && Math.floor(Math.random() * (offset.max - offset.min) + offset.min) || 0;
     if (timeUnit) {
         startTimestamp = moment_1.default().startOf(timeUnit);
         // cacheKeyConfig['cacheTime'] = startTimestamp.toDate()
@@ -119,6 +121,7 @@ function getCacheTime(timeUnit, count = 1) {
         expires =
             Math.floor((expireTimestamp.valueOf() - moment_1.default().valueOf()) / 1000);
     }
+    expires += offsetCount;
     return { startTimestamp, expires };
 }
 async function CloudImplementBefore(cloudImplementOptions) {
@@ -528,18 +531,18 @@ function CreateCloudCacheFunction(info) {
         let startTimestamp;
         let expires;
         if (expireBy === 'timeUnit') {
-            let result = getCacheTime(cache.timeUnit, cache.count);
+            let result = getCacheTime(cache.timeUnit, cache.count, cache.offset);
             startTimestamp = result.startTimestamp;
             expires = result.expires;
         }
         else if (expireBy === 'request') {
             startTimestamp = moment_1.default();
-            expires = getTimeLength(cache.timeUnit, cache.count);
+            expires = getTimeLength(cache.timeUnit, cache.count, cache.offset);
         }
         else {
             console.error('error expireBy ' + expireBy);
             startTimestamp = moment_1.default();
-            expires = getTimeLength(cache.timeUnit, cache.count);
+            expires = getTimeLength(cache.timeUnit, cache.count, cache.offset);
         }
         let timestamp = startTimestamp.valueOf();
         // if (typeof results === 'object') {
