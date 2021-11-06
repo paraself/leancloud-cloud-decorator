@@ -435,17 +435,19 @@ async function CloudImplementBefore<T extends CloudParams>(cloudImplementOptions
     cloudOptions: cloudOptions2,
     request
   })
-
-  //内部调用, 跳过检测
-  if(request.internal) return
+  
   //@ts-ignore
   let params: CloudParams = request.params || {}
-  if(!request.noUser){
+  if(!request.noUser&&!request.internal){
     await CheckPermission(request.currentUser,cloudOptions&&cloudOptions.noUser,roles)
   }
   if (schema) {
     CheckSchema(schema, params)
   }
+
+  //内部调用, 跳过检测
+  if(request.internal) return
+
   if (rateLimit) {
     await RateLimitCheck({functionName, 
       objectId: request.currentUser && request.currentUser.get('objectId'),
