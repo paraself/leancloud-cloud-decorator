@@ -170,7 +170,7 @@ function promiseExec(command) {
             resolve();
         }
         else {
-            process.exit(code || 1);
+            process.exit(code || 0);
         } });
     });
 }

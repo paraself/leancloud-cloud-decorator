@@ -190,6 +190,6 @@ export function promiseExec(command:string){
           }
           if(stdout) console.log(stdout)
           // resolve()
-      }).on('close', (code, signal) =>  { if (code === 0 && !_err) { resolve() } else {process.exit(code || 1)} })
+      }).on('close', (code, signal) =>  { if (code === 0 && !_err) { resolve() } else {process.exit(code || 0)} })
   })
 }
