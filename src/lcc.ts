@@ -16,4 +16,4 @@ exec(command, { maxBuffer: 1024 * 800 }, (err, stdout, stderr) => {
       return;
     }
     console.log(stdout)
-}).on('close', (code, signal) => {console.log(code + ' ' + signal);process.exit(code)})
+}).on('close', (code, signal) => {console.log(code + ' ' + signal);process.exit(code || 1)})
