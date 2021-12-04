@@ -125,7 +125,9 @@ function getCacheTime(timeUnit, count = 1, offset) {
     return { startTimestamp, expires };
 }
 async function CloudImplementBefore(cloudImplementOptions) {
+    var _a;
     let { functionName, request, cloudOptions, schema, rateLimit, roles, debounce, verify } = cloudImplementOptions;
+    request = Object.assign({ noUser: request.noUser || ((_a = cloudOptions) === null || _a === void 0 ? void 0 : _a.noUser) }, request);
     let cloudOptions2 = cloudOptions;
     beforeInvoke && await beforeInvoke({
         functionName,
@@ -171,7 +173,9 @@ async function CloudImplementBefore(cloudImplementOptions) {
     }
 }
 async function CloudImplementAfter(cloudImplementOptions) {
+    var _a;
     let { functionName, request, cloudOptions, data } = cloudImplementOptions;
+    request = Object.assign({ noUser: request.noUser || ((_a = cloudOptions) === null || _a === void 0 ? void 0 : _a.noUser) }, request);
     let cloudOptions2 = cloudOptions;
     if (cloudOptions && cloudOptions.afterInvoke) {
         data = await cloudOptions.afterInvoke({

@@ -421,6 +421,7 @@ async function CloudImplementBefore<T extends CloudParams>(cloudImplementOptions
   verify:VerifyOptions|null
 }){
   let { functionName, request, cloudOptions, schema, rateLimit,roles,debounce,verify } = cloudImplementOptions
+  request = Object.assign({noUser:request.noUser || cloudOptions?.noUser},request)
 
   let cloudOptions2 = cloudOptions as (CloudOptions<any> | undefined)
 
@@ -477,6 +478,7 @@ async function CloudImplementAfter<T extends CloudParams>(cloudImplementOptions:
   data?:any,
 }){
   let { functionName, request, cloudOptions,data } = cloudImplementOptions
+  request = Object.assign({noUser:request.noUser || cloudOptions?.noUser},request)
 
   let cloudOptions2 = cloudOptions as (CloudOptions<any> | undefined)
   if(cloudOptions && cloudOptions.afterInvoke){
