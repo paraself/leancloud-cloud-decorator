@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { CloudIdConfig } from './buildIDCommon';
-export declare type CloudFunctionInfos = {
+export type CloudFunctionInfos = {
     name: string;
     functions: string[];
 }[];

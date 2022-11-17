@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import AV from 'leanengine';
 import { EnumLocale } from './buildIDCommon';
-export declare type MsgIdConfig = {
+export type MsgIdConfig = {
     [key: string]: {
         [key in EnumLocale]?: string;
     } & {

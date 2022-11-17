@@ -1,4 +1,4 @@
-export declare type CloudIdConfig = {
+export type CloudIdConfig = {
     [key: string]: {
         name: string;
         functions: {
@@ -6,7 +6,7 @@ export declare type CloudIdConfig = {
         };
     };
 };
-export declare type CloudIdInfo = ({
+export type CloudIdInfo = ({
     id: number;
     name: string;
     functions: {
@@ -14,7 +14,7 @@ export declare type CloudIdInfo = ({
         name: string;
     }[];
 })[];
-export declare type CloudIdInfoMap = {
+export type CloudIdInfoMap = {
     [key: string]: {
         id: number;
         name: string;
@@ -57,7 +57,7 @@ export declare enum EnumLocale {
     /** 俄语 */
     ru = "ru"
 }
-export declare type MsgIdInfoMap = {
+export type MsgIdInfoMap = {
     [key: string]: {
         [key in EnumLocale]: string;
     } & {

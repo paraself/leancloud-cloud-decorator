@@ -3,9 +3,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const child_process_1 = require("child_process");
 const base_1 = require("./base");
-var targetPlatform = base_1.CheckPlatform(process.argv[2]);
+var targetPlatform = (0, base_1.CheckPlatform)(process.argv[2]);
 const command = `npx lcc-build ${targetPlatform} && lcc-release ${targetPlatform} && lcc-p ${targetPlatform}`;
-child_process_1.exec(command, { maxBuffer: 1024 * 800 }, (err, stdout, stderr) => {
+(0, child_process_1.exec)(command, { maxBuffer: 1024 * 800 }, (err, stdout, stderr) => {
     if (err) {
         console.log(command);
         console.log('\x1b[31m');

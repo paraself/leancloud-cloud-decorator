@@ -1,11 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.CreateCloudMetaData = exports.GetJsonValueString = exports.PlatformString = void 0;
 function GetTypeData(file, name, data) {
     let out;
     if (data.type == 'union') {
         out = {
             // name: name,
             types: data.types.map(e => GetTypeData(file, undefined, e)),
+            // comment: comment && comment.shortText,
         };
         if (name) {
             out.name = name;
@@ -221,6 +223,14 @@ function CreateMethodMetaData(file, className, data) {
             .concat((signatures.comment.tags && (signatures.comment.tags.map(e => e.tag + ': ' + e.text)))
             || []).join('\n'),
         valueComment: signatures.comment && signatures.comment.returns,
+        //   /**
+        //    * 如果是一个可以被缓存的接口，则返回可缓存的key的组合
+        //    */
+        //   cache: Array<Array<string>>
+        //   /**
+        //    * 该云函数在哪个平台上可用
+        //    */
+        //   platforms: Array<'weapp' | 'web-user' | 'web-admin' | 'ios' | 'android'>
     });
 }
 function CreateClassMetaData(file, data) {
@@ -249,7 +259,7 @@ function CreateInterfaceMetaData(file, data) {
     if (data.indexSignature) {
         Object.assign(file[data.id], Object.assign({ name: data.name }, CreateIndexSignatureMeta(file, data.indexSignature[0])));
     }
-    else if (data.type) {
+    else if (('type' in data) && data.type) {
         Object.assign(file[data.id], GetTypeData(file, undefined, data.type));
     }
     else if (data.kindString === 'Enumeration') {

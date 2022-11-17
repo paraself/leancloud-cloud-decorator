@@ -1,4 +1,4 @@
-export declare type DataType = 'number' | 'string' | 'boolean' | 'null' | 'undefined';
+export type DataType = 'number' | 'string' | 'boolean' | 'null' | 'undefined';
 export interface IMetaDataParams {
     /**
      * 参数名称，例如 GetPracParams

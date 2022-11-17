@@ -1,15 +1,32 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.CreatDartSdk = void 0;
 const fs_1 = require("fs");
 const fs = __importStar(require("fs"));
 const ts = __importStar(require("typescript"));
@@ -18,9 +35,6 @@ const base_1 = require("./base");
 const cloudMetaData_1 = require("./cloudMetaData");
 const comment_parser_1 = __importDefault(require("comment-parser"));
 class DartArrayDeclaration {
-    constructor(params) {
-        this.elementType = params.elementType;
-    }
     encoding(variable) {
         if (this.elementType instanceof DartPrimitive) {
             return variable;
@@ -36,6 +50,9 @@ class DartArrayDeclaration {
     get name() {
         return "List<" + this.elementType.name + ">";
     }
+    constructor(params) {
+        this.elementType = params.elementType;
+    }
 }
 class DartCloudParams {
     encoding(variable) {
@@ -49,9 +66,6 @@ class DartCloudParams {
     }
 }
 class DartPromiseDeclaration {
-    constructor(params) {
-        this.elementType = params.elementType;
-    }
     encoding(variable) {
         return this.elementType.encoding(variable);
     }
@@ -61,12 +75,11 @@ class DartPromiseDeclaration {
     get name() {
         return "Future<" + this.elementType.name + ">";
     }
+    constructor(params) {
+        this.elementType = params.elementType;
+    }
 }
 class DartMapDeclaration {
-    constructor(params) {
-        this.keyType = params.keyType;
-        this.valueType = params.valueType;
-    }
     encoding(variable) {
         if (this.valueType instanceof DartPrimitive) {
             return variable;
@@ -81,6 +94,10 @@ class DartMapDeclaration {
     }
     get name() {
         return "Map<" + this.keyType.name + "," + this.valueType.name + ">";
+    }
+    constructor(params) {
+        this.keyType = params.keyType;
+        this.valueType = params.valueType;
     }
 }
 class DartDeclaration {
@@ -669,7 +686,7 @@ function GetComment(node) {
     if (!range) {
         return '';
     }
-    let out = range.map(e => comment_parser_1.default(sourceText.substring(e.pos, e.end))
+    let out = range.map(e => (0, comment_parser_1.default)(sourceText.substring(e.pos, e.end))
         .map(c => c.source.split('\n').map(l => '///' + l).join('\n'))
         .join('\n'))
         .join('\n');
@@ -787,12 +804,12 @@ function createSdkFile(file) {
                             // console.log(JSON.stringify(decorator))
                             let decorator = decorators[i].getText();
                             if (decorator.substring(0, 6) == '@Cloud') {
-                                let platformText = cloudMetaData_1.PlatformString(decorator);
+                                let platformText = (0, cloudMetaData_1.PlatformString)(decorator);
                                 // console.log(paramsText)
                                 let platforms = platformText && JSON.parse(platformText);
-                                let rpcText = cloudMetaData_1.GetJsonValueString(decorator, 'rpc');
+                                let rpcText = (0, cloudMetaData_1.GetJsonValueString)(decorator, 'rpc');
                                 let rpc = rpcText && JSON.parse(rpcText);
-                                let internalText = cloudMetaData_1.GetJsonValueString(decorator, 'internal');
+                                let internalText = (0, cloudMetaData_1.GetJsonValueString)(decorator, 'internal');
                                 let internal = internalText && JSON.parse(internalText);
                                 needSkip = false;
                                 if (!internal && (!platforms || platforms.length == 0)) {
@@ -845,7 +862,7 @@ function createSdk(dir, exclude, packageName) {
         if (path.extname(file) == '.ts' && exclude.indexOf(file) < 0) {
             console.log('read ' + file);
             let name = path.basename(file, '.ts');
-            let text = fs_1.readFileSync(_dirroot + 'src/cloud/' + file).toString();
+            let text = (0, fs_1.readFileSync)(_dirroot + 'src/cloud/' + file).toString();
             if (!text.includes('@lcc-ignore-file')) {
                 let sourceFile = ts.createSourceFile(file, text, ts.ScriptTarget.ES2015, 
                 /*setParentNodes */ true);

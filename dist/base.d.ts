@@ -1,8 +1,8 @@
 import * as AV from 'leanengine';
 export declare let Config: {
-    "cloudPrefix"?: string | undefined;
-    "translate"?: string | undefined;
-    "platforms"?: {
+    cloudPrefix?: string | undefined;
+    translate?: string | undefined;
+    platforms?: {
         [key: string]: {
             package: string;
             type?: string | undefined;
@@ -29,7 +29,7 @@ declare const platforms: {
 };
 declare const cloudPrefix: string;
 export { platforms, cloudPrefix };
-export declare type Platform = keyof typeof platforms;
+export type Platform = keyof typeof platforms;
 export declare function CheckPlatform(platform: string): Platform;
 export declare function GetModuleMap(platform: Platform): {
     [key: string]: string;
@@ -43,7 +43,7 @@ export declare function GetModuleMap(platform: Platform): {
  */
 export declare function isRole(avUser: AV.User, roleName: string): Promise<boolean>;
 export declare function isRoles(avUser: AV.User, roleArray: string[]): Promise<boolean>;
-declare type EqualToConditionsType = {
+type EqualToConditionsType = {
     [key: string]: string | number | AV.Object | boolean | Date;
 };
 export declare function getCacheKey(equalToConditions: EqualToConditionsType, cacheKey?: string, symbol?: string): string;

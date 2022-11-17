@@ -1,15 +1,32 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Cloud = exports.RateLimitError = exports.VerifyError = exports.MissingVerify = exports.DebounceError = exports.SchemaError = exports.ClientApiVersionError = exports.SetListener = exports.SetAfterVerify = exports.SetInvokeCallback = exports.SetCache = exports.getCacheKey = void 0;
 const leanengine_1 = __importDefault(require("leanengine"));
 const leancloud_storage_1 = __importDefault(require("leancloud-storage"));
 const joi_1 = __importDefault(require("joi"));
@@ -19,15 +36,15 @@ const cloudStats_1 = require("./cloudStats");
 const semver_1 = __importDefault(require("semver"));
 const fs_1 = __importDefault(require("fs"));
 const base_2 = require("./base");
-exports.getCacheKey = base_2.getCacheKey;
+Object.defineProperty(exports, "getCacheKey", { enumerable: true, get: function () { return base_2.getCacheKey; } });
 const redisSetting = __importStar(require("./redis"));
 const redis_1 = require("./redis");
-exports.SetCache = redis_1.SetCache;
+Object.defineProperty(exports, "SetCache", { enumerable: true, get: function () { return redis_1.SetCache; } });
 const buildIDCommon_1 = require("./buildIDCommon");
 const ioredis_1 = __importDefault(require("ioredis"));
 const verify_1 = require("./verify");
 const cloudFunctionIDFile = 'cloudFunctionID.json';
-const cloudIdInfoMap = (fs_1.default.existsSync(cloudFunctionIDFile) && buildIDCommon_1.GetCloudInfoMap(JSON.parse(fs_1.default.readFileSync(cloudFunctionIDFile, 'utf8')))) || {};
+const cloudIdInfoMap = (fs_1.default.existsSync(cloudFunctionIDFile) && (0, buildIDCommon_1.GetCloudInfoMap)(JSON.parse(fs_1.default.readFileSync(cloudFunctionIDFile, 'utf8')))) || {};
 let redis = redisSetting.redis;
 let prefix = redisSetting.cachePrefix;
 redisSetting.AddCacheUpdateCallback((params) => {
@@ -108,26 +125,25 @@ function getTimeLength(timeUnit, count = 1, offset) {
     return moment_1.default.duration(count, timeUnit || 'minute').asSeconds() + offsetCount;
 }
 function getCacheTime(timeUnit, count = 1, offset) {
-    let startTimestamp = moment_1.default().startOf('day');
+    let startTimestamp = (0, moment_1.default)().startOf('day');
     let expires = 60 * 60 * 24;
     let offsetCount = offset && Math.floor(Math.random() * (offset.max - offset.min) + offset.min) || 0;
     if (timeUnit) {
-        startTimestamp = moment_1.default().startOf(timeUnit);
+        startTimestamp = (0, moment_1.default)().startOf(timeUnit);
         // cacheKeyConfig['cacheTime'] = startTimestamp.toDate()
         let expireTimestamp = startTimestamp
             .clone()
             .add(count, timeUnit)
             .add(1, (timeUnit === 'second') ? 'second' : 'minute');
         expires =
-            Math.floor((expireTimestamp.valueOf() - moment_1.default().valueOf()) / 1000);
+            Math.floor((expireTimestamp.valueOf() - (0, moment_1.default)().valueOf()) / 1000);
     }
     expires += offsetCount;
     return { startTimestamp, expires };
 }
 async function CloudImplementBefore(cloudImplementOptions) {
-    var _a;
     let { functionName, request, cloudOptions, schema, rateLimit, roles, debounce, verify } = cloudImplementOptions;
-    request = Object.assign({ noUser: request.noUser || ((_a = cloudOptions) === null || _a === void 0 ? void 0 : _a.noUser) }, request);
+    request = Object.assign({ noUser: request.noUser || (cloudOptions === null || cloudOptions === void 0 ? void 0 : cloudOptions.noUser) }, request);
     let cloudOptions2 = cloudOptions;
     beforeInvoke && await beforeInvoke({
         functionName,
@@ -173,9 +189,8 @@ async function CloudImplementBefore(cloudImplementOptions) {
     }
 }
 async function CloudImplementAfter(cloudImplementOptions) {
-    var _a;
     let { functionName, request, cloudOptions, data } = cloudImplementOptions;
-    request = Object.assign({ noUser: request.noUser || ((_a = cloudOptions) === null || _a === void 0 ? void 0 : _a.noUser) }, request);
+    request = Object.assign({ noUser: request.noUser || (cloudOptions === null || cloudOptions === void 0 ? void 0 : cloudOptions.noUser) }, request);
     let cloudOptions2 = cloudOptions;
     if (cloudOptions && cloudOptions.afterInvoke) {
         data = await cloudOptions.afterInvoke({
@@ -239,7 +254,7 @@ async function CheckPermission(currentUser, noUser, roles) {
         let havePermission = false;
         for (let i = 0; i < roles.length; ++i) {
             let role = roles[i];
-            if (await base_1.isRoles(currentUser, role)) {
+            if (await (0, base_1.isRoles)(currentUser, role)) {
                 havePermission = true;
                 break;
             }
@@ -307,7 +322,7 @@ async function _CheckVerify(verify, params, user) {
         }
         let verifyData;
         try {
-            verifyData = await verify_1.SetVerify(Object.assign({ type: verify.type }, params.cloudVerify));
+            verifyData = await (0, verify_1.SetVerify)(Object.assign({ type: verify.type }, params.cloudVerify));
         }
         catch (error) {
             if (error instanceof Error) {
@@ -389,7 +404,7 @@ async function CheckDebounce(debounce, params, currentUser, lock) {
                     cacheKeyConfig[key] = params[key];
                 }
                 cacheKeyConfig['currentUser'] = currentUser.get('objectId');
-                let key = base_2.getCacheKey(cacheKeyConfig);
+                let key = (0, base_2.getCacheKey)(cacheKeyConfig);
                 //符合缓存条件,记录所使用的查询keys
                 if (!await lock.tryLock(key)) {
                     throw new DebounceError('debounce error');
@@ -473,7 +488,7 @@ function CreateCloudCacheFunction(info) {
         //是否执行非缓存的调试版本
         if (cloudParams.noCache) {
             if (params.adminId &&
-                (await base_1.isRole(leanengine_1.default.Object.createWithoutData('_User', params.adminId), 'Dev'))) {
+                (await (0, base_1.isRole)(leanengine_1.default.Object.createWithoutData('_User', params.adminId), 'Dev'))) {
             }
             else {
                 throw new leanengine_1.default.Cloud.Error('non-administrators in noCache', { code: 400 });
@@ -491,7 +506,7 @@ function CreateCloudCacheFunction(info) {
             cacheKeyConfig['currentUser'] = request.currentUser;
         }
         cacheKeyConfig['timeUnit'] = cache.timeUnit;
-        let cacheKey = `${redisSetting.cachePrefix}:cloud:${NODE_ENV}:${functionName}:` + base_2.getCacheKey(cacheKeyConfig);
+        let cacheKey = `${redisSetting.cachePrefix}:cloud:${NODE_ENV}:${functionName}:` + (0, base_2.getCacheKey)(cacheKeyConfig);
         // console.log(functionName + ' CloudImplement Cache')
         //尝试获取缓存
         let redis2 = _redis || redis;
@@ -501,7 +516,7 @@ function CreateCloudCacheFunction(info) {
         if (textResult) {
             let timestamp = cacheResults[1][1] && parseInt(cacheResults[1][1]);
             try {
-                cloudStats_1.IncrCache({
+                (0, cloudStats_1.IncrCache)({
                     function: functionName,
                     //@ts-ignore
                     platform: params.platform,
@@ -540,12 +555,12 @@ function CreateCloudCacheFunction(info) {
             expires = result.expires;
         }
         else if (expireBy === 'request') {
-            startTimestamp = moment_1.default();
+            startTimestamp = (0, moment_1.default)();
             expires = getTimeLength(cache.timeUnit, cache.count, cache.offset);
         }
         else {
             console.error('error expireBy ' + expireBy);
-            startTimestamp = moment_1.default();
+            startTimestamp = (0, moment_1.default)();
             expires = getTimeLength(cache.timeUnit, cache.count, cache.offset);
         }
         let timestamp = startTimestamp.valueOf();
@@ -586,13 +601,13 @@ function CreateCloudCacheFunction(info) {
  */
 function Cloud(params) {
     return function (target, propertyKey, descriptor) {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c, _d;
         const handle = descriptor.value;
         let functionName = (target.name || target.constructor.name) + '.' + propertyKey;
         // console.log(target.constructor.name)
         if (params) {
-            params.moduleId = ((_a = params) === null || _a === void 0 ? void 0 : _a.moduleId) || ((_b = cloudIdInfoMap[(target.name || target.constructor.name)]) === null || _b === void 0 ? void 0 : _b.id);
-            params.functionId = (_e = (_d = (_c = cloudIdInfoMap[(target.name || target.constructor.name)]) === null || _c === void 0 ? void 0 : _c.functions) === null || _d === void 0 ? void 0 : _d[propertyKey]) === null || _e === void 0 ? void 0 : _e.id;
+            params.moduleId = (params === null || params === void 0 ? void 0 : params.moduleId) || ((_a = cloudIdInfoMap[(target.name || target.constructor.name)]) === null || _a === void 0 ? void 0 : _a.id);
+            params.functionId = (_d = (_c = (_b = cloudIdInfoMap[(target.name || target.constructor.name)]) === null || _b === void 0 ? void 0 : _b.functions) === null || _c === void 0 ? void 0 : _c[propertyKey]) === null || _d === void 0 ? void 0 : _d.id;
         }
         let fitEnvironment = true;
         //判断是否符合运行环境

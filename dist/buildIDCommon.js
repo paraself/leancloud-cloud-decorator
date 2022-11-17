@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GetMsgInfoMap = exports.EnumLocale = exports.GetCloudInfoMap = exports.GetCloudInfo = void 0;
 function GetCloudInfo(config) {
     return Object.keys(config).map(e => Object.assign({ id: parseInt(e) }, Object.assign({}, config[e], { functions: Object.keys(config[e].functions).map(f => ({ id: parseInt(f), name: config[e].functions[f] })) })));
 }

@@ -1,5 +1,5 @@
-import AV from 'leanengine';
-import { GeetestRegisterReturn, GetGeetestVerificationParams, SetGeetestVerificationParams } from './geetest';
+import AV from "leanengine";
+import { GeetestRegisterReturn, GetGeetestVerificationParams, SetGeetestVerificationParams } from "./geetest";
 export interface InitVerifyParams {
     cachePrefix?: string;
     geetest?: {
@@ -8,7 +8,7 @@ export interface InitVerifyParams {
         fallbackCachePrefix: string;
     };
 }
-export declare type VerifyType = 'geetest' | 'sms';
+export type VerifyType = "geetest" | "sms";
 export declare function InitVerify(params: InitVerifyParams): void;
 export interface VerifyParams {
     /**
@@ -27,12 +27,12 @@ export interface VerifyParams {
     } | GeetestRegisterReturn;
 }
 export interface VerifyGeetestParams {
-    type: 'geetest';
+    type: "geetest";
     sessionId: string;
     data: GeetestRegisterReturn;
 }
 export interface VerifySmsParams {
-    type: 'sms';
+    type: "sms";
     sessionId: string;
     data: {
         mobilePhoneNumber: string;
@@ -45,14 +45,14 @@ export declare class VerifyParamsMissingUserOrMobilePhoneNumberError extends Err
     constructor();
 }
 export declare function GetVerifyParams(params: {
-    type: 'sms';
+    type: "sms";
     user?: AV.User;
     sms: {
         mobilePhoneNumber?: string;
     };
 }): Promise<VerifySmsParams>;
 export declare function GetVerifyParams(params: {
-    type: 'geetest';
+    type: "geetest";
     user?: AV.User;
     geetest: GetGeetestVerificationParams;
 }): Promise<VerifyGeetestParams>;

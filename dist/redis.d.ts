@@ -15,7 +15,7 @@ export declare function SetCache(params: {
      */
     cachePrefix?: string;
 }): void;
-declare type CacheUpdateCallback = (params: {
+type CacheUpdateCallback = (params: {
     cache: Redis;
     cachePrefix?: string;
 }) => void;

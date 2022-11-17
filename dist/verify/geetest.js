@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GeetestVerify = void 0;
 // import {ErrorMsg} from 'leancloud-cloud-decorator'
 // import { Cloud, CloudParams } from './cloud'
 const gt3_sdk_1 = __importDefault(require("gt3-sdk"));

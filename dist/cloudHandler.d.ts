@@ -1,4 +1,4 @@
-import AV from 'leanengine';
+import AV from "leanengine";
 export interface SDKVersion {
     platform: string;
     apiVersion: string;
@@ -101,10 +101,10 @@ interface DeleteCacheParams {
     };
 }
 export declare function DeleteCloudCache(params: DeleteCacheParams): Promise<{
-    'day': number;
-    'hour': number;
-    'minute': number;
-    'second': number;
-    'month': number;
+    day: number;
+    hour: number;
+    minute: number;
+    second: number;
+    month: number;
 } | undefined>;
 export {};

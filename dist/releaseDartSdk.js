@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.releaseDartSdk = void 0;
 const fs_1 = require("fs");
 const yaml_1 = __importDefault(require("yaml"));
 const semver_1 = __importDefault(require("semver"));
@@ -22,7 +23,7 @@ function getSdkPackagePath(platform) {
 //   return targetPlatform.replace('-','_') as Platform
 // }
 function createSdkInfo(platform, dir, infoDir) {
-    let packageJson = yaml_1.default.parse(fs_1.readFileSync(dir, 'utf-8'));
+    let packageJson = yaml_1.default.parse((0, fs_1.readFileSync)(dir, 'utf-8'));
     // 版本号加一
     let version = semver_1.default.parse(packageJson.version);
     if (!version) {
@@ -32,9 +33,9 @@ function createSdkInfo(platform, dir, infoDir) {
     console.log('write ' + version.format());
     packageJson.version = version.format();
     console.log('write ' + dir);
-    fs_1.writeFileSync(dir, yaml_1.default.stringify(packageJson));
+    (0, fs_1.writeFileSync)(dir, yaml_1.default.stringify(packageJson));
     console.log('write ' + infoDir);
-    fs_1.writeFileSync(infoDir, `
+    (0, fs_1.writeFileSync)(infoDir, `
 var platform = "${platform}";
 var apiVersion = "${version.format()}";
     `);

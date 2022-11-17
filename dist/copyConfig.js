@@ -16,7 +16,7 @@ if (fs_1.default.existsSync(configFilePath)) {
     fs_1.default.copyFileSync(configFilePath, sourceConfigPath);
     fs_1.default.copyFileSync(configFilePath, distConfigPath);
     let rootPath = __dirname + '/../';
-    base_1.promiseExec(`cd ${rootPath} && npx tsc -p .`);
+    (0, base_1.promiseExec)(`cd ${rootPath} && npx tsc -p .`);
 }
 else {
     console.log(configFilePath + ' does\'t exist');

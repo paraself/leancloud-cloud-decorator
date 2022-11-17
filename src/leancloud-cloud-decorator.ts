@@ -649,7 +649,7 @@ async function _CheckVerify(verify:VerifyOptions|null,params: CloudParams,user?:
       if( error instanceof Error){
         throw new VerifyError(error.message)
       }else{
-        throw new VerifyError(error)
+        throw new VerifyError(error as string)
       }
     }
     if(afterVerify){

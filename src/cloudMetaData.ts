@@ -435,13 +435,13 @@ function GetEnumerationMeta(data: EnumerationData) {
   return { types: data.children.map(e => { return { literal: e.defaultValue } }) };
 }
 
-function CreateInterfaceMetaData(file: { [key: number]: IMetaDataParams }, data: InterfaceData&EnumerationData&TypeAliasData) {
+function CreateInterfaceMetaData(file: { [key: number]: IMetaDataParams }, data: InterfaceData | EnumerationData | TypeAliasData) {
   if(!file[data.id]){
     file[data.id] = {}
   }
   if (data.indexSignature) {
     Object.assign(file[data.id], Object.assign({ name: data.name }, CreateIndexSignatureMeta(file, data.indexSignature[0])))
-  } else if (data.type) {
+  } else if (('type' in data) && data.type) {
     Object.assign(file[data.id], GetTypeData(file, undefined, data.type))
   } else if (data.kindString === 'Enumeration') {
     Object.assign(file[data.id], GetEnumerationMeta(data))

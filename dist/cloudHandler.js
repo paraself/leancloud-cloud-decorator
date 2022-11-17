@@ -1,15 +1,32 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.DeleteCloudCache = exports.SetCloudErrorCallback = exports.SetCloudInvokeCallback = void 0;
 const leanengine_1 = __importDefault(require("leanengine"));
 const redisSetting = __importStar(require("./redis"));
 const base_1 = require("./base");
@@ -20,8 +37,10 @@ const buildIDCommon_1 = require("./buildIDCommon");
 const fs = __importStar(require("fs"));
 const errorMsg_1 = require("./errorMsg");
 const Verify = __importStar(require("./verify"));
-const errorMsgFile = 'errorMsg.json';
-const errorMsgInfoMap = (fs.existsSync(errorMsgFile) && buildIDCommon_1.GetMsgInfoMap(JSON.parse(fs.readFileSync(errorMsgFile, 'utf8')))) || {};
+const errorMsgFile = "errorMsg.json";
+const errorMsgInfoMap = (fs.existsSync(errorMsgFile) &&
+    (0, buildIDCommon_1.GetMsgInfoMap)(JSON.parse(fs.readFileSync(errorMsgFile, "utf8")))) ||
+    {};
 const _define = leanengine_1.default.Cloud.define;
 const _beforeDelete = leanengine_1.default.Cloud.beforeDelete;
 const _beforeSave = leanengine_1.default.Cloud.beforeSave;
@@ -60,9 +79,9 @@ function SetCloudErrorCallback(callback) {
 exports.SetCloudErrorCallback = SetCloudErrorCallback;
 async function CloudHookHandler(request, handler, className, actionName) {
     try {
-        cloudStats_1.IncrCall({
+        (0, cloudStats_1.IncrCall)({
             module: className,
-            action: actionName
+            action: actionName,
         });
         return await handler(request);
     }
@@ -74,8 +93,10 @@ async function CloudHookHandler(request, handler, className, actionName) {
             user: request.currentUser,
             module: className,
             action: actionName,
-            params: request.object && request.object.updatedKeys && lodash_1.default.pick(request.object.toJSON(), request.object.updatedKeys),
-            target: request.object
+            params: request.object &&
+                request.object.updatedKeys &&
+                lodash_1.default.pick(request.object.toJSON(), request.object.updatedKeys),
+            target: request.object,
         };
         // if (error instanceof IkkError) {
         //   ikkError = error
@@ -98,16 +119,16 @@ async function CloudHookHandler(request, handler, className, actionName) {
 }
 function CreateHookFunction(name, hook = _beforeUpdate) {
     return (className, handler) => {
-        hook(className, request => CloudHookHandler(request, handler, className, name));
+        hook(className, (request) => CloudHookHandler(request, handler, className, name));
     };
 }
-leanengine_1.default.Cloud.beforeDelete = CreateHookFunction('beforeDelete', _beforeDelete);
-leanengine_1.default.Cloud.beforeSave = CreateHookFunction('beforeSave', _beforeSave);
-leanengine_1.default.Cloud.beforeUpdate = CreateHookFunction('beforeUpdate', _beforeUpdate);
-leanengine_1.default.Cloud.afterDelete = CreateHookFunction('afterDelete', _afterDelete);
-leanengine_1.default.Cloud.afterSave = CreateHookFunction('afterSave', _afterSave);
-leanengine_1.default.Cloud.afterUpdate = CreateHookFunction('afterUpdate', _afterUpdate);
-const UNKNOW_STATS = process.env.NODE_ENV ? 'unknown' : 'local';
+leanengine_1.default.Cloud.beforeDelete = CreateHookFunction("beforeDelete", _beforeDelete);
+leanengine_1.default.Cloud.beforeSave = CreateHookFunction("beforeSave", _beforeSave);
+leanengine_1.default.Cloud.beforeUpdate = CreateHookFunction("beforeUpdate", _beforeUpdate);
+leanengine_1.default.Cloud.afterDelete = CreateHookFunction("afterDelete", _afterDelete);
+leanengine_1.default.Cloud.afterSave = CreateHookFunction("afterSave", _afterSave);
+leanengine_1.default.Cloud.afterUpdate = CreateHookFunction("afterUpdate", _afterUpdate);
+const UNKNOW_STATS = process.env.NODE_ENV ? "unknown" : "local";
 /**
  * @function define - 更改原始函数,增加日志记录功能. 必须在云函数定义被require之前定义
  * @param {string} name
@@ -125,7 +146,6 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
      * @param {CloudFunction} request
      */
     var CloudHandler = async function (request) {
-        var _a, _b;
         let ip;
         try {
             // var userAgent =
@@ -140,18 +160,20 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
             console.error(error);
         }
         // return callback(request)
-        var lock = new redis_1.Lock(name + ':');
+        var lock = new redis_1.Lock(name + ":");
         let params = request.params || {};
         let apiVersion = params._api;
         apiVersion = {
             platform: (apiVersion && apiVersion.platform) || UNKNOW_STATS,
-            apiVersion: (apiVersion && (apiVersion.apiVersion || apiVersion['api'])) || UNKNOW_STATS,
-            clientVersion: (apiVersion && (apiVersion.clientVersion || apiVersion['version'])) || UNKNOW_STATS,
+            apiVersion: (apiVersion && (apiVersion.apiVersion || apiVersion["api"])) ||
+                UNKNOW_STATS,
+            clientVersion: (apiVersion && (apiVersion.clientVersion || apiVersion["version"])) ||
+                UNKNOW_STATS,
         };
         try {
             //@ts-ignore
             request.lock = lock;
-            cloudStats_1.IncrCall({
+            (0, cloudStats_1.IncrCall)({
                 function: name,
                 platform: apiVersion.platform,
                 api: apiVersion.apiVersion,
@@ -176,7 +198,8 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
             lock.clearLock();
             // console.error(error)
             // let ikkError
-            let msg = (error instanceof errorMsg_1.ErrorMsg) && errorMsgInfoMap[error.getStringTemplate().en];
+            let msg = error instanceof errorMsg_1.ErrorMsg &&
+                errorMsgInfoMap[error.getStringTemplate().en];
             var errorInfo = {
                 user: request.currentUser,
                 function: name,
@@ -188,24 +211,24 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                 //@ts-ignore
                 errorMsg: msg && {
                     code: {
-                        moduleId: (_a = cloudOptions) === null || _a === void 0 ? void 0 : _a.moduleId,
-                        functionId: (_b = cloudOptions) === null || _b === void 0 ? void 0 : _b.functionId,
-                        msgId: msg && msg.id
+                        moduleId: cloudOptions === null || cloudOptions === void 0 ? void 0 : cloudOptions.moduleId,
+                        functionId: cloudOptions === null || cloudOptions === void 0 ? void 0 : cloudOptions.functionId,
+                        msgId: msg && msg.id,
                     },
                     messageTemplate: msg,
-                    params: (error instanceof errorMsg_1.ErrorMsg) && error.params
-                }
+                    params: error instanceof errorMsg_1.ErrorMsg && error.params,
+                },
             };
             let info = error;
             if (info) {
                 // errorInfo.error = info
-                if (typeof info === 'string') {
+                if (typeof info === "string") {
                     //@ts-ignore
                     errorInfo.message = info;
                     //@ts-ignore
                     errorInfo.description = info;
                 }
-                else if (typeof info === 'object') {
+                else if (typeof info === "object") {
                     if (info.error && info.target) {
                         errorInfo = Object.assign(info, errorInfo);
                     }
@@ -215,7 +238,7 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
                             info = info.originalError;
                         }
                         // errorInfo = Object.assign(errorInfo, info)
-                        // if (info.message && info.stack) 
+                        // if (info.message && info.stack)
                         {
                             errorInfo.error = info;
                         }
@@ -282,84 +305,86 @@ leanengine_1.default.Cloud.define = function (name, optionsOrHandler, handler = 
 //   }
 // })
 //@ts-ignore
-leanengine_1.default.Cloud.define(base_1.cloudPrefix + 'Cloud.GetStats', async (request) => {
-    if (request.currentUser && (await base_1.isRole(request.currentUser, 'Dev'))) {
-        return cloudStats_1.GetStats();
+leanengine_1.default.Cloud.define(base_1.cloudPrefix + "Cloud.GetStats", async (request) => {
+    if (request.currentUser && (await (0, base_1.isRole)(request.currentUser, "Dev"))) {
+        return (0, cloudStats_1.GetStats)();
     }
     else {
-        throw new leanengine_1.default.Cloud.Error('non-administrators', { code: 400 });
+        throw new leanengine_1.default.Cloud.Error("non-administrators", { code: 400 });
     }
 });
 async function DeleteCloudCache(params) {
     let cacheKeyConfig = params.params;
-    let env = params.env || (process.env.NODE_ENV || 'dev');
+    let env = params.env || process.env.NODE_ENV || "dev";
     if (cacheKeyConfig && params.userId) {
-        cacheKeyConfig['currentUser'] = params.userId;
+        cacheKeyConfig["currentUser"] = params.userId;
     }
-    let functionName = params.module + '.' + params.function;
+    let functionName = params.module + "." + params.function;
     if (cacheKeyConfig) {
-        let timeUnitList = ['day', 'hour', 'minute', 'second', 'month'];
+        let timeUnitList = ["day", "hour", "minute", "second", "month"];
         let pipeline = redis.pipeline();
         for (let i = 0; i < timeUnitList.length; ++i) {
-            cacheKeyConfig['timeUnit'] = timeUnitList[i];
+            cacheKeyConfig["timeUnit"] = timeUnitList[i];
             if (Array.isArray(env)) {
-                env.forEach(e => {
-                    let cacheKey = `${prefix}:cloud:${e}:${functionName}:` + base_1.getCacheKey(cacheKeyConfig);
+                env.forEach((e) => {
+                    let cacheKey = `${prefix}:cloud:${e}:${functionName}:` +
+                        (0, base_1.getCacheKey)(cacheKeyConfig);
                     if (process.env.DEBUG_CACHE) {
-                        console.log('del ' + cacheKey);
+                        console.log("del " + cacheKey);
                     }
                     pipeline.del(cacheKey);
                 });
             }
             else {
-                let cacheKey = `${prefix}:cloud:${env}:${functionName}:` + base_1.getCacheKey(cacheKeyConfig);
+                let cacheKey = `${prefix}:cloud:${env}:${functionName}:` +
+                    (0, base_1.getCacheKey)(cacheKeyConfig);
                 if (process.env.DEBUG_CACHE) {
-                    console.log('del ' + cacheKey);
+                    console.log("del " + cacheKey);
                 }
                 pipeline.del(cacheKey);
             }
         }
         let result = await pipeline.exec();
         return {
-            'day': result[0][1],
-            'hour': result[1][1],
-            'minute': result[2][1],
-            'second': result[3][1],
-            'month': result[4][1]
+            day: result[0][1],
+            hour: result[1][1],
+            minute: result[2][1],
+            second: result[3][1],
+            month: result[4][1],
         };
     }
     else {
         let matches = [];
         if (Array.isArray(env)) {
             for (let e = 0; e < env.length; ++e) {
-                matches.push(...await redis.keys(`${prefix}:cloud:${env[e]}:${functionName}:*`));
+                matches.push(...(await redis.keys(`${prefix}:cloud:${env[e]}:${functionName}:*`)));
             }
         }
         else {
-            matches.push(...await redis.keys(`${prefix}:cloud:${env}:${functionName}:*`));
+            matches.push(...(await redis.keys(`${prefix}:cloud:${env}:${functionName}:*`)));
         }
         for (let i = 0; i < matches.length; ++i) {
             await new Promise((resolve, reject) => {
                 let stream = redis.scanStream({
-                    match: matches[i]
+                    match: matches[i],
                 });
-                stream.on('data', async function (keys) {
+                stream.on("data", async function (keys) {
                     // `keys` is an array of strings representing key names
                     if (keys.length) {
                         var pipeline = redis.pipeline();
                         keys.forEach(function (key) {
                             if (process.env.DEBUG_CACHE) {
-                                console.log('del ' + key);
+                                console.log("del " + key);
                             }
                             pipeline.del(key);
                         });
                         await pipeline.exec();
                     }
                 });
-                stream.on('end', function () {
+                stream.on("end", function () {
                     resolve();
                 });
-                stream.on('error', function (err) {
+                stream.on("error", function (err) {
                     reject(err);
                 });
             });
@@ -368,18 +393,20 @@ async function DeleteCloudCache(params) {
     }
 }
 exports.DeleteCloudCache = DeleteCloudCache;
-leanengine_1.default.Cloud.define(base_1.cloudPrefix + 'Cloud.DeleteCache', async (request) => {
-    if (request.currentUser && (await base_1.isRole(request.currentUser, 'Dev'))) {
+leanengine_1.default.Cloud.define(base_1.cloudPrefix + "Cloud.DeleteCache", async (request) => {
+    if (request.currentUser && (await (0, base_1.isRole)(request.currentUser, "Dev"))) {
         //@ts-ignore
         let params = request.params;
         return DeleteCloudCache(params);
     }
     else {
-        throw new leanengine_1.default.Cloud.Error('non-administrators', { code: 400 });
+        throw new leanengine_1.default.Cloud.Error("non-administrators", { code: 400 });
     }
 });
-leanengine_1.default.Cloud.define(base_1.cloudPrefix + 'Cloud.GetVerifyParams', async (request) => {
+leanengine_1.default.Cloud.define(base_1.cloudPrefix + "Cloud.GetVerifyParams", async (request) => {
     //@ts-ignore
-    return Verify.GetVerifyParams(Object.assign({ user: request.currentUser }, request.params || {}));
+    return Verify.GetVerifyParams(
+    // @ts-ignore
+    Object.assign({ user: request.currentUser }, request.params || {}));
 });
 //# sourceMappingURL=cloudHandler.js.map

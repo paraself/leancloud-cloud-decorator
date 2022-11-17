@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.currentUser = void 0;
 const typescript_1 = __importDefault(require("typescript"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
@@ -174,6 +175,8 @@ leanengine_1.default.init({
     appId: process.env.LC_APP_ID,
     appKey: process.env.LC_APP_KEY,
     masterKey: process.env.LC_APP_MASTER_KEY,
+    // production: false,
+    // serverURLs: 'https://api.pte-ai.com'
 });
 leanengine_1.default.setProduction(false);
 exports.currentUser = undefined;
@@ -228,7 +231,7 @@ async function translateRequest(text, target) {
     };
     //   console.log(JSON.stringify(_params,null,2) )
     let count = 0;
-    let res = await async_retry_1.default(async (bail, _count) => {
+    let res = await (0, async_retry_1.default)(async (bail, _count) => {
         count = _count;
         return await leanengine_1.default.Cloud.run(base_1.Config.translate || ((base_1.Config.cloudPrefix || '') + 'Util.GetTranslate'), _params, { user, remote: true });
     }, { onRetry: error => {

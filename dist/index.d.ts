@@ -1,14 +1,14 @@
-export * from './leancloud-cloud-decorator';
-export * from './base';
-export * from './cloudMetaData';
-export * from './cloudHandler';
-export * from './cloudStats';
-export * from './errorMsg';
-export * from './verify';
-import { CloudInvoke, CloudInvokeBefore, Listener } from './leancloud-cloud-decorator';
-import { CloudFunctionError } from './cloudHandler';
-import AV from 'leanengine';
-import { VerifyParams } from './verify';
+export * from "./leancloud-cloud-decorator";
+export * from "./base";
+export * from "./cloudMetaData";
+export * from "./cloudHandler";
+export * from "./cloudStats";
+export * from "./errorMsg";
+export * from "./verify";
+import { CloudInvoke, CloudInvokeBefore, Listener } from "./leancloud-cloud-decorator";
+import { CloudFunctionError } from "./cloudHandler";
+import AV from "leanengine";
+import { VerifyParams } from "./verify";
 interface InitParams<T> extends Listener<T> {
     /**
      * redis连接地址
@@ -44,6 +44,7 @@ interface InitParams<T> extends Listener<T> {
         geetest?: {
             geetest_id: string;
             geetest_key: string;
+            fallbackCachePrefix: string;
         };
     };
 }

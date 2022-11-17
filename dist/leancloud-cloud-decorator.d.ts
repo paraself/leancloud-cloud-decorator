@@ -22,8 +22,8 @@ export interface CloudInvokeParams<T> {
     data?: any;
     cloudOptions?: CloudOptions<any>;
 }
-export declare type CloudInvoke<T> = (params: CloudInvokeParams<T>) => Promise<any>;
-export declare type SemverCloudInvoke<T> = {
+export type CloudInvoke<T> = (params: CloudInvokeParams<T>) => Promise<any>;
+export type SemverCloudInvoke<T> = {
     /**
      * 平台
      */
@@ -37,7 +37,7 @@ export declare type SemverCloudInvoke<T> = {
      */
     callback: CloudInvoke<T>;
 };
-export declare type CloudInvokeBefore<T> = CloudInvoke<T>;
+export type CloudInvokeBefore<T> = CloudInvoke<T>;
 export declare function SetInvokeCallback<T>(params: {
     beforeInvoke?: CloudInvokeBefore<T>;
     afterInvoke?: CloudInvoke<T>;
@@ -47,7 +47,7 @@ export declare function SetAfterVerify(params: {
         user?: AV.User;
     }) => Promise<void>;
 }): void;
-declare type Environment = 'production' | 'staging' | string;
+type Environment = 'production' | 'staging' | string;
 interface CacheOptions<T> {
     /**
      * 需要缓存的参数条件,请求参数完全符合其中某个数组中的参数组合时,才调用缓存. _开头为内部参数,不会被判断
@@ -109,9 +109,9 @@ export interface VerifyOptions {
      */
     expire?: number;
 }
-declare type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
-declare type TypedSchemaLike<T> = T extends string ? Joi.StringSchema : T extends Array<infer U> ? Joi.ArraySchema : T extends number ? Joi.NumberSchema : T extends Date ? Joi.DateSchema : T extends boolean ? Joi.BooleanSchema : T extends Buffer ? Joi.BinarySchema : T extends Object ? Joi.ObjectSchema : Joi.AnySchema;
-export declare type IClientCacheMode = 'remote' | 'local' | 'localFirst' | 'remoteFirst';
+type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+type TypedSchemaLike<T> = T extends string ? Joi.StringSchema : T extends Array<infer U> ? Joi.ArraySchema : T extends number ? Joi.NumberSchema : T extends Date ? Joi.DateSchema : T extends boolean ? Joi.BooleanSchema : T extends Buffer ? Joi.BinarySchema : T extends Object ? Joi.ObjectSchema : Joi.AnySchema;
+export type IClientCacheMode = 'remote' | 'local' | 'localFirst' | 'remoteFirst';
 /**
  * T为云函数的参数类型
  */

@@ -1,14 +1,31 @@
 #!/usr/bin/env node
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-require('source-map-support').install();
+exports.IsExportDisabled = void 0;
+require("source-map-support").install();
 const fs_1 = require("fs");
 const fs = __importStar(require("fs"));
 const ts = __importStar(require("typescript"));
@@ -19,13 +36,13 @@ const buildDartSdk_1 = require("./buildDartSdk");
 // import * as vm from 'vm'
 // require('./cloud/index')
 function printNode(sourceFile) {
-    let resultText = '';
+    let resultText = "";
     var deep = 0;
     function scanNode(node) {
-        var space = '';
+        var space = "";
         for (var i = 0; i < deep; ++i)
-            space += ' ';
-        console.log(space + deep + '.' + ts.SyntaxKind[node.kind]);
+            space += " ";
+        console.log(space + deep + "." + ts.SyntaxKind[node.kind]);
         console.log(space + node.getText());
         console.log();
         deep += 1;
@@ -38,35 +55,43 @@ function printNode(sourceFile) {
 function getFunctionName(node) {
     let classNode = node.parent;
     if (!classNode.name || !node.name)
-        throw new Error('missing classNode.name or node.name');
-    let functionName = classNode.name.getText() + '.' + node.name.getText();
+        throw new Error("missing classNode.name or node.name");
+    let functionName = classNode.name.getText() + "." + node.name.getText();
     return functionName;
 }
 function getReturnTypeDeclare(node) {
     var _a, _b, _c;
-    return ((_c = (_b = (_a = node.type) === null || _a === void 0 ? void 0 : _a.typeArguments) === null || _b === void 0 ? void 0 : _b[0]) === null || _c === void 0 ? void 0 : _c.getText()) || 'any';
+    return (((_c = (_b = (_a = node.type) === null || _a === void 0 ? void 0 : _a.typeArguments) === null || _b === void 0 ? void 0 : _b[0]) === null || _c === void 0 ? void 0 : _c.getText()) ||
+        "any");
 }
-function createCloudRunText(node, method = 'run', clientCache, versionCb) {
+function createCloudRunText(node, method = "run", clientCache, versionCb) {
     let functionName = getFunctionName(node);
     if (clientCache) {
-        let clientCacheConfig = JSON.parse(clientCache.replace('undefined', '""'));
+        let clientCacheConfig = JSON.parse(clientCache.replace("undefined", '""'));
         let defaultCache = clientCacheConfig.offlineDefaultCache;
-        let defaultCacheText = defaultCache ? JSON.stringify(defaultCache, null, 2) : 'undefined';
-        let versionString = 'let version = ' + (versionCb ? `options?.clientCacheVersionParams && (${versionCb})(options!.clientCacheVersionParams).toString() || ''` : '""');
+        let defaultCacheText = defaultCache
+            ? JSON.stringify(defaultCache, null, 2)
+            : "undefined";
+        let versionString = "let version = " +
+            (versionCb
+                ? `options?.clientCacheVersionParams && (${versionCb})(options!.clientCacheVersionParams).toString() || ''`
+                : '""');
         let keyPath = `
         (${JSON.stringify(clientCacheConfig.keyPath)}.findIndex((e:string[]) => e.every(e => Object.keys(params||{}).includes(e)) && Object.keys(params||{}).every(e2 => e.includes(e2))) >= 0) ?
-        "${functionName}"+(version&&("_"+version)||"")+"?"+` + "Object.keys(params||{}).map(e=>`${e}=${Array.isArray(params![e])?(params![e] as any[]).map(e=>encodeURIComponent(e)).join('|'):encodeURIComponent(params![e])}`).join('&')" + `
+        "${functionName}"+(version&&("_"+version)||"")+"?"+` +
+            "Object.keys(params||{}).map(e=>`${e}=${Array.isArray(params![e])?(params![e] as any[]).map(e=>encodeURIComponent(e)).join('|'):encodeURIComponent(params![e])}`).join('&')" +
+            `
         :undefined
         `;
         if (node.parameters.length > 0) {
             let parameterName = node.parameters[0].name.getText();
             return `{
                 ${versionString}
-                return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},options?.mode||"${clientCacheConfig.mode || 'remote'}",${defaultCacheText},options?.onData,options?.onError,options?.onInvokeCallback) }`;
+                return API.${method}('${functionName}',${parameterName},undefined,true,version||undefined,${keyPath},options?.mode||"${clientCacheConfig.mode || "remote"}",${defaultCacheText},options?.onData,options?.onError,options?.onInvokeCallback) }`;
         }
         return `{
             ${versionString}
-            return API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},options?.mode||"${clientCacheConfig.mode || 'remote'}",${defaultCacheText},options?.onData,options?.onError,options?.onInvokeCallback) }`;
+            return API.${method}('${functionName}',undefined,undefined,true,version||undefined,${keyPath},options?.mode||"${clientCacheConfig.mode || "remote"}",${defaultCacheText},options?.onData,options?.onError,options?.onInvokeCallback) }`;
     }
     if (node.parameters.length > 0) {
         let parameterName = node.parameters[0].name.getText();
@@ -127,14 +152,15 @@ function createCloudRunText(node, method = 'run', clientCache, versionCb) {
 //     return {name,parameters}
 // }
 function IsInternalName(node) {
-    return node.name && node.name.escapedText.toString().startsWith('_');
+    return node.name && node.name.escapedText.toString().startsWith("_");
 }
 function GetImportName(importSpecifier) {
-    return ((importSpecifier.propertyName && (importSpecifier.propertyName.escapedText.toString() + ' as ')) || '')
-        + importSpecifier.name.escapedText.toString();
+    return (((importSpecifier.propertyName &&
+        importSpecifier.propertyName.escapedText.toString() + " as ") ||
+        "") + importSpecifier.name.escapedText.toString());
 }
 function IsExportDisabled(node) {
-    return node.getFullText().includes('@lcc-export-disabled');
+    return node.getFullText().includes("@lcc-export-disabled");
 }
 exports.IsExportDisabled = IsExportDisabled;
 //https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
@@ -142,10 +168,10 @@ exports.IsExportDisabled = IsExportDisabled;
 function createSdkFile(sourceFile) {
     let results = [];
     let lastPositions = [];
-    let exportText = '';
+    let exportText = "";
     // for(let i=0;i<Object.keys(Platform).length;++i){
-    results.push("import * as API from '..'\n"
-        + "export interface CloudParams{ noCache?: boolean; \n adminId ?: string; }\n");
+    results.push("import * as API from '..'\n" +
+        "export interface CloudParams{ noCache?: boolean; \n adminId ?: string; }\n");
     lastPositions.push(0);
     // }
     // let resultText = ''
@@ -184,7 +210,9 @@ function createSdkFile(sourceFile) {
                         break;
                     }
                     let functionDeclaration = node;
-                    if (!IsInternalName(functionDeclaration) && functionDeclaration.modifiers && functionDeclaration.modifiers.find(e => e.kind == ts.SyntaxKind.ExportKeyword)) {
+                    if (!IsInternalName(functionDeclaration) &&
+                        functionDeclaration.modifiers &&
+                        functionDeclaration.modifiers.find((e) => e.kind == ts.SyntaxKind.ExportKeyword)) {
                     }
                     else {
                         skipAllNode(node);
@@ -204,7 +232,8 @@ function createSdkFile(sourceFile) {
                         break;
                     }
                     let declaration = node;
-                    if (declaration.modifiers && declaration.modifiers.find(e => e.kind == ts.SyntaxKind.ExportKeyword)) {
+                    if (declaration.modifiers &&
+                        declaration.modifiers.find((e) => e.kind == ts.SyntaxKind.ExportKeyword)) {
                     }
                     else {
                         skipAllNode(node);
@@ -218,19 +247,23 @@ function createSdkFile(sourceFile) {
                         break;
                     }
                     const skipModuleNames = [
-                        './cloud', './index', './base', 'bluebird', 'leancloud-cloud-decorator'
+                        "./cloud",
+                        "./index",
+                        "./base",
+                        "bluebird",
+                        "leancloud-cloud-decorator",
                     ];
                     let importDeclaration = node;
                     let moduleName = importDeclaration.moduleSpecifier.getText();
                     // console.log(moduleName.substring(1, moduleName.length - 1))
                     moduleName = moduleName.substring(1, moduleName.length - 1);
-                    if (!moduleName.includes('..')
-                        && !moduleName.includes('.json')
-                        && !skipModuleNames.includes(moduleName)) {
+                    if (!moduleName.includes("..") &&
+                        !moduleName.includes(".json") &&
+                        !skipModuleNames.includes(moduleName)) {
                         let importClause = importDeclaration.importClause;
                         if (importClause) {
-                            let text = '';
-                            if (!node.getText().includes('_')) {
+                            let text = "";
+                            if (!node.getText().includes("_")) {
                                 text = node.getText();
                                 if (moduleMap[moduleName]) {
                                     text = text.replace(moduleName, moduleMap[moduleName]);
@@ -243,9 +276,11 @@ function createSdkFile(sourceFile) {
                                 }
                                 let namedImports = importClause.namedBindings;
                                 if (namedImports && namedImports.elements) {
-                                    let names = namedImports.elements.filter(e => !IsInternalName(e)).map(e => GetImportName(e));
+                                    let names = namedImports.elements
+                                        .filter((e) => !IsInternalName(e))
+                                        .map((e) => GetImportName(e));
                                     if (names.length > 0) {
-                                        text += ((text && ', ') || '') + `{ ${names.join(', ')} }`;
+                                        text += ((text && ", ") || "") + `{ ${names.join(", ")} }`;
                                     }
                                 }
                                 if (text) {
@@ -253,10 +288,10 @@ function createSdkFile(sourceFile) {
                                     text = `import ${text} from '${moduleName2}'`;
                                 }
                             }
-                            // for (let i = 0; i < Object.keys(Platform).length; ++i) 
+                            // for (let i = 0; i < Object.keys(Platform).length; ++i)
                             {
                                 let i = 0;
-                                appendText(text + '\n', i);
+                                appendText(text + "\n", i);
                             }
                         }
                     }
@@ -270,7 +305,8 @@ function createSdkFile(sourceFile) {
                         break;
                     }
                     let importEqualsDeclaration = node;
-                    if (importEqualsDeclaration.moduleReference.kind == ts.SyntaxKind.QualifiedName) {
+                    if (importEqualsDeclaration.moduleReference.kind ==
+                        ts.SyntaxKind.QualifiedName) {
                     }
                     else {
                         skipAllNode(node);
@@ -297,7 +333,7 @@ function createSdkFile(sourceFile) {
                     //是否需要增加 export
                     let needExport = true;
                     if (interfaceNode.modifiers) {
-                        if (interfaceNode.modifiers.find(x => x.kind == ts.SyntaxKind.ExportKeyword)) {
+                        if (interfaceNode.modifiers.find((x) => x.kind == ts.SyntaxKind.ExportKeyword)) {
                             needExport = false;
                         }
                     }
@@ -307,7 +343,7 @@ function createSdkFile(sourceFile) {
                             let i = 0;
                             skipText(interfaceNode.getStart(), interfaceNode.getStart(), i);
                             //增加 export 标示
-                            appendText('export ', i);
+                            appendText("export ", i);
                         }
                     }
                 }
@@ -321,7 +357,7 @@ function createSdkFile(sourceFile) {
                     let classNode = node;
                     let needExport = true;
                     if (classNode.modifiers) {
-                        if (classNode.modifiers.find(x => x.kind == ts.SyntaxKind.ExportKeyword)) {
+                        if (classNode.modifiers.find((x) => x.kind == ts.SyntaxKind.ExportKeyword)) {
                             needExport = false;
                         }
                     }
@@ -330,7 +366,7 @@ function createSdkFile(sourceFile) {
                         {
                             let i = 0;
                             skipText(classNode.getStart(), classNode.getStart(), i);
-                            appendText('export ', i);
+                            appendText("export ", i);
                         }
                     }
                     ts.forEachChild(node, scanNode);
@@ -354,7 +390,7 @@ function createSdkFile(sourceFile) {
                         for (let i = 0; i < decorators.length; ++i) {
                             // console.log(JSON.stringify(decorator))
                             let decorator = decorators[i].getText();
-                            if (decorator.substring(0, 6) == '@Cloud') {
+                            if (decorator.substring(0, 6) == "@Cloud") {
                                 // let sandbox = {
                                 //     result :{platforms:[],rpc:false},
                                 //     Platform:Platform
@@ -367,58 +403,67 @@ function createSdkFile(sourceFile) {
                                 // }
                                 // let code = 'function Cloud(p){result = p} '+ cloudFunction
                                 // vm.runInContext(code, sandbox);
-                                let platformText = cloudMetaData_1.PlatformString(decorator);
+                                let platformText = (0, cloudMetaData_1.PlatformString)(decorator);
                                 // console.log(paramsText)
                                 let platforms = platformText && JSON.parse(platformText);
-                                let rpcText = cloudMetaData_1.GetJsonValueString(decorator, 'rpc');
+                                let rpcText = (0, cloudMetaData_1.GetJsonValueString)(decorator, "rpc");
                                 let rpc = rpcText && JSON.parse(rpcText);
-                                let internalText = cloudMetaData_1.GetJsonValueString(decorator, 'internal');
+                                let internalText = (0, cloudMetaData_1.GetJsonValueString)(decorator, "internal");
                                 let internal = internalText && JSON.parse(internalText);
-                                let verifyText = cloudMetaData_1.GetJsonValueString(decorator, 'verify');
+                                let verifyText = (0, cloudMetaData_1.GetJsonValueString)(decorator, "verify");
                                 let verify = verifyText && JSON.parse(verifyText);
-                                let clientCache = cloudMetaData_1.GetJsonValueString(decorator, 'clientCache');
+                                let clientCache = (0, cloudMetaData_1.GetJsonValueString)(decorator, "clientCache");
                                 let versionCb = undefined;
                                 if (clientCache) {
-                                    [versionCb, clientCache] = cloudMetaData_1.GetJsonValueString(clientCache, 'versionCb', true);
+                                    [versionCb, clientCache] = (0, cloudMetaData_1.GetJsonValueString)(clientCache, "versionCb", true);
                                 }
-                                let clientCacheVersionParams = versionCb && (versionCb.indexOf(":") >= 0 ? cloudMetaData_1.GetJsonValueString(versionCb, '', false, 0) : 'any');
+                                let clientCacheVersionParams = versionCb &&
+                                    (versionCb.indexOf(":") >= 0
+                                        ? (0, cloudMetaData_1.GetJsonValueString)(versionCb, "", false, 0)
+                                        : "any");
                                 needSkip = false;
                                 // let parameters = sandbox.result || {}
                                 // let platforms:string[] = parameters.platforms
                                 // let keys = Object.keys(Platform)
-                                // for (let i = 0; i < keys.length; ++i) 
+                                // for (let i = 0; i < keys.length; ++i)
                                 {
                                     // let s = keys[i].replace('_', '-')
                                     // let s = targetPlatform.replace('_', '-')
-                                    if (internal || (platforms && !platforms.includes(targetPlatform))) {
+                                    if (internal ||
+                                        (platforms && !platforms.includes(targetPlatform))) {
                                         skipNode(node, node, i);
                                     }
                                     else if (methodNode.body) {
                                         skipText(decorators[0].getStart(), decorators[decorators.length - 1].getEnd(), i);
                                         skipNode(methodNode.body, methodNode.body, i);
                                         let text = results[i];
-                                        let lastIndex = text.lastIndexOf(')');
+                                        let lastIndex = text.lastIndexOf(")");
                                         if (verify) {
-                                            let VerifyParamsText = '';
-                                            if (verify.type == 'geetest') {
+                                            let VerifyParamsText = "";
+                                            if (verify.type == "geetest") {
                                                 VerifyParamsText = `& { cloudVerify? :{sessionId:string,data:{  
                                                 geetest_challenge:string
                                                 geetest_seccode:string
                                                 geetest_validate:string
                                               }} }`;
                                             }
-                                            else if (verify.type == 'sms') {
+                                            else if (verify.type == "sms") {
                                                 VerifyParamsText = `& { cloudVerify? :{sessionId:string,data:{  
                                                 mobilePhoneNumber:string
                                                 smsCode:string
                                               }} }`;
                                             }
                                             if (VerifyParamsText) {
-                                                results[i] = ClipParamsText(text.substring(0, lastIndex)) + VerifyParamsText + text.substring(lastIndex);
+                                                results[i] =
+                                                    ClipParamsText(text.substring(0, lastIndex)) +
+                                                        VerifyParamsText +
+                                                        text.substring(lastIndex);
                                             }
                                         }
                                         if (clientCache) {
-                                            results[i] = ClipParamsText(text.substring(0, lastIndex)) + `,options?:{
+                                            results[i] =
+                                                ClipParamsText(text.substring(0, lastIndex)) +
+                                                    `,options?:{
 
         /**
          * 覆盖默认的访问模式
@@ -445,10 +490,13 @@ function createSdkFile(sourceFile) {
             params: any
           }) => void
 
-        ${clientCacheVersionParams ? "clientCacheVersionParams:" + clientCacheVersionParams : ""}
-    }` + text.substring(lastIndex);
+        ${clientCacheVersionParams
+                                                        ? "clientCacheVersionParams:" + clientCacheVersionParams
+                                                        : ""}
+    }` +
+                                                    text.substring(lastIndex);
                                         }
-                                        appendText(createCloudRunText(methodNode, rpc ? 'rpc' : 'run', clientCache, versionCb), i);
+                                        appendText(createCloudRunText(methodNode, rpc ? "rpc" : "run", clientCache, versionCb), i);
                                     }
                                 }
                                 break;
@@ -474,12 +522,13 @@ function createSdkFile(sourceFile) {
     return results;
 }
 function ClipParamsText(text2) {
-    let params = text2.substring(text2.lastIndexOf('(') + 1).trim();
+    let params = text2.substring(text2.lastIndexOf("(") + 1).trim();
     if (!params) {
-        text2 += 'params:{}|undefined';
+        text2 += "params:{}|undefined";
     }
-    else if (params.includes('CloudParams')) {
-        text2 = text2.substring(0, text2.lastIndexOf('(') + 1) + 'params:{}|undefined';
+    else if (params.includes("CloudParams")) {
+        text2 =
+            text2.substring(0, text2.lastIndexOf("(") + 1) + "params:{}|undefined";
     }
     return text2;
 }
@@ -487,23 +536,24 @@ function deleteFolderRecursive(path) {
     if (fs.existsSync(path)) {
         fs.readdirSync(path).forEach(function (file, index) {
             var curPath = path + "/" + file;
-            if (fs.lstatSync(curPath).isDirectory()) { // recurse
+            if (fs.lstatSync(curPath).isDirectory()) {
+                // recurse
                 deleteFolderRecursive(curPath);
             }
-            else { // delete file
+            else {
+                // delete file
                 fs.unlinkSync(curPath);
             }
         });
         fs.rmdirSync(path);
     }
 }
-;
-const _dirroot = __dirname + '/../../../';
+const _dirroot = __dirname + "/../../../";
 function getSdkLibPath(platform) {
-    return _dirroot + 'release/api/' + platform + '/src/lib';
+    return _dirroot + "release/api/" + platform + "/src/lib";
 }
 function getSdkPath(platform) {
-    return _dirroot + 'release/api/' + platform;
+    return _dirroot + "release/api/" + platform;
 }
 // function clearOldBuild() {
 //     for (let i = 0; i < Platform.count; ++i) {
@@ -523,24 +573,24 @@ function createSdk(dir, exclude) {
     // for (let i = 0; i < Platform.count; ++i) {
     // for(let i in Platform){
     let i = 0;
-    // if (!targetPlatform || targetPlatform == getSdkFolderName(targetPlatform)) 
+    // if (!targetPlatform || targetPlatform == getSdkFolderName(targetPlatform))
     {
         let libPath = getSdkLibPath(targetPlatform);
         if (fs.existsSync(libPath)) {
-            console.log('remove old files ' + libPath);
+            console.log("remove old files " + libPath);
             deleteFolderRecursive(libPath);
         }
         fs.mkdirSync(libPath);
     }
     // }
-    let indexFileText = '';
+    let indexFileText = "";
     for (let d = 0; d < dir.length; ++d) {
         let file = dir[d];
-        if (path.extname(file) == '.ts' && exclude.indexOf(file) < 0) {
-            console.log('read ' + file);
-            let name = path.basename(file, '.ts');
-            let text = fs_1.readFileSync(_dirroot + 'src/cloud/' + file).toString();
-            if (text.includes('@lcc-ignore-file')) {
+        if (path.extname(file) == ".ts" && exclude.indexOf(file) < 0) {
+            console.log("read " + file);
+            let name = path.basename(file, ".ts");
+            let text = (0, fs_1.readFileSync)(_dirroot + "src/cloud/" + file).toString();
+            if (text.includes("@lcc-ignore-file")) {
                 continue;
             }
             let sourceFile = ts.createSourceFile(file, text, ts.ScriptTarget.ES2015, 
@@ -551,14 +601,14 @@ function createSdk(dir, exclude) {
                 // for (let i = 0; i < Platform.count; ++i) {
                 // let keys = Object.keys(Platform)
                 // for(let i in Platform){
-                // for (let i = 0; i < keys.length; ++i) 
+                // for (let i = 0; i < keys.length; ++i)
                 {
                     let i = 0;
-                    // if (!targetPlatform || targetPlatform == getSdkFolderName(keys[i] as Platform)) 
+                    // if (!targetPlatform || targetPlatform == getSdkFolderName(keys[i] as Platform))
                     {
                         if (fs.existsSync(getSdkLibPath(targetPlatform))) {
-                            let libPath = getSdkLibPath(targetPlatform) + '/' + file;
-                            console.log('write ' + libPath);
+                            let libPath = getSdkLibPath(targetPlatform) + "/" + file;
+                            console.log("write " + libPath);
                             fs.writeFileSync(libPath, sdks[i]);
                         }
                     }
@@ -574,11 +624,11 @@ function createSdk(dir, exclude) {
     // for (let i = 0; i < Platform.count; ++i) {
     // for(let i in Platform)
     {
-        // if (!targetPlatform || targetPlatform == getSdkFolderName(targetPlatform)) 
+        // if (!targetPlatform || targetPlatform == getSdkFolderName(targetPlatform))
         {
             if (fs.existsSync(getSdkLibPath(targetPlatform))) {
-                let libPath = getSdkLibPath(targetPlatform) + '/index.ts';
-                console.log('write ' + libPath);
+                let libPath = getSdkLibPath(targetPlatform) + "/index.ts";
+                console.log("write " + libPath);
                 fs.writeFileSync(libPath, indexFileText);
             }
         }
@@ -590,7 +640,7 @@ function compile(fileNames, options) {
     let allDiagnostics = ts
         .getPreEmitDiagnostics(program)
         .concat(emitResult.diagnostics);
-    allDiagnostics.forEach(diagnostic => {
+    allDiagnostics.forEach((diagnostic) => {
         if (diagnostic.file) {
             let { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
             let message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
@@ -603,18 +653,21 @@ function compile(fileNames, options) {
     let exitCode = emitResult.emitSkipped ? 1 : 0;
     console.log(`Process exiting with code '${exitCode}'.`);
 }
-let targetPlatform = base_1.CheckPlatform(process.argv[2]);
-let moduleMap = base_1.GetModuleMap(targetPlatform);
-moduleMap['leanengine'] = moduleMap['leanengine'] || moduleMap['leancloud-storage'] || 'leancloud-storage';
+let targetPlatform = (0, base_1.CheckPlatform)(process.argv[2]);
+let moduleMap = (0, base_1.GetModuleMap)(targetPlatform);
+moduleMap["leanengine"] =
+    moduleMap["leanengine"] ||
+        moduleMap["leancloud-storage"] ||
+        "leancloud-storage";
 // console.log('clear last build....')
 // clearOldBuild()
-if (base_1.platforms[targetPlatform].type == 'dart') {
-    buildDartSdk_1.CreatDartSdk({ platform: targetPlatform, dirroot: _dirroot });
+if (base_1.platforms[targetPlatform].type == "dart") {
+    (0, buildDartSdk_1.CreatDartSdk)({ platform: targetPlatform, dirroot: _dirroot });
 }
 else {
-    const exclude = ['cloud.ts', 'index.ts', 'base.ts'];
-    let dir = fs.readdirSync(_dirroot + 'src/cloud/');
-    console.log('build typescript sdk....');
+    const exclude = ["cloud.ts", "index.ts", "base.ts"];
+    let dir = fs.readdirSync(_dirroot + "src/cloud/");
+    console.log("build typescript sdk....");
     createSdk(dir, exclude);
 }
 // console.log('compile....')
