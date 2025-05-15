@@ -3,50 +3,53 @@ import _ from 'lodash'
 import fs from 'fs'
 import _Config from './config.json'
 export let Config = _Config as unknown as {
-  "cloudPrefix"?:string,
-  "translate"?:string,
-  "platforms"?: {[key:string]:{
-    package: string,
-    type?:string,
-    module?:{[key:string]:string},
-    devDependencies?:{[key:string]:string},
-}}
-}
-import { exec,spawn} from 'child_process'
-
-const _dirroot = __dirname+'/../../../'
-
-const configFilePath = _dirroot+'/lcc-config.json'
-// console.log(fs.readdirSync('./'))
-if(fs.existsSync(configFilePath)){
-    // @ts-ignore
-    Config = JSON.parse(fs.readFileSync(configFilePath,'utf8')) 
-}else{
-    console.log(configFilePath+' does\'t exist')
-}
-
-const platforms :{[key:string]:
-  {
-    package:string,
-    type?:string,
-    module?:{[key:string]:string},
-    devDependencies?:{[key:string]:string},
+  "cloudPrefix"?: string,
+  "translate"?: string,
+  "platforms"?: {
+    [key: string]: {
+      package: string,
+      type?: string,
+      module?: { [key: string]: string },
+      devDependencies?: { [key: string]: string },
+    }
   }
-}= Config.platforms || {}
+}
+import { exec } from 'child_process'
+
+const _dirroot = __dirname + '/../../../'
+
+const configFilePath = _dirroot + '/lcc-config.json'
+// console.log(fs.readdirSync('./'))
+if (fs.existsSync(configFilePath)) {
+  // @ts-ignore
+  Config = JSON.parse(fs.readFileSync(configFilePath, 'utf8'))
+} else {
+  console.log(configFilePath + ' does\'t exist')
+}
+
+const platforms: {
+  [key: string]:
+  {
+    package: string,
+    type?: string,
+    module?: { [key: string]: string },
+    devDependencies?: { [key: string]: string },
+  }
+} = Config.platforms || {}
 const cloudPrefix = Config.cloudPrefix || ''
 process.env.LCC_CLOUD_PREFIX = cloudPrefix
-export {platforms,cloudPrefix}
+export { platforms, cloudPrefix }
 
 export type Platform = keyof typeof platforms
 
-export function CheckPlatform(platform:string):Platform{
-  if(platforms[platform]){
+export function CheckPlatform(platform: string): Platform {
+  if (platforms[platform]) {
     return platform as Platform
   }
-  throw new Error('不存在平台 '+platform+' 更改 lcc-config.json 后请执行 lcc-config 更新平台配置')
+  throw new Error('不存在平台 ' + platform + ' 更改 lcc-config.json 后请执行 lcc-config 更新平台配置')
 }
 
-export function GetModuleMap(platform:Platform):{[key : string]:string}{
+export function GetModuleMap(platform: Platform): { [key: string]: string } {
   return platforms[platform].module || {}
 }
 
@@ -58,7 +61,7 @@ export function GetModuleMap(platform:Platform):{[key : string]:string}{
 // }
 
 
-function getRoleNames (avUser:AV.User) {
+function getRoleNames(avUser: AV.User) {
   return avUser.getRoles()
     .then(roles => {
       return Promise.resolve(roles.map(e => e.getName()))
@@ -71,7 +74,7 @@ function getRoleNames (avUser:AV.User) {
  * @param  {string} roleName 输入一个LC的用户
  * @return {Promise<boolean>} 返回这个用户是否具有该权限
  */
-export async function isRole(avUser: AV.User, roleName:string) {
+export async function isRole(avUser: AV.User, roleName: string) {
   try {
     var names = await getRoleNames(avUser)
     if (names.indexOf(roleName) !== -1) return Promise.resolve(true)
@@ -82,7 +85,7 @@ export async function isRole(avUser: AV.User, roleName:string) {
   }
 }
 
-export function isRoles (avUser: AV.User, roleArray:string[]) {
+export function isRoles(avUser: AV.User, roleArray: string[]) {
   return getRoleNames(avUser)
     .then(roleNames => {
       let diffArray = _.difference(roleArray, roleNames)
@@ -123,8 +126,8 @@ function _getQueryValueForCache(
 function getQueryValueForCache(
   value: string | number | AV.Object | boolean | Date | any[]
 ): string {
-  if(Array.isArray(value)){
-    return value.map(e=>_getQueryValueForCache(e)).join('|')
+  if (Array.isArray(value)) {
+    return value.map(e => _getQueryValueForCache(e)).join('|')
   }
   switch (typeof value) {
     case 'string':
@@ -173,23 +176,23 @@ export function getCacheKey(
 
 
 
-export function promiseExec(command:string){
-  return new Promise<void>((resolve,reject)=>{
-    let _err:any
-      exec(command, { maxBuffer: 1024 * 800 }, (err, stdout, stderr) => {
-          if (err) {
-              _err = err
-              console.log(command)
-              console.log('\x1b[31m')
-              if(stdout) console.log(stdout)
-              if(stderr) console.log(stderr)
-              console.log(err)
-              console.log('\x1b[0m')
-              reject(err)
-              return
-          }
-          if(stdout) console.log(stdout)
-          // resolve()
-      }).on('close', (code, signal) =>  { if (code === 0 && !_err) { resolve() } else {process.exit(code || 0)} })
+export function promiseExec(command: string) {
+  return new Promise<void>((resolve, reject) => {
+    let _err: any
+    exec(command, { maxBuffer: 1024 * 800 }, (err, stdout, stderr) => {
+      if (err) {
+        _err = err
+        console.log(command)
+        console.log('\x1b[31m')
+        if (stdout) console.log(stdout)
+        if (stderr) console.log(stderr)
+        console.log(err)
+        console.log('\x1b[0m')
+        reject(err)
+        return
+      }
+      if (stdout) console.log(stdout)
+      // resolve()
+    }).on('close', (code, signal) => { if (code === 0 && !_err) { resolve() } else { process.exit(code || 0) } })
   })
 }

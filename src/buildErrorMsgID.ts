@@ -5,68 +5,68 @@ import fs from 'fs'
 import path from 'path'
 import AV from 'leanengine'
 import retry from 'async-retry'
-import {EnumLocale} from './buildIDCommon'
-import {Config} from './base'
+import { EnumLocale } from './buildIDCommon'
+import { Config } from './base'
 require('dotenv').config()
 
-function GetStringFromTemplateSpan(node:ts.TemplateSpan):string {
-    if(ts.isPropertyAccessExpression(node.expression)){
-        return '{'+node.expression.name.text +'}' + node.literal.text
-    }
-    console.error('Error StringTemplateSpan '+node.getText())
-    return node.literal.text
+function GetStringFromTemplateSpan(node: ts.TemplateSpan): string {
+  if (ts.isPropertyAccessExpression(node.expression)) {
+    return '{' + node.expression.name.text + '}' + node.literal.text
+  }
+  console.error('Error StringTemplateSpan ' + node.getText())
+  return node.literal.text
 }
-function GetStringFromTemplate(node:ts.TemplateExpression):string {
-    return node.head.text+node.templateSpans.map(e=>GetStringFromTemplateSpan(e)).join('')
+function GetStringFromTemplate(node: ts.TemplateExpression): string {
+  return node.head.text + node.templateSpans.map(e => GetStringFromTemplateSpan(e)).join('')
 }
-function GetStringFromBinaryExpression(node:ts.BinaryExpression):string {
-    return GetString(node.left) + GetString(node.right)
+function GetStringFromBinaryExpression(node: ts.BinaryExpression): string {
+  return GetString(node.left) + GetString(node.right)
 }
-function GetString(node:ts.Node):string {
-    if(ts.isBinaryExpression(node)){
-        return GetStringFromBinaryExpression(node)
-    }else if(ts.isTemplateExpression(node)){
-        return GetStringFromTemplate(node)
-    }else if(ts.isStringLiteral(node)){
-        return node.text
-    }else if(ts.isPropertyAccessExpression(node)){
-        return '{'+node.name.getText()+'}'
-    } else{
-        console.error('error expression :'+node.getText())
-    }
-    return ''
+function GetString(node: ts.Node): string {
+  if (ts.isBinaryExpression(node)) {
+    return GetStringFromBinaryExpression(node)
+  } else if (ts.isTemplateExpression(node)) {
+    return GetStringFromTemplate(node)
+  } else if (ts.isStringLiteral(node)) {
+    return node.text
+  } else if (ts.isPropertyAccessExpression(node)) {
+    return '{' + node.name.getText() + '}'
+  } else {
+    console.error('error expression :' + node.getText())
+  }
+  return ''
 }
-type ErrorMsgLang = {en:string,cn?:string} 
-function GetMsgFromErrorNode(node:ts.Node):ErrorMsgLang{
-    let msg:ErrorMsgLang = {
-        en:''
-    }
-    function scanNode(_node: ts.Node) {
+type ErrorMsgLang = { en: string, cn?: string }
+function GetMsgFromErrorNode(node: ts.Node): ErrorMsgLang {
+  let msg: ErrorMsgLang = {
+    en: ''
+  }
+  function scanNode(_node: ts.Node) {
 
-        if(ts.isPropertyAssignment(_node)&&_node.name.getText()=='en'){
-            msg.en = GetString(_node.initializer)
-        }else if(ts.isPropertyAssignment(_node)&&_node.name.getText()=='cn'){
-            msg.cn = GetString(_node.initializer)
-        }else{
-            _node.forEachChild(scanNode)
-        }
+    if (ts.isPropertyAssignment(_node) && _node.name.getText() == 'en') {
+      msg.en = GetString(_node.initializer)
+    } else if (ts.isPropertyAssignment(_node) && _node.name.getText() == 'cn') {
+      msg.cn = GetString(_node.initializer)
+    } else {
+      _node.forEachChild(scanNode)
     }
-    node.forEachChild(scanNode)
-    return msg
+  }
+  node.forEachChild(scanNode)
+  return msg
 }
 
-function GetErrorMsgNodeFromNode(node:ts.SourceFile) {
-    let messages:ErrorMsgLang[] = []
-    function scanNode(_node: ts.Node) {
-        if(ts.isNewExpression(_node) && _node.expression.getText()=='ErrorMsg'){
-            messages.push(GetMsgFromErrorNode(_node.arguments![0]))
-        }else{
-            _node.forEachChild(scanNode)
-        }
+function GetErrorMsgNodeFromNode(node: ts.SourceFile) {
+  let messages: ErrorMsgLang[] = []
+  function scanNode(_node: ts.Node) {
+    if (ts.isNewExpression(_node) && _node.expression.getText() == 'ErrorMsg') {
+      messages.push(GetMsgFromErrorNode(_node.arguments![0]))
+    } else {
+      _node.forEachChild(scanNode)
     }
-    
-    node.forEachChild(scanNode)
-    return messages
+  }
+
+  node.forEachChild(scanNode)
+  return messages
 }
 // function FindFuncEndIndex(text:string,start:number) {
 //     let left = 1
@@ -96,104 +96,104 @@ function GetErrorMsgNodeFromNode(node:ts.SourceFile) {
 // }
 
 
-function GetDirErrorMsg(dirroot:string){
-    let messages:ErrorMsgLang[] = []
-    let dir = fs.readdirSync(dirroot)
+function GetDirErrorMsg(dirroot: string) {
+  let messages: ErrorMsgLang[] = []
+  let dir = fs.readdirSync(dirroot)
 
-    for(let d=0;d<dir.length;++d){
-        let file = dir[d]
-        if( path.extname(file)=='.ts' || path.extname(file)=='.js'){
-            let content = fs.readFileSync(path.join(dirroot,file),'utf8')
-            let sourceFile = ts.createSourceFile(
-                file,
-                content,
-                ts.ScriptTarget.ES2015,
+  for (let d = 0; d < dir.length; ++d) {
+    let file = dir[d]
+    if (path.extname(file) == '.ts' || path.extname(file) == '.js') {
+      let content = fs.readFileSync(path.join(dirroot, file), 'utf8')
+      let sourceFile = ts.createSourceFile(
+        file,
+        content,
+        ts.ScriptTarget.ES2015,
                 /*setParentNodes */ true
-            );
-            messages.push(...GetErrorMsgNodeFromNode(sourceFile))
-        }
-        else if(fs.lstatSync(path.join(dirroot,file)).isDirectory()){
-            messages.push(...GetDirErrorMsg(path.join(dirroot,file)))
-        }
+      );
+      messages.push(...GetErrorMsgNodeFromNode(sourceFile))
     }
-    return messages
-}
-
-function GetProjectErrorMsg(dirroot:string):ErrorMsgLang[]{
-
-    let messages = GetDirErrorMsg(path.join(dirroot , 'src/cloud/') )
-    messages.push(...GetDirErrorMsg(path.join(dirroot , 'src/plugins/') )) 
-    messages = messages.filter(x=>x.en)
-
-    return Object.values(messages.reduce((obj, item) => {
-        obj[item.en] = item
-        return obj
-      }, {})) 
-}
-
-async function BuildErrorMsgId(dirroot:string) {
-    let errorMsgIDFile = path.join(dirroot,'errorMsg.json')
-
-    let result = CombinMsgConfig( GetProjectErrorMsg(dirroot), fs.existsSync(errorMsgIDFile) && JSON.parse( fs.readFileSync(errorMsgIDFile,'utf8')) || {} )
-    await translateAll(result)
-    fs.writeFileSync(errorMsgIDFile,JSON.stringify(result,null,2))
-    console.log('BuildErrorMsgId finish==>'+errorMsgIDFile)
-}
-
-export type MsgIdConfig = {[key:string]:{[key in EnumLocale]?:string}&{en:string}}
-
-function CombinMsgConfig(msgs:ErrorMsgLang[],config:MsgIdConfig):MsgIdConfig{
-    let oldEnToId:{[key:string]:number} = {}
-    let msgId = 100
-    Object.keys( config ).forEach(
-        e=>{
-            let id =  parseInt(e)
-            oldEnToId[config[e].en] =id
-            if(id>=msgId){
-                msgId = id+1
-            }
-        }
-    )
-    let newConfig:MsgIdConfig = {}
-    msgs.forEach(e=>{
-        let id = oldEnToId[e.en]
-        newConfig[ (id||(msgId++)).toString() ] = (id && Object.assign(config[id.toString()]||{},e))||e
-    })
-    return newConfig
-}
-
-async function translateAll(config:MsgIdConfig){
-    let targets = Object.keys(EnumLocale).filter(e=>e!=EnumLocale.en) as EnumLocale[]
-    for(let i=0;i<targets.length;++i){
-        await translate(config,targets[i])
+    else if (fs.lstatSync(path.join(dirroot, file)).isDirectory()) {
+      messages.push(...GetDirErrorMsg(path.join(dirroot, file)))
     }
-    console.log('translateAll finish')
+  }
+  return messages
 }
 
-async function translate(config:MsgIdConfig, target : EnumLocale) {
-    let msgs = Object.values(config).filter(e=>!e[target])
-    let msgs2 = [...msgs]
-    let count = +msgs.length
-    console.log('translate to '+target+', count '+count)
-    let results:string[] = []
-    while(msgs.length>0){
-        results.push( ...await translateRequest(msgs.splice(0,100).map(e=>e.en),target) )
-        console.log((count-msgs.length)+'/'+count)
+function GetProjectErrorMsg(dirroot: string): ErrorMsgLang[] {
+
+  let messages = GetDirErrorMsg(path.join(dirroot, 'src/cloud/'))
+  messages.push(...GetDirErrorMsg(path.join(dirroot, 'src/plugins/')))
+  messages = messages.filter(x => x.en)
+
+  return Object.values(messages.reduce((obj, item) => {
+    obj[item.en] = item
+    return obj
+  }, {}))
+}
+
+async function BuildErrorMsgId(dirroot: string) {
+  let errorMsgIDFile = path.join(dirroot, 'errorMsg.json')
+
+  let result = CombinMsgConfig(GetProjectErrorMsg(dirroot), fs.existsSync(errorMsgIDFile) && JSON.parse(fs.readFileSync(errorMsgIDFile, 'utf8')) || {})
+  await translateAll(result)
+  fs.writeFileSync(errorMsgIDFile, JSON.stringify(result, null, 2))
+  console.log('BuildErrorMsgId finish==>' + errorMsgIDFile)
+}
+
+export type MsgIdConfig = { [key: string]: { [key in EnumLocale]?: string } & { en: string } }
+
+function CombinMsgConfig(msgs: ErrorMsgLang[], config: MsgIdConfig): MsgIdConfig {
+  let oldEnToId: { [key: string]: number } = {}
+  let msgId = 100
+  Object.keys(config).forEach(
+    e => {
+      let id = parseInt(e)
+      oldEnToId[config[e].en] = id
+      if (id >= msgId) {
+        msgId = id + 1
+      }
     }
-    results.forEach((v,i)=>{
-        msgs2[i][target] = v
-    })
+  )
+  let newConfig: MsgIdConfig = {}
+  msgs.forEach(e => {
+    let id = oldEnToId[e.en]
+    newConfig[(id || (msgId++)).toString()] = (id && Object.assign(config[id.toString()] || {}, e)) || e
+  })
+  return newConfig
+}
+
+async function translateAll(config: MsgIdConfig) {
+  let targets = Object.keys(EnumLocale).filter(e => e != EnumLocale.en) as EnumLocale[]
+  for (let i = 0; i < targets.length; ++i) {
+    await translate(config, targets[i])
+  }
+  console.log('translateAll finish')
+}
+
+async function translate(config: MsgIdConfig, target: EnumLocale) {
+  let msgs = Object.values(config).filter(e => !e[target])
+  let msgs2 = [...msgs]
+  let count = +msgs.length
+  console.log('translate to ' + target + ', count ' + count)
+  let results: string[] = []
+  while (msgs.length > 0) {
+    results.push(...await translateRequest(msgs.splice(0, 100).map(e => e.en), target))
+    console.log((count - msgs.length) + '/' + count)
+  }
+  results.forEach((v, i) => {
+    msgs2[i][target] = v
+  })
 }
 
 AV.setServerURLs(process.env.LC_SERVER_URL as string)
 AV.init({
-    appId: process.env.LC_APP_ID!,
-    appKey: process.env.LC_APP_KEY!,
-    masterKey: process.env.LC_APP_MASTER_KEY!,
-    // production: false,
-    // serverURLs: 'https://api.pte-ai.com'
-  })
-  AV.setProduction(false)
+  appId: process.env.LC_APP_ID!,
+  appKey: process.env.LC_APP_KEY!,
+  masterKey: process.env.LC_APP_MASTER_KEY!,
+  // production: false,
+  // serverURLs: 'https://api.pte-ai.com'
+})
+AV.setProduction(false)
 
 export let currentUser: AV.User | undefined = undefined
 async function getUser(): Promise<AV.User> {
@@ -205,64 +205,66 @@ async function getUser(): Promise<AV.User> {
   }
 }
 
-let LocaleToGoogleMap:{[key in EnumLocale]?:string} = {
-    cn:'zh-CN',
-    tn:'zh-TW'
+let LocaleToGoogleMap: { [key in EnumLocale]?: string } = {
+  cn: 'zh-CN',
+  tn: 'zh-TW'
 }
 
 /**
  * 将原始模板字符串中的参数,转换为var1,var2 形式, 并返回映射列表
  */
-function GetTranslationSafeTemplateString(text:string):[string,{[key:string]:string}] {
-    let index = 1
-    let varToName:{[key:string]:string} = {}
-    let nameToVar:{[key:string]:string} = {}
-    return [text.replace(/\{.*?\}/g,(e)=>{
-        if(nameToVar[e]) return nameToVar[e]
-        let varName = '{var'+ (index++)+'}'
-        varToName[varName] = e
-        nameToVar[e] = varName
-        return varName
-    }),varToName]
+function GetTranslationSafeTemplateString(text: string): [string, { [key: string]: string }] {
+  let index = 1
+  let varToName: { [key: string]: string } = {}
+  let nameToVar: { [key: string]: string } = {}
+  return [text.replace(/\{.*?\}/g, (e) => {
+    if (nameToVar[e]) return nameToVar[e]
+    let varName = '{var' + (index++) + '}'
+    varToName[varName] = e
+    nameToVar[e] = varName
+    return varName
+  }), varToName]
 }
 
 /**
  * 从安全返回的翻译字符串中,获取模板字符串
  */
-function GetTranslationTemplateString(text:string,map: {[key:string]:string}) {
-    Object.keys(map).forEach(e=>{
-        text = text.split(e).join(map[e])
-    })
-    return text
+function GetTranslationTemplateString(text: string, map: { [key: string]: string }) {
+  Object.keys(map).forEach(e => {
+    text = text.split(e).join(map[e])
+  })
+  return text
 }
-function ProcessHtmlCode(text:string) {
-    return text.split('&#39;').join("'")
+function ProcessHtmlCode(text: string) {
+  return text.split('&#39;').join("'")
 }
 
-async function translateRequest(text:string[],target : EnumLocale):Promise<string[]>{
+async function translateRequest(text: string[], target: EnumLocale): Promise<string[]> {
 
-    let user = await getUser()
-    let safeTemplateString = text.map(e=>GetTranslationSafeTemplateString(e))
-    let _params = {
-      target: LocaleToGoogleMap[target] || target as string,
-      source: EnumLocale.en,
-      text: safeTemplateString.map(e=>e[0])
+  let user = await getUser()
+  let safeTemplateString = text.map(e => GetTranslationSafeTemplateString(e))
+  let _params = {
+    target: LocaleToGoogleMap[target] || target as string,
+    source: EnumLocale.en,
+    text: safeTemplateString.map(e => e[0])
+  }
+
+  //   console.log(JSON.stringify(_params,null,2) )
+
+  let count = 0
+  let res: string[] = await retry(async (bail, _count) => {
+    count = _count
+    return await AV.Cloud.run(Config.translate || ((Config.cloudPrefix || '') + 'Util.GetTranslate'), _params, { user, remote: true })
+  }, {
+    onRetry: error => {
+      console.log('----------------------------------');
+      // console.error(`${text.join('\n')}: 
+      console.error(`翻译出错，正在进行第${count}次重试！`)
+      console.log(error.message)
     }
-      
-    //   console.log(JSON.stringify(_params,null,2) )
-
-    let count = 0
-    let res:string[] = await retry(async (bail, _count) => {
-        count = _count
-        return await AV.Cloud.run(Config.translate || ((Config.cloudPrefix||'')+'Util.GetTranslate'), _params, { user, remote: true })
-      }, {onRetry: error => {
-        console.log('----------------------------------');
-        // console.error(`${text.join('\n')}: 
-        console.error(`翻译出错，正在进行第${count}次重试！`)
-        console.log(error.message)
-      }})
-      res = res.map(e=>ProcessHtmlCode(e))
-      return res.map((e,i)=>GetTranslationTemplateString(e,safeTemplateString[i][1]))
+  })
+  res = res.map(e => ProcessHtmlCode(e))
+  return res.map((e, i) => GetTranslationTemplateString(e, safeTemplateString[i][1]))
 }
 // let result = GetProjectErrorMsg('/Users/zhilongchen/home/muyue/pteai-node-ts2/')
 // console.log(

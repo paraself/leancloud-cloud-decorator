@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 require('source-map-support').install()
-import { readFileSync,writeFileSync } from 'fs'
+import { readFileSync, writeFileSync } from 'fs'
 import * as fs from 'fs'
 import * as ts from 'typescript'
-import { Platform,CheckPlatform,platforms } from './base'
-import { PlatformString } from './cloudMetaData'
+import { Platform, CheckPlatform, platforms } from './base'
 import * as path from 'path'
 // import { devDependencies, dependencies} from '../package.json'
 
@@ -13,7 +12,7 @@ var targetPlatform = CheckPlatform(process.argv[2])
 // function getPlatform(targetPlatform: string): Platform {
 //   return targetPlatform.replace('-','_') as Platform
 // }
-const _dirroot = __dirname+'/../../../'
+const _dirroot = __dirname + '/../../../'
 // function getSdkFolderName(platform: Platform) {
 //   return platform.replace('_', '-');
 // }
@@ -29,14 +28,14 @@ function getSdkPackagePath(platform: Platform) {
 
 function getImport(sourceFile: ts.SourceFile) {
 
-  let importList:string[] = []
+  let importList: string[] = []
   function scanNode(node: ts.Node) {
     switch (node.kind) {
       case ts.SyntaxKind.ImportDeclaration: {
         let importDeclaration = <ts.ImportDeclaration>node
         let moduleName = importDeclaration.moduleSpecifier.getText()
         if (moduleName[1] != '.') {
-          importList.push(moduleName.substring(1, moduleName.length - 1) )
+          importList.push(moduleName.substring(1, moduleName.length - 1))
         }
       }
     }
@@ -45,7 +44,7 @@ function getImport(sourceFile: ts.SourceFile) {
   return importList
 }
 
-function getImports(dir: string[],parentDir:string){
+function getImports(dir: string[], parentDir: string) {
 
   let devDependencies = [
     "@types/node",
@@ -60,7 +59,7 @@ function getImports(dir: string[],parentDir:string){
 
       let sourceFile = ts.createSourceFile(
         file,
-        readFileSync(parentDir+'/'+file).toString(),
+        readFileSync(parentDir + '/' + file).toString(),
         ts.ScriptTarget.ES2015,
         /*setParentNodes */ true
       )
@@ -78,16 +77,16 @@ function getImports(dir: string[],parentDir:string){
 /**
  * 只使用主项目里存在的依赖
  */
-function createDevDependencies(imports:string[]) {
+function createDevDependencies(imports: string[]) {
   let map = {}
-  let { devDependencies, dependencies } = JSON.parse(readFileSync('package.json', 'utf-8') )
-    imports.map(e => {
+  let { devDependencies, dependencies } = JSON.parse(readFileSync('package.json', 'utf-8'))
+  imports.map(e => {
     map[e] = devDependencies[e] || dependencies[e]
   })
   return map
 }
 
-function setDevDependencies(devDependencies: any,peerDependencies: any,dir:string) {
+function setDevDependencies(devDependencies: any, peerDependencies: any, dir: string) {
   let packageJson = JSON.parse(readFileSync(dir, 'utf-8'))
   packageJson.devDependencies = devDependencies
   packageJson.peerDependencies = peerDependencies
@@ -96,7 +95,7 @@ function setDevDependencies(devDependencies: any,peerDependencies: any,dir:strin
 
 // let platform = getPlatform(targetPlatform)
 let libPath = getSdkLibPath(targetPlatform)
-let dir = (fs.existsSync(libPath) && fs.readdirSync(libPath))||[]
+let dir = (fs.existsSync(libPath) && fs.readdirSync(libPath)) || []
 console.log('build devDependencies....')
 let imports = getImports(dir, libPath)
 let devDependencies = createDevDependencies(imports)
@@ -104,4 +103,4 @@ let devDependencies = createDevDependencies(imports)
 let packageJsonPath = getSdkPackagePath(targetPlatform)
 // let infoJsonDistPath = getSdkInfoDistPath(platform)
 console.log('write ' + packageJsonPath)
-setDevDependencies( Object.assign( devDependencies,platforms[targetPlatform].devDependencies ),{}, packageJsonPath)
+setDevDependencies(Object.assign(devDependencies, platforms[targetPlatform].devDependencies), {}, packageJsonPath)

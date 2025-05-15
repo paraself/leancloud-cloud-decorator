@@ -4,18 +4,18 @@ import moment from 'moment'
 const LEANCLOUD_APP_GROUP = process.env.LEANCLOUD_APP_GROUP || 'local'
 const NODE_ENV = process.env.NODE_ENV || 'dev'
 const STATS_VERSION = 'v1'
-let _prefix = `${redisSetting.cachePrefix}:stats:`+STATS_VERSION+':'
+let _prefix = `${redisSetting.cachePrefix}:stats:` + STATS_VERSION + ':'
 let prefix = `${_prefix}${LEANCLOUD_APP_GROUP}:${NODE_ENV}`
 let expire = 60 * 60 * 24 * 30
 let redis = redisSetting.redis
 
-redisSetting.AddCacheUpdateCallback((params)=>{
+redisSetting.AddCacheUpdateCallback((params) => {
   redis = redisSetting.redis
-  _prefix = `${redisSetting.cachePrefix}:stats:`+STATS_VERSION+':'
+  _prefix = `${redisSetting.cachePrefix}:stats:` + STATS_VERSION + ':'
   prefix = `${_prefix}${LEANCLOUD_APP_GROUP}:${NODE_ENV}`
 })
 
-interface cloudInfo{
+interface cloudInfo {
   function?: string
   module?: string
   action?: string
@@ -36,7 +36,7 @@ function checkKeyParams(key: string) {
   return /:|\?|\=/.test(key)
 }
 function getKey(info: cloudInfo) {
-  let func = (info.function || (info.module + '#' + info.action)) 
+  let func = (info.function || (info.module + '#' + info.action))
   let time = moment(new Date()).format('YYYY-MM-DD')
   // let api = `${info.platform}@${info.api}`
   let { api, platform, version } = info
@@ -45,23 +45,23 @@ function getKey(info: cloudInfo) {
     if (checkKeyParams(version)) {
       throw new Error('error cloud log params')
     }
-    params.push('version='+version)
+    params.push('version=' + version)
   }
   if (platform) {
     if (checkKeyParams(platform)) {
       throw new Error('error cloud log params')
     }
-    params.push('platform='+platform)
+    params.push('platform=' + platform)
   }
   if (api) {
     if (checkKeyParams(api)) {
       throw new Error('error cloud log params')
     }
-    params.push('api='+api)
+    params.push('api=' + api)
   }
   let key = `${prefix}:${func}:${time}`
   if (params.length > 0) {
-    return key+':'+params.join('&')
+    return key + ':' + params.join('&')
   }
   return key
   // return `${prefix}:${func}:${time}:version=${version}&platform=${platform}&api=${api}`
@@ -89,7 +89,7 @@ export function IncrCache(info: cloudInfo) {
  * 云函数错误统计加1
  */
 export function IncrError(info: cloudInfo) {
-  let key:string
+  let key: string
   try {
     key = getKey(info)
   } catch (error) {
@@ -107,7 +107,7 @@ export interface GetStatsReturn {
   /**
    * 数据表名称
    */
-  module?: string 
+  module?: string
   /**
    * 钩子函数名
    */
@@ -131,7 +131,7 @@ export interface GetStatsReturn {
   /**
    * 客户端版本号
    */
-  version?:string
+  version?: string
   /**
    * 字符串日期, 例如2019-09-20
    */
@@ -153,7 +153,7 @@ export interface GetStatsReturn {
 function decodeParams(paramsString: string) {
   let params = {}
   let paramsStringList = paramsString.split('&')
-  for (let i = 0; i < paramsStringList.length; ++i){
+  for (let i = 0; i < paramsStringList.length; ++i) {
     let condition = paramsStringList[i]
     let index = condition.indexOf('=');
 
@@ -167,16 +167,16 @@ function decodeParams(paramsString: string) {
 }
 
 const hookNames = {
-  beforeDelete:true,
-  beforeSave:true,
+  beforeDelete: true,
+  beforeSave: true,
   beforeUpdate: true,
 
-  afterDelete:true,
-  afterSave:true,
+  afterDelete: true,
+  afterSave: true,
   afterUpdate: true,
 }
 
-function getInfoFromKey(key: string){
+function getInfoFromKey(key: string) {
   let infos = key.substring(_prefix.length).split(':')
   if (infos.length == 5 || infos.length == 4) {
     let group = infos[0]
@@ -184,14 +184,14 @@ function getInfoFromKey(key: string){
     let func = infos[2]
     let date = infos[3]
 
-    let info:{group:string,env:string,date:string,module?:string,action?:string,function?:string} = {
+    let info: { group: string, env: string, date: string, module?: string, action?: string, function?: string } = {
       group,
       env,
       date
     }
     if (infos.length == 5) {
       let params = decodeParams(infos[4])
-      info = Object.assign(info,params)
+      info = Object.assign(info, params)
     }
     let funcInfo = func.split('.')
     if (funcInfo.length < 2) {
@@ -220,7 +220,7 @@ export async function GetStats(): Promise<GetStatsReturn[]> {
   let stats: GetStatsReturn[] = []
   let keys = await redis.keys(_prefix + '*')
   let pipeline = redis.pipeline()
-  for (let i = 0; i < keys.length; ++i){
+  for (let i = 0; i < keys.length; ++i) {
     pipeline.hgetall(keys[i])
   }
   let results = await pipeline.exec();
@@ -245,7 +245,7 @@ export async function GetStats(): Promise<GetStatsReturn[]> {
           stats.push(Object.assign(info, result))
         }
       } catch (error) {
-        console.error('error in GetStats key:'+keys[i]+' '+JSON.stringify(error))
+        console.error('error in GetStats key:' + keys[i] + ' ' + JSON.stringify(error))
       }
     }
   }

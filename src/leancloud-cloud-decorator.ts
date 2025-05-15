@@ -2,56 +2,56 @@ import AV, { request } from 'leanengine'
 import AV2 from 'leancloud-storage'
 import Joi, { any, object } from 'joi'
 import moment from 'moment'
-import {isRole,isRoles,cloudPrefix} from './base'
+import { isRole, isRoles, cloudPrefix } from './base'
 import { IncrCache } from './cloudStats'
-import {SDKVersion} from './cloudHandler'
+import { SDKVersion } from './cloudHandler'
 import semver from 'semver'
 import fs from 'fs'
 
-import { Platform,getCacheKey } from './base'
-export { Platform,getCacheKey }
+import { Platform, getCacheKey } from './base'
+export { Platform, getCacheKey }
 
-import * as redisSetting  from './redis'
-import {SetCache} from './redis'
-import {CloudIdConfig,CloudIdInfo,GetCloudInfo,GetCloudInfoMap,CloudIdInfoMap} from './buildIDCommon'
+import * as redisSetting from './redis'
+import { SetCache } from './redis'
+import { CloudIdConfig, CloudIdInfo, GetCloudInfo, GetCloudInfoMap, CloudIdInfoMap } from './buildIDCommon'
 
-export {SetCache}
+export { SetCache }
 import Redis from 'ioredis'
 import { VerifyType, SetVerifyParams, SetVerify, VerifyParams } from './verify'
 
 const cloudFunctionIDFile = 'cloudFunctionID.json'
-const cloudIdInfoMap : CloudIdInfoMap = (fs.existsSync(cloudFunctionIDFile) && GetCloudInfoMap(JSON.parse( fs.readFileSync(cloudFunctionIDFile,'utf8'))))||{}
+const cloudIdInfoMap: CloudIdInfoMap = (fs.existsSync(cloudFunctionIDFile) && GetCloudInfoMap(JSON.parse(fs.readFileSync(cloudFunctionIDFile, 'utf8')))) || {}
 
 let redis = redisSetting.redis
 let prefix = redisSetting.cachePrefix
 
-redisSetting.AddCacheUpdateCallback((params)=>{
+redisSetting.AddCacheUpdateCallback((params) => {
   redis = redisSetting.redis
   prefix = redisSetting.cachePrefix
 })
 
-export interface CloudInvokeParams<T>{
-  functionName:string
-  request:AV.Cloud.CloudFunctionRequest & {noUser?:true, internal?:true} &{internalData?:T} & {params:{_api?:SDKVersion}}
-  data?:any
-  cloudOptions?:CloudOptions<any>
+export interface CloudInvokeParams<T> {
+  functionName: string
+  request: AV.Cloud.CloudFunctionRequest & { noUser?: true, internal?: true } & { internalData?: T } & { params: { _api?: SDKVersion } }
+  data?: any
+  cloudOptions?: CloudOptions<any>
 }
 
-export type CloudInvoke<T> = (params:CloudInvokeParams<T>)=>Promise<any>
+export type CloudInvoke<T> = (params: CloudInvokeParams<T>) => Promise<any>
 
 export type SemverCloudInvoke<T> = {
   /**
    * 平台
    */
-  platform:Platform,
+  platform: Platform,
   /**
    * 可执行的版本
    */
-  semver:string,
+  semver: string,
   /**
    * 符合条件时的回调
    */
-  callback:CloudInvoke<T>
+  callback: CloudInvoke<T>
 }
 
 // export type CloudInvoke<T> = (params:{
@@ -62,19 +62,19 @@ export type SemverCloudInvoke<T> = {
 // })=>Promise<any>
 export type CloudInvokeBefore<T> = CloudInvoke<T>
 
-let beforeInvoke:CloudInvoke<any>|undefined
-let afterInvoke:CloudInvoke<any>|undefined
+let beforeInvoke: CloudInvoke<any> | undefined
+let afterInvoke: CloudInvoke<any> | undefined
 
-export function SetInvokeCallback<T>(params:{
-  beforeInvoke?:CloudInvokeBefore<T>,
-  afterInvoke?:CloudInvoke<T>
-}){
+export function SetInvokeCallback<T>(params: {
+  beforeInvoke?: CloudInvokeBefore<T>,
+  afterInvoke?: CloudInvoke<T>
+}) {
   beforeInvoke = params.beforeInvoke
   afterInvoke = params.afterInvoke
 }
 
-let afterVerify:((params:VerifyParams&{user?:AV.User})=>Promise<void>)|undefined
-export function SetAfterVerify(params:{afterVerify:(params:VerifyParams&{user?:AV.User})=>Promise<void>}){
+let afterVerify: ((params: VerifyParams & { user?: AV.User }) => Promise<void>) | undefined
+export function SetAfterVerify(params: { afterVerify: (params: VerifyParams & { user?: AV.User }) => Promise<void> }) {
   afterVerify = params.afterVerify
 }
 
@@ -92,7 +92,7 @@ interface CacheOptions<T> {
   /**
    * 缓存时长,单位为timeUnit,默认为1
    */
-  count?:number
+  count?: number
   // time:number
   /**
    * 是否每个用户分别使用一个缓存
@@ -101,14 +101,14 @@ interface CacheOptions<T> {
   /**
    * 过期时间基于时间单位还是请求时间. 默认request. timeUnit为某个时间单位的整点开始即时,request为请求的时候开始计时
    */
-  expireBy?: 'timeUnit' | 'request' 
+  expireBy?: 'timeUnit' | 'request'
   /**
    * redis 地址, 不填则使用默认redis
    */
-  redisUrl?:string
+  redisUrl?: string
   /**
    * 过期时间的随机偏移量,单位为秒
-   */  
+   */
   offset?: {
     min: number,
     max: number
@@ -124,26 +124,26 @@ interface RateLimitOptions {
   /**
    * 时间单位
    */
-  timeUnit: 'day' | 'hour' | 'minute' | 'second' | 'month' 
+  timeUnit: 'day' | 'hour' | 'minute' | 'second' | 'month'
 }
 
-export interface VerifyOptions{
+export interface VerifyOptions {
   /**
    * 验证类型
    */
-  type:VerifyType
+  type: VerifyType
   /**
    * 多少次调用需要走一次验证
    */
-  count?:number
+  count?: number
   /**
    * 时间单位
    */
-  timeUnit: 'day' | 'hour' | 'minute' | 'second' | 'month' 
+  timeUnit: 'day' | 'hour' | 'minute' | 'second' | 'month'
   /**
    * 过期时间,单位为秒. 默认为30天
    */
-  expire?:number
+  expire?: number
 }
 
 //https://stackoverflow.com/questions/48215950/exclude-property-from-type
@@ -156,15 +156,15 @@ type Unarray<T> = T extends Array<infer U> ? U : T;
 // given a <T> we can use typescript 2.8 conditional types to map different
 // primative types to Joi schemas
 type TypedSchemaLike<T> = T extends string ? Joi.StringSchema :
-                                  T extends Array<infer U> ? Joi.ArraySchema :
-                                  T extends number ? Joi.NumberSchema :
-                                  T extends Date ? Joi.DateSchema :
-                                  T extends boolean ? Joi.BooleanSchema :
-                                  // T extends Object ? TypedObjectSchema<T> :
-                                  T extends Buffer ? Joi.BinarySchema :
-                                  T extends Object ? Joi.ObjectSchema :
-                                  // T extends number[] ? Joi.NumberSchema :
-                                  Joi.AnySchema;
+  T extends Array<infer U> ? Joi.ArraySchema :
+  T extends number ? Joi.NumberSchema :
+  T extends Date ? Joi.DateSchema :
+  T extends boolean ? Joi.BooleanSchema :
+  // T extends Object ? TypedObjectSchema<T> :
+  T extends Buffer ? Joi.BinarySchema :
+  T extends Object ? Joi.ObjectSchema :
+  // T extends number[] ? Joi.NumberSchema :
+  Joi.AnySchema;
 
 type TypedObjectSchema<T> = { [key in keyof T]-?: TypedSchemaLike<T[key]> }
 
@@ -174,7 +174,7 @@ export type IClientCacheMode = 'remote' | 'local' | 'localFirst' | 'remoteFirst'
 /**
  * T为云函数的参数类型
  */
-interface CloudOptions<T extends CloudParams,R=any> {
+interface CloudOptions<T extends CloudParams, R = any> {
   /**
    * 自动生成SDK的平台
    */
@@ -194,7 +194,7 @@ interface CloudOptions<T extends CloudParams,R=any> {
   /**
    * 防抖配置
    */
-  debounce?:boolean | Array<Array<keyof T>>
+  debounce?: boolean | Array<Array<keyof T>>
   /**
    * 备选名,用于让新的云函数,兼容旧的云函数调用
    */
@@ -222,58 +222,58 @@ interface CloudOptions<T extends CloudParams,R=any> {
   /**
    * 内部函数,不注册云函数,但是会应用缓存的功能,以供内部调用
    */
-  internal?:true
+  internal?: true
   /**
    * noUser为true的时, 默认不fetch User数据, 加上此设置,强制fetch User数据
    */
-  fetchUser?:true
+  fetchUser?: true
   /**
    * 云函数调用前的回调, 可用于修改数据. 在全局beforeInvoke之后执行
    */
-  beforeInvoke?:CloudInvoke<any>,
+  beforeInvoke?: CloudInvoke<any>,
   /**
    * @deprecated
    * 云函数调用后的回调, 可用于修改数据, 在全局afterInvoke之前执行
    */
-  afterInvoke?:CloudInvoke<any>,
+  afterInvoke?: CloudInvoke<any>,
   /**
    * 云函数调用后的回调, 可用于修改数据, 在全局afterInvoke之前执行
    */
-  afterInvokes?:SemverCloudInvoke<any>[],
+  afterInvokes?: SemverCloudInvoke<any>[],
   /**
    * 额外自定义配置信息
    */
-  customOptions?:any
+  customOptions?: any
   /**
    * 模块id,可以自动生成,也可以指定
    */
-  moduleId?:number
+  moduleId?: number
   /**
    * 云函数id,可以自动生成,也可以指定
    */
-  functionId?:number
+  functionId?: number
   /**
    * 是否需要验证后才能执行
    */
-  verify?:VerifyOptions
+  verify?: VerifyOptions
 
   /**
    * 服务端 标记哪些云函数可以进行客户端缓存，并把该标记发布到sdk 
    */
-  clientCache?:{
+  clientCache?: {
     /**
      * 缓存没有数据时的默认返回内容
      */
-    offlineDefaultCache?:R
+    offlineDefaultCache?: R
     /**
      * 配置存储的key, 以及符合配置条件的请求才会被缓存
      */
-    keyPath:(keyof T)[][],
-  
+    keyPath: (keyof T)[][],
+
     /**
      * 版本标记。当前端升级api模块之后，调用接口时生成的clientCacheVersion也不同。会把返回的version加入到缓存的key path里。
      */
-    versionCb?:(params:any)=>number|string
+    versionCb?: (params: any) => number | string
 
 
     /**
@@ -303,20 +303,20 @@ interface CloudOptions<T extends CloudParams,R=any> {
      * 
      * 默认是remote
      */
-		mode?: IClientCacheMode,
+    mode?: IClientCacheMode,
   }
 }
 
-export interface Listener<A>{
+export interface Listener<A> {
   /**
    * 限流被触发的回调
    */
-  onRateLimited?:CloudInvoke<A>
+  onRateLimited?: CloudInvoke<A>
 }
 
-let listener : Listener<any> = {}
+let listener: Listener<any> = {}
 
-export function SetListener(p:Listener<any>){
+export function SetListener(p: Listener<any>) {
   listener = p || {}
 }
 
@@ -347,60 +347,60 @@ const NODE_ENV = process.env.NODE_ENV as string || 'dev'
 // }
 
 
-async function RateLimitCheck(params: {functionName: string, objectId: string, ip:string, rateLimit: RateLimitOptions[], cloudInvokeData: CloudInvokeParams<any>}) {
+async function RateLimitCheck(params: { functionName: string, objectId: string, ip: string, rateLimit: RateLimitOptions[], cloudInvokeData: CloudInvokeParams<any> }) {
 
-  let {functionName, objectId, ip, rateLimit, cloudInvokeData} = params
-  if(rateLimit.length==0) return
+  let { functionName, objectId, ip, rateLimit, cloudInvokeData } = params
+  if (rateLimit.length == 0) return
   let pipeline = redis.pipeline()
-  for (let i = 0; i < rateLimit.length; ++i){
+  for (let i = 0; i < rateLimit.length; ++i) {
     let limit = rateLimit[i]
     let timeUnit = limit.timeUnit
-    let user = objectId||ip
+    let user = objectId || ip
     let { startTimestamp, expires } = getCacheTime(limit.timeUnit)
     let date = startTimestamp.valueOf()
     let cacheKey = `${prefix}:rate:${timeUnit}-${date}:${functionName}:${user}`
     pipeline.incr(cacheKey).expire(cacheKey, expires)
   }
   let result = await pipeline.exec()
-  
+
   for (let i = 0; i < rateLimit.length; ++i) {
     let limit = rateLimit[i]
-    let user =  objectId||ip
-    let count = result[i*2+0][1]
+    let user = objectId || ip
+    let count = result[i * 2 + 0][1]
     if (count > limit.limit) {
-      if(listener.onRateLimited){
+      if (listener.onRateLimited) {
         listener.onRateLimited(cloudInvokeData)
       }
       throw new RateLimitError({
-        functionName,user,count,limit:limit.limit,timeUnit:limit.timeUnit,code:401
+        functionName, user, count, limit: limit.limit, timeUnit: limit.timeUnit, code: 401
       })
     }
   }
 }
 
-function getTimeLength(timeUnit?: 'day' | 'hour' | 'minute' | 'month'| 'second',count=1,offset?: {
+function getTimeLength(timeUnit?: 'day' | 'hour' | 'minute' | 'month' | 'second', count = 1, offset?: {
   min: number,
   max: number
 }) {
-  let offsetCount = offset && Math.floor(Math.random() * (offset.max - offset.min) + offset.min) || 0; 
-  return moment.duration(count,timeUnit||'minute').asSeconds() + offsetCount
+  let offsetCount = offset && Math.floor(Math.random() * (offset.max - offset.min) + offset.min) || 0;
+  return moment.duration(count, timeUnit || 'minute').asSeconds() + offsetCount
 }
 
-function getCacheTime(timeUnit?: 'day' | 'hour' | 'minute' | 'second' | 'month',count=1,offset?: {
+function getCacheTime(timeUnit?: 'day' | 'hour' | 'minute' | 'second' | 'month', count = 1, offset?: {
   min: number,
   max: number
 }) {
 
   let startTimestamp = moment().startOf('day')
   let expires = 60 * 60 * 24
-  let offsetCount = offset && Math.floor(Math.random() * (offset.max - offset.min) + offset.min) || 0; 
+  let offsetCount = offset && Math.floor(Math.random() * (offset.max - offset.min) + offset.min) || 0;
   if (timeUnit) {
     startTimestamp = moment().startOf(timeUnit)
     // cacheKeyConfig['cacheTime'] = startTimestamp.toDate()
     let expireTimestamp = startTimestamp
       .clone()
       .add(count, timeUnit)
-      .add(1, (timeUnit === 'second') ? 'second':'minute')
+      .add(1, (timeUnit === 'second') ? 'second' : 'minute')
     expires =
       Math.floor((expireTimestamp.valueOf() - moment().valueOf()) / 1000)
   }
@@ -412,16 +412,16 @@ type CloudHandler = (params: CloudParams) => Promise<any>
 
 async function CloudImplementBefore<T extends CloudParams>(cloudImplementOptions: {
   functionName: string
-  request: AV.Cloud.CloudFunctionRequest & {noUser?:true, internal?:true}
+  request: AV.Cloud.CloudFunctionRequest & { noUser?: true, internal?: true }
   cloudOptions: CloudOptions<T> | undefined
   schema: Joi.ObjectSchema | null
   rateLimit: RateLimitOptions[] | null
-  roles:string[][]|null
-  debounce:boolean | Array<Array<keyof T>> | null
-  verify:VerifyOptions|null
-}){
-  let { functionName, request, cloudOptions, schema, rateLimit,roles,debounce,verify } = cloudImplementOptions
-  request = Object.assign({noUser:request.noUser || cloudOptions?.noUser},request)
+  roles: string[][] | null
+  debounce: boolean | Array<Array<keyof T>> | null
+  verify: VerifyOptions | null
+}) {
+  let { functionName, request, cloudOptions, schema, rateLimit, roles, debounce, verify } = cloudImplementOptions
+  request = Object.assign({ noUser: request.noUser || cloudOptions?.noUser }, request)
 
   let cloudOptions2 = cloudOptions as (CloudOptions<any> | undefined)
 
@@ -430,58 +430,62 @@ async function CloudImplementBefore<T extends CloudParams>(cloudImplementOptions
     cloudOptions: cloudOptions2,
     request
   })
-  
+
   cloudOptions && cloudOptions.beforeInvoke && await cloudOptions.beforeInvoke({
     functionName,
     cloudOptions: cloudOptions2,
     request
   })
-  
+
   //@ts-ignore
   let params: CloudParams = request.params || {}
-  if(!request.noUser&&!request.internal){
-    await CheckPermission(request.currentUser,cloudOptions&&cloudOptions.noUser,roles)
+  if (!request.noUser && !request.internal) {
+    await CheckPermission(request.currentUser, cloudOptions && cloudOptions.noUser, roles)
   }
   if (schema) {
     CheckSchema(schema, params)
   }
 
   //内部调用, 跳过检测
-  if(request.internal) return
+  if (request.internal) return
 
   if (rateLimit) {
-    await RateLimitCheck({functionName, 
+    await RateLimitCheck({
+      functionName,
       objectId: request.currentUser && request.currentUser.get('objectId'),
-      ip:request.meta.remoteAddress, 
+      ip: request.meta.remoteAddress,
       rateLimit,
       cloudInvokeData: {
         functionName,
         cloudOptions: cloudOptions2,
         request
-      }})
+      }
+    })
   }
-  if(verify){
-    await CheckVerify({functionName, 
+  if (verify) {
+    await CheckVerify({
+      functionName,
       objectId: request.currentUser && request.currentUser.get('objectId'),
-      ip:request.meta.remoteAddress,verify,params,user:request.currentUser})
+      ip: request.meta.remoteAddress, verify, params, user: request.currentUser
+    })
   }
-  if(debounce && request.currentUser){
-    await CheckDebounce(debounce as string[][],params,request.currentUser,
+  if (debounce && request.currentUser) {
+    await CheckDebounce(debounce as string[][], params, request.currentUser,
       //@ts-ignore
       request.lock as Lock)
   }
 }
 async function CloudImplementAfter<T extends CloudParams>(cloudImplementOptions: {
   functionName: string
-  request: AV.Cloud.CloudFunctionRequest & {noUser?:true, internal?:true}
+  request: AV.Cloud.CloudFunctionRequest & { noUser?: true, internal?: true }
   cloudOptions: CloudOptions<T> | undefined
-  data?:any,
-}){
-  let { functionName, request, cloudOptions,data } = cloudImplementOptions
-  request = Object.assign({noUser:request.noUser || cloudOptions?.noUser},request)
+  data?: any,
+}) {
+  let { functionName, request, cloudOptions, data } = cloudImplementOptions
+  request = Object.assign({ noUser: request.noUser || cloudOptions?.noUser }, request)
 
   let cloudOptions2 = cloudOptions as (CloudOptions<any> | undefined)
-  if(cloudOptions && cloudOptions.afterInvoke){
+  if (cloudOptions && cloudOptions.afterInvoke) {
     data = await cloudOptions.afterInvoke({
       functionName,
       cloudOptions: cloudOptions2,
@@ -490,12 +494,12 @@ async function CloudImplementAfter<T extends CloudParams>(cloudImplementOptions:
     }) || data
   }
 
-  if(cloudOptions && cloudOptions.afterInvokes){
+  if (cloudOptions && cloudOptions.afterInvokes) {
     //@ts-ignore
     let version = request.params && request.params._api as SDKVersion
-    if(version){ 
-      let fit = cloudOptions.afterInvokes.find(x=> semver.valid(version.clientVersion) && semver.satisfies(version.clientVersion,x.semver))
-      if(fit){
+    if (version) {
+      let fit = cloudOptions.afterInvokes.find(x => semver.valid(version.clientVersion) && semver.satisfies(version.clientVersion, x.semver))
+      if (fit) {
         data = await fit.callback({
           functionName,
           cloudOptions: cloudOptions2,
@@ -506,7 +510,7 @@ async function CloudImplementAfter<T extends CloudParams>(cloudImplementOptions:
     }
   }
 
-  if(afterInvoke){
+  if (afterInvoke) {
     data = await afterInvoke({
       functionName,
       cloudOptions: cloudOptions2,
@@ -519,29 +523,29 @@ async function CloudImplementAfter<T extends CloudParams>(cloudImplementOptions:
 
 async function CloudImplement<T extends CloudParams>(cloudImplementOptions: {
   functionName: string
-  request: AV.Cloud.CloudFunctionRequest & {noUser?:true,internal?:true}
+  request: AV.Cloud.CloudFunctionRequest & { noUser?: true, internal?: true }
   handle: CloudHandler
   cloudOptions: CloudOptions<T> | undefined
   schema: Joi.ObjectSchema | null
   rateLimit: RateLimitOptions[] | null
-  roles:string[][]|null,
-  disableCheck?:true
-  debounce:boolean | Array<Array<keyof T>> | null
-  verify:VerifyOptions|null
+  roles: string[][] | null,
+  disableCheck?: true
+  debounce: boolean | Array<Array<keyof T>> | null
+  verify: VerifyOptions | null
 }) {
-  let { functionName, request, handle, cloudOptions, schema, rateLimit,roles,disableCheck,debounce,verify } = cloudImplementOptions
-  if(!disableCheck){
+  let { functionName, request, handle, cloudOptions, schema, rateLimit, roles, disableCheck, debounce, verify } = cloudImplementOptions
+  if (!disableCheck) {
     await CloudImplementBefore(cloudImplementOptions)
   }
 
-  let data = await handle( Object.assign({
+  let data = await handle(Object.assign({
     request,
-    currentUser:request.currentUser,
+    currentUser: request.currentUser,
     //@ts-ignore
-    lock:request.lock
-  },request.params) )
+    lock: request.lock
+  }, request.params))
 
-  if(!disableCheck){
+  if (!disableCheck) {
     data = await CloudImplementAfter({
       functionName,
       request,
@@ -552,7 +556,7 @@ async function CloudImplement<T extends CloudParams>(cloudImplementOptions: {
   return data
 }
 
-async function CheckPermission(currentUser?:AV.User, noUser?:true|null,roles?:string[][]|null) {
+async function CheckPermission(currentUser?: AV.User, noUser?: true | null, roles?: string[][] | null) {
   if (!currentUser && !noUser) {
     throw new AV.Cloud.Error('missing user', { code: 400 })
   }
@@ -574,58 +578,58 @@ async function CheckPermission(currentUser?:AV.User, noUser?:true|null,roles?:st
 /**
  * 客户端版本错误
  */
-export class ClientApiVersionError extends Error{
-  constructor(message = ''){
+export class ClientApiVersionError extends Error {
+  constructor(message = '') {
     super(message)
     this.name = 'ClientApiVersionError'
   }
 }
-export class SchemaError extends Error{
+export class SchemaError extends Error {
   validationError: Joi.ValidationError
-  constructor(error: Joi.ValidationError){
+  constructor(error: Joi.ValidationError) {
     super(error.message)
     this.validationError = error
     this.name = 'SchemaError'
   }
 }
 
-export class DebounceError extends Error{
-  constructor(message = ''){
+export class DebounceError extends Error {
+  constructor(message = '') {
     super(message)
     this.name = 'DebounceError'
   }
 }
 
-export class MissingVerify  extends Error{
-  constructor(message = ''){
+export class MissingVerify extends Error {
+  constructor(message = '') {
     super(message)
     this.name = 'MissingVerify'
   }
 }
-export class VerifyError  extends Error{
-  constructor(message = ''){
+export class VerifyError extends Error {
+  constructor(message = '') {
     super(message)
     this.name = 'VerifyError'
   }
 }
 
-export class RateLimitError extends AV.Cloud.Error{
-  
-  functionName:string
-  user:string
-  count:number
-  limit:number
-  timeUnit:string
-  code:number
+export class RateLimitError extends AV.Cloud.Error {
 
-  constructor(params:{
-    functionName:string,
-    user:string,
-    count:number,
-    limit:number,
-    timeUnit:string,
-    code:number
-  }){
+  functionName: string
+  user: string
+  count: number
+  limit: number
+  timeUnit: string
+  code: number
+
+  constructor(params: {
+    functionName: string,
+    user: string,
+    count: number,
+    limit: number,
+    timeUnit: string,
+    code: number
+  }) {
     super(params.functionName + ' user ' + params.user + ' run ' + params.count + ' over limit ' + params.limit + ' in ' + params.timeUnit, { code: params.code })
     this.functionName = params.functionName
     this.user = params.user
@@ -637,38 +641,38 @@ export class RateLimitError extends AV.Cloud.Error{
 }
 
 
-async function _CheckVerify(verify:VerifyOptions|null,params: CloudParams,user?:AV.User){
-  if(verify){
-    if(!params.cloudVerify){
+async function _CheckVerify(verify: VerifyOptions | null, params: CloudParams, user?: AV.User) {
+  if (verify) {
+    if (!params.cloudVerify) {
       throw new MissingVerify()
     }
-    let verifyData:VerifyParams
+    let verifyData: VerifyParams
     try {
-      verifyData = await SetVerify(Object.assign({type:verify.type},params.cloudVerify) )
+      verifyData = await SetVerify(Object.assign({ type: verify.type }, params.cloudVerify))
     } catch (error) {
-      if( error instanceof Error){
+      if (error instanceof Error) {
         throw new VerifyError(error.message)
-      }else{
+      } else {
         throw new VerifyError(error)
       }
     }
-    if(afterVerify){
-      await afterVerify(Object.assign({user},verifyData))
+    if (afterVerify) {
+      await afterVerify(Object.assign({ user }, verifyData))
     }
   }
 }
 
-async function CheckVerify(params: {verify:VerifyOptions,functionName: string, objectId: string, ip:string, params: CloudParams,user?:AV.User}){
-  
+async function CheckVerify(params: { verify: VerifyOptions, functionName: string, objectId: string, ip: string, params: CloudParams, user?: AV.User }) {
 
-  let {functionName, objectId, ip, verify} = params
-  if(!verify) return
 
-  let user = objectId||ip
+  let { functionName, objectId, ip, verify } = params
+  if (!verify) return
+
+  let user = objectId || ip
   let lockKey = `${prefix}:verify_lock:${functionName}:${user}`
   let verified = false
-  if(await redis.get(lockKey)){
-    await _CheckVerify(verify,params.params,params.user)
+  if (await redis.get(lockKey)) {
+    await _CheckVerify(verify, params.params, params.user)
     await redis.del(lockKey)
     verified = true
   }
@@ -680,16 +684,16 @@ async function CheckVerify(params: {verify:VerifyOptions,functionName: string, o
     let date = startTimestamp.valueOf()
     let cacheKey = `${prefix}:verify_count:${timeUnit}-${date}:${functionName}:${user}`
     let result = await redis.pipeline().incr(cacheKey).expire(cacheKey, expires).exec()
-    const i=0
-    let count = result[i*2+0][1]
-    if(count>=(verify.count||1)){
+    const i = 0
+    let count = result[i * 2 + 0][1]
+    if (count >= (verify.count || 1)) {
       let pipeline = redis.pipeline()
-      pipeline.setex(cacheKey,expires,0)
-      if(verified){
+      pipeline.setex(cacheKey, expires, 0)
+      if (verified) {
         await pipeline.exec()
-      }else{
-        await pipeline.setex(lockKey,verify.expire||3600*24*30,1).exec()
-        await _CheckVerify(verify,params.params,params.user)
+      } else {
+        await pipeline.setex(lockKey, verify.expire || 3600 * 24 * 30, 1).exec()
+        await _CheckVerify(verify, params.params, params.user)
         await redis.del(lockKey)
       }
     }
@@ -697,16 +701,16 @@ async function CheckVerify(params: {verify:VerifyOptions,functionName: string, o
   }
 }
 
-async function CheckDebounce(debounce:boolean | string[][], params: CloudParams,currentUser:AV.User,lock:Lock){
+async function CheckDebounce(debounce: boolean | string[][], params: CloudParams, currentUser: AV.User, lock: Lock) {
 
   if (debounce) {
-    if(debounce==true){
+    if (debounce == true) {
       let key = currentUser.get('objectId')
       //符合缓存条件,记录所使用的查询keys
-      if(! await lock.tryLock(key)){
+      if (! await lock.tryLock(key)) {
         throw new DebounceError('debounce error')
       }
-    }else if(Array.isArray(debounce)){
+    } else if (Array.isArray(debounce)) {
       //判断是否符合防抖条件
       let cacheParams: string[] | null = null
       let paramsKeys = Object.keys(ClearInternalParams(params))
@@ -731,7 +735,7 @@ async function CheckDebounce(debounce:boolean | string[][], params: CloudParams,
         cacheKeyConfig['currentUser'] = currentUser.get('objectId')
         let key = getCacheKey(cacheKeyConfig)
         //符合缓存条件,记录所使用的查询keys
-        if(! await lock.tryLock(key)){
+        if (! await lock.tryLock(key)) {
           throw new DebounceError('debounce error')
         }
       }
@@ -746,7 +750,7 @@ function CheckSchema(schema: Joi.ObjectSchema, params: CloudParams) {
   // console.log(error)
   // console.log(value)
   if (error) {
-    throw new SchemaError(error) 
+    throw new SchemaError(error)
     //new AV.Cloud.Error('schema error', { code: 400 })
   }
 }
@@ -755,7 +759,7 @@ function CheckSchema(schema: Joi.ObjectSchema, params: CloudParams) {
  * 用于检测schema和判断是否需要缓存
  * @param params 
  */
-function ClearInternalParams(params){
+function ClearInternalParams(params) {
   let params2 = Object.assign({}, params)
   delete params2.noCache
   delete params2.adminId
@@ -766,7 +770,7 @@ function ClearInternalParams(params){
   //@ts-ignore
   delete params2.version
   delete params2.cloudVerify
-  Object.keys(params2).forEach(e=>{if(e.startsWith('_'))delete params2[e]})
+  Object.keys(params2).forEach(e => { if (e.startsWith('_')) delete params2[e] })
   // delete params2._api
   return params2
 }
@@ -777,13 +781,13 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
   functionName: string,
   cloudOptions: CloudOptions<T>,
   schema?: Joi.ObjectSchema,
-  rpc?:boolean
-  debounce?:boolean
-  verify?:VerifyOptions
+  rpc?: boolean
+  debounce?: boolean
+  verify?: VerifyOptions
 }) {
   let { cache, handle, cloudOptions, functionName, rpc } = info
-  let _redis = cache.redisUrl && new Redis(cache.redisUrl, {maxRetriesPerRequest: null})
-  return async (request: AV.Cloud.CloudFunctionRequest & {noUser?:true, internal?:true}) => {
+  let _redis = cache.redisUrl && new Redis(cache.redisUrl, { maxRetriesPerRequest: null })
+  return async (request: AV.Cloud.CloudFunctionRequest & { noUser?: true, internal?: true }) => {
 
     let schema = info.schema || null
     let debounce = info.debounce || null
@@ -819,7 +823,7 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
       } else {
         //不符合缓存条件,直接执行云函数
         // console.log(functionName+' CloudImplement(request, descriptor)')
-        return CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit,roles,debounce,verify })
+        return CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles, debounce, verify })
       }
     }
     let cloudParams: CloudParams = params
@@ -837,14 +841,14 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
       }
 
       let { startTimestamp, expires } = getCacheTime(cache.timeUnit)
-      let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit,roles,debounce,verify })
+      let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles, debounce, verify })
       if (typeof results === 'object') {
         results.__timestamp = startTimestamp.valueOf()
       }
       console.log(functionName + ' CloudImplement no cache')
       return Promise.resolve(results)
     }
-    await CloudImplementBefore({ functionName, request, cloudOptions, schema, rateLimit,roles,debounce,verify })
+    await CloudImplementBefore({ functionName, request, cloudOptions, schema, rateLimit, roles, debounce, verify })
 
     if (cache.currentUser) {
       cacheKeyConfig['currentUser'] = request.currentUser
@@ -855,26 +859,26 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
     // console.log(functionName + ' CloudImplement Cache')
     //尝试获取缓存
     let redis2 = _redis || redis
-    let cacheResults =  await redis2.pipeline().get(cacheKey).get(cacheKey+':timestamp').exec()
+    let cacheResults = await redis2.pipeline().get(cacheKey).get(cacheKey + ':timestamp').exec()
     let textResult = cacheResults[0][1]
     // let textResult = await redis2.get(cacheKey)
     if (textResult) {
-      let timestamp =  cacheResults[1][1] && parseInt(cacheResults[1][1])
+      let timestamp = cacheResults[1][1] && parseInt(cacheResults[1][1])
       try {
         IncrCache({
-          function:functionName,
+          function: functionName,
           //@ts-ignore
-          platform: params.platform ,
+          platform: params.platform,
           //@ts-ignore
-          api: params.api ,
+          api: params.api,
           //@ts-ignore
-          version: params.version ,
+          version: params.version,
         })
         // if(rpc){
         //   return AV.parseJSON(JSON.parse( textResult ) )
         // }
         let data = AV2.parse(textResult)
-        if(typeof data === 'object'){
+        if (typeof data === 'object') {
           data.__timestamp = timestamp
         }
         //@ts-ignore
@@ -883,30 +887,30 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
           request,
           data,
           cloudOptions
-        }) 
+        })
       } catch (error) {
         return textResult
       }
     }
     //获取缓存失败,执行原始云函数
-    let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit,roles,disableCheck:true,debounce,verify })
+    let results = await CloudImplement({ functionName, request, handle, cloudOptions, schema, rateLimit, roles, disableCheck: true, debounce, verify })
     let expireBy = cache.expireBy || 'request'
     let startTimestamp: moment.Moment
     let expires: number
-  
+
     if (expireBy === 'timeUnit') {
-      let result = getCacheTime(cache.timeUnit,cache.count,cache.offset)
+      let result = getCacheTime(cache.timeUnit, cache.count, cache.offset)
       startTimestamp = result.startTimestamp
       expires = result.expires
     } else if (expireBy === 'request') {
       startTimestamp = moment()
-      expires = getTimeLength(cache.timeUnit,cache.count,cache.offset)
+      expires = getTimeLength(cache.timeUnit, cache.count, cache.offset)
     } else {
       console.error('error expireBy ' + expireBy)
       startTimestamp = moment()
-      expires = getTimeLength(cache.timeUnit,cache.count,cache.offset)
+      expires = getTimeLength(cache.timeUnit, cache.count, cache.offset)
     }
-    
+
     let timestamp = startTimestamp.valueOf()
     // if (typeof results === 'object') {
     //   results.__timestamp = startTimestamp.valueOf()
@@ -925,18 +929,18 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
       // cacheValue = JSON.stringify(results)
       //@ts-ignore
       cacheValue = AV2.stringify(results)
-      if(typeof results === 'object'){
+      if (typeof results === 'object') {
         results.__timestamp = timestamp
       }
     }
-    redis2.multi().setex(cacheKey, expires, cacheValue).setex(cacheKey+':timestamp', expires, timestamp).exec()
+    redis2.multi().setex(cacheKey, expires, cacheValue).setex(cacheKey + ':timestamp', expires, timestamp).exec()
 
     return await CloudImplementAfter({
       functionName,
       request,
-      data:results,
+      data: results,
       cloudOptions
-    }) 
+    })
     // return Promise.resolve(results)
   }
 }
@@ -944,13 +948,13 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
 /**
  * 将函数加入云函数中,云函数名为 ``类名.函数名``
  */
-export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>) {
-  return function(target, propertyKey: string, descriptor: PropertyDescriptor) {
-    const handle:CloudHandler = descriptor.value
+export function Cloud<T extends CloudParams, A = any>(params?: CloudOptions<T, A>) {
+  return function (target, propertyKey: string, descriptor: PropertyDescriptor) {
+    const handle: CloudHandler = descriptor.value
     let functionName =
       (target.name || target.constructor.name) + '.' + propertyKey
     // console.log(target.constructor.name)
-    if(params){
+    if (params) {
       params.moduleId = params?.moduleId || cloudIdInfoMap[(target.name || target.constructor.name)]?.id
       params.functionId = cloudIdInfoMap[(target.name || target.constructor.name)]?.functions?.[propertyKey]?.id
     }
@@ -966,9 +970,9 @@ export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>)
         } else {
           console.error(
             'error environment type ' +
-              params.environment +
-              ' in function ' +
-              functionName
+            params.environment +
+            ' in function ' +
+            functionName
           )
         }
       }
@@ -982,14 +986,14 @@ export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>)
         schema = params.schemaCb(schema)
       }
       let rateLimit = params && params.rateLimit || null
-      let roles = params && params.roles|| null
-      let debounce = params && params.debounce|| null
+      let roles = params && params.roles || null
+      let debounce = params && params.debounce || null
       let verify = params && params.verify
       // console.log(params)
       if (params && params.cache) {
         //缓存版本
         const cache = params.cache
-        console.log(functionName+' cache cloud function')
+        console.log(functionName + ' cache cloud function')
         const rpc = params.rpc
         cloudFunction = CreateCloudCacheFunction({
           cache,
@@ -1003,48 +1007,48 @@ export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>)
       } else {
         // console.log(functionName + ' normal cloud function')
         //无缓存版本
-        cloudFunction = (request) => CloudImplement({ functionName, request, handle, cloudOptions: params! , schema: schema || null, rateLimit,roles,debounce,verify:verify||null })
+        cloudFunction = (request) => CloudImplement({ functionName, request, handle, cloudOptions: params!, schema: schema || null, rateLimit, roles, debounce, verify: verify || null })
       }
 
-      let afterInvokes =params &&  params.afterInvokes
+      let afterInvokes = params && params.afterInvokes
       if (afterInvokes) {
-        let errorRange = afterInvokes.filter(e=>!semver.validRange(e.semver))
+        let errorRange = afterInvokes.filter(e => !semver.validRange(e.semver))
         //检查合法性
-        if(errorRange.length>0){
-          console.error(functionName+': Error afterInvokes semver: '+errorRange.map(e=>e.semver).join(', '))
+        if (errorRange.length > 0) {
+          console.error(functionName + ': Error afterInvokes semver: ' + errorRange.map(e => e.semver).join(', '))
         }
         //检测是否存在范围相交
-        let errorIntersects = afterInvokes.filter((e,i)=>afterInvokes!.find((e2,i2)=>i!=i2&&semver.intersects(e.semver,e2.semver)))
-        if(errorIntersects.length>0){
-          console.error(functionName+': Error afterInvokes semver: '+errorIntersects.map(e=>e.semver).join(', '))
+        let errorIntersects = afterInvokes.filter((e, i) => afterInvokes!.find((e2, i2) => i != i2 && semver.intersects(e.semver, e2.semver)))
+        if (errorIntersects.length > 0) {
+          console.error(functionName + ': Error afterInvokes semver: ' + errorIntersects.map(e => e.semver).join(', '))
         }
       }
       if (params && params.internal) {
-        console.log('internal function '+cloudPrefix+functionName)
-        AV.Cloud.define(cloudPrefix+functionName,{internal:true}, (request) =>{
+        console.log('internal function ' + cloudPrefix + functionName)
+        AV.Cloud.define(cloudPrefix + functionName, { internal: true }, (request) => {
           let currentUser = request && request.currentUser
           let params2 = request && request.params
-          return cloudFunction({ currentUser, params:params2, noUser:true,internal:true })
+          return cloudFunction({ currentUser, params: params2, noUser: true, internal: true })
         },
-        //@ts-ignore
-        params)
-        //创建别名函数
-        if (params && params.optionalName) {
-          AV.Cloud.define(params.optionalName,{internal:true}, cloudFunction,
-            //@ts-ignore
-            params)
-        }
-      } else {
-        let options:AV.Cloud.DefineOptions = {}
-        if(params && params.noUser && !params.fetchUser){
-          options.fetchUser = false
-        }
-        AV.Cloud.define(cloudPrefix+functionName,options, cloudFunction,
           //@ts-ignore
           params)
         //创建别名函数
         if (params && params.optionalName) {
-          AV.Cloud.define(params.optionalName,options, cloudFunction,
+          AV.Cloud.define(params.optionalName, { internal: true }, cloudFunction,
+            //@ts-ignore
+            params)
+        }
+      } else {
+        let options: AV.Cloud.DefineOptions = {}
+        if (params && params.noUser && !params.fetchUser) {
+          options.fetchUser = false
+        }
+        AV.Cloud.define(cloudPrefix + functionName, options, cloudFunction,
+          //@ts-ignore
+          params)
+        //创建别名函数
+        if (params && params.optionalName) {
+          AV.Cloud.define(params.optionalName, options, cloudFunction,
             //@ts-ignore
             params)
         }
@@ -1055,7 +1059,7 @@ export function Cloud<T extends CloudParams,A = any>(params?: CloudOptions<T,A>)
         delete params2.lock
         delete params2.currentUser
         delete params2.request
-        return cloudFunction({ currentUser, params:params2, noUser:true,internal:true })
+        return cloudFunction({ currentUser, params: params2, noUser: true, internal: true })
       }
     }
 
@@ -1072,7 +1076,7 @@ export interface Lock {
   /**
    * 尝试锁住某个key,成功返回true,失败返回false, 会在云函数结束后自动解锁
    */
-  tryLock(key: string): Promise< boolean >
+  tryLock(key: string): Promise<boolean>
   /**
    * 主动解锁某个key
    */
@@ -1106,9 +1110,9 @@ export interface CloudParams {
   /**
    * 调用云函数的sdk信息
    */
-  _api?:SDKVersion
+  _api?: SDKVersion
   /**
    * 验证参数
    */
-  cloudVerify?:SetVerifyParams
+  cloudVerify?: SetVerifyParams
 }

@@ -50,7 +50,7 @@ export interface IMetaData {
   /**
    * 云函数模块名称
    */
-  class:string
+  class: string
   /**
    * 云函数名称
    */
@@ -104,30 +104,30 @@ interface TypedocData {
   decorators?: Decorator[],
   comment?: Comment,
   indexSignature?: IndexSignature[]
-  defaultValue?:string
+  defaultValue?: string
 }
 interface TypeData {
   type: string
-  value: string|number
+  value: string | number
   types: TypeData[]
   name: string
   id?: number
   elementType?: TypeData
   typeArguments: TypeData[]
-  declaration?:TypedocData
+  declaration?: TypedocData
 }
 interface ArrayTypeData {
   type: 'array'
   elementType: TypeData
 }
-interface CommentTag{
-  tag:'deprecated',
-  text:string,
+interface CommentTag {
+  tag: 'deprecated',
+  text: string,
 }
 interface Comment {
   shortText?: string
   returns?: string
-  tags?:CommentTag[]
+  tags?: CommentTag[]
 }
 interface Signature extends TypedocData {
   kindString: 'Call signature'
@@ -135,7 +135,7 @@ interface Signature extends TypedocData {
   parameters: ParameterData[]
 }
 
-interface IndexSignature extends TypedocData{
+interface IndexSignature extends TypedocData {
   kindString: "Index signature",
   type: TypeData
   parameters: ParameterData[]
@@ -168,10 +168,10 @@ interface EnumerationData extends TypedocData {
 
 interface TypeAliasData extends TypedocData {
   kindString: 'Type alias'
-  type?:TypeData
+  type?: TypeData
 }
 
-function GetTypeData(file: { [key: number]: IMetaDataParams }, name: string|undefined, data: TypeData): IMetaDataParams {
+function GetTypeData(file: { [key: number]: IMetaDataParams }, name: string | undefined, data: TypeData): IMetaDataParams {
   let out: IMetaDataParams
   if (data.type == 'union') {
     out = {
@@ -187,22 +187,22 @@ function GetTypeData(file: { [key: number]: IMetaDataParams }, name: string|unde
     out = {
       members: [GetTypeData(file, name, data.typeArguments[0])],
       isArray: true
-    } 
+    }
   }
   else if (data.elementType) {
     out = {
       members: [GetTypeData(file, name, data.elementType)],
-      isArray:true
-    } 
+      isArray: true
+    }
   }
   else if (data.type == 'reference' && data.name == 'Array') {
     out = {
       members: [GetTypeData(file, name, data.typeArguments![0])],
       isArray: true
-    } 
+    }
   }
   else if (data.type == 'reflection' && data.declaration) {
-    out = CreateInterfaceMetaData(file,data.declaration as InterfaceData&EnumerationData&TypeAliasData)
+    out = CreateInterfaceMetaData(file, data.declaration as InterfaceData & EnumerationData & TypeAliasData)
     if (out && name) {
       out.name = name
     }
@@ -248,7 +248,7 @@ function CreateReturnMetaDatas(file: { [key: number]: IMetaDataParams }, data: T
   }
 }
 
-export function PlatformString(text: string) :string|null {
+export function PlatformString(text: string): string | null {
   let value = GetJsonValueString(text, 'platforms')
   if (!value) {
     return null
@@ -260,30 +260,30 @@ export function PlatformString(text: string) :string|null {
   return value
 }
 
-function RemoveComma(text:string) {
-    text = text.trim()
-    if (text[0] == ',') {
-        return text.substring(1)
-    }
-    if (text[text.length-1] == ',') {
-        return text.substring(0,text.length-1)
-    }
-    return text
+function RemoveComma(text: string) {
+  text = text.trim()
+  if (text[0] == ',') {
+    return text.substring(1)
+  }
+  if (text[text.length - 1] == ',') {
+    return text.substring(0, text.length - 1)
+  }
+  return text
 }
-export function GetJsonValueString(text: string, key: string,remove : true) :[string,string]
-export function GetJsonValueString(text: string, key: string) : string
-export function GetJsonValueString(text: string, key: string,remove : false,startIndex:number) : string
-export function GetJsonValueString(text: string, key: string,remove?:boolean,startIndex?:number) {
+export function GetJsonValueString(text: string, key: string, remove: true): [string, string]
+export function GetJsonValueString(text: string, key: string): string
+export function GetJsonValueString(text: string, key: string, remove: false, startIndex: number): string
+export function GetJsonValueString(text: string, key: string, remove?: boolean, startIndex?: number) {
   let lastCommon = text.lastIndexOf(',')
   let lastToken = text.lastIndexOf('}')
-  if(lastCommon&&lastToken&&!text.substring(lastCommon+1,lastToken).trim()){
-    text = text.substring(0,lastCommon) + text.substring(lastCommon+1)
+  if (lastCommon && lastToken && !text.substring(lastCommon + 1, lastToken).trim()) {
+    text = text.substring(0, lastCommon) + text.substring(lastCommon + 1)
   }
   text = text.replace(/(\/\*([\s\S]*?)\*\/)|(\/\/(.*)$)/gm, '');//移除注释
   let start = startIndex || text.indexOf(key)
-  if (start < 0){ 
-    if(remove){
-      return [null,text]
+  if (start < 0) {
+    if (remove) {
+      return [null, text]
     }
     return null
   }
@@ -294,10 +294,10 @@ export function GetJsonValueString(text: string, key: string,remove?:boolean,sta
   let end = text.length
   while (index <= end) {
     let token = text[index]
-    if (token == '[' || token == '{'|| token == '(') {
+    if (token == '[' || token == '{' || token == '(') {
       tokenCount += 1
       // console.log(index + ' [ ' + tokenCount)
-    } else if (token == ']'||token == '}'||token == ')') {
+    } else if (token == ']' || token == '}' || token == ')') {
       tokenCount -= 1
       // console.log(index + ' ] ' + tokenCount)
     }
@@ -305,22 +305,22 @@ export function GetJsonValueString(text: string, key: string,remove?:boolean,sta
       // index -= 1
       break
     }
-    if (token == ',' && tokenCount == 0 ) {
+    if (token == ',' && tokenCount == 0) {
       // index -= 1
       break
     }
-    index+=1
+    index += 1
   }
   let text1 = text.substring(valueStart, index);
   if (remove) {
-      let result2 = RemoveComma( text.substring(0, start-1) )+ RemoveComma(text.substring(index))
-      result2 = result2.replace(/'/g, '"') //将单引号换成双引号
+    let result2 = RemoveComma(text.substring(0, start - 1)) + RemoveComma(text.substring(index))
+    result2 = result2.replace(/'/g, '"') //将单引号换成双引号
       .replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": '); //给key加双引号
-      return [RemoveComma(text1), result2];
+    return [RemoveComma(text1), result2];
   }
-  let result = text1.includes('(') ?text1 : text1
-      .replace(/'/g, '"') //将单引号换成双引号
-      .replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": '); //给key加双引号
+  let result = text1.includes('(') ? text1 : text1
+    .replace(/'/g, '"') //将单引号换成双引号
+    .replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": '); //给key加双引号
   return result;
 }
 // export function JsonString(text: string,key:string) {
@@ -357,7 +357,7 @@ export function GetJsonValueString(text: string, key: string,remove?:boolean,sta
 function CreateDecoratorMetaData(datas: Decorator[]): {
   cache?: Array<Array<string>>
   platforms?: Array<'weapp' | 'web-user' | 'web-admin' | 'ios' | 'android'>
-}|null {
+} | null {
   let data = datas.find(e => e.name == 'Cloud')
   if (data) {
     if (data.arguments.params) {
@@ -365,13 +365,13 @@ function CreateDecoratorMetaData(datas: Decorator[]): {
 
       let internalText = GetJsonValueString(paramsText, 'internal')
       let internal = internalText && JSON.parse(internalText)
-      if(internal) return null
+      if (internal) return null
 
       let platformsText = PlatformString(paramsText)
       // console.log(paramsText1)
       let platforms = platformsText && JSON.parse(platformsText)
       // console.log(params)
-      let paramsText2 = GetJsonValueString(GetJsonValueString(paramsText, 'cache')||'', 'params')
+      let paramsText2 = GetJsonValueString(GetJsonValueString(paramsText, 'cache') || '', 'params')
       // console.log(paramsText2)
       let params2 = paramsText2 && JSON.parse(paramsText2)
       return {
@@ -383,7 +383,7 @@ function CreateDecoratorMetaData(datas: Decorator[]): {
   }
   return null
 }
-function CreateMethodMetaData(file: { [key: number]: IMetaDataParams }, className: string, data: MethodData): IMetaData|null {
+function CreateMethodMetaData(file: { [key: number]: IMetaDataParams }, className: string, data: MethodData): IMetaData | null {
   let signatures = data.signatures[0]
   let config = CreateDecoratorMetaData(data.decorators || [])
   return config && Object.assign(config, {
@@ -397,10 +397,10 @@ function CreateMethodMetaData(file: { [key: number]: IMetaDataParams }, classNam
      * 返回值类型
      */
     value: CreateReturnMetaDatas(file, signatures.type),//,
-    comment: signatures.comment && (signatures.comment.shortText && [signatures.comment.shortText] ||[])
+    comment: signatures.comment && (signatures.comment.shortText && [signatures.comment.shortText] || [])
       .concat(
-        (signatures.comment.tags && (signatures.comment.tags.map(e=>e.tag+': '+e.text)))
-        ||[]).join('\n'),
+        (signatures.comment.tags && (signatures.comment.tags.map(e => e.tag + ': ' + e.text)))
+        || []).join('\n'),
     valueComment: signatures.comment && signatures.comment.returns,
     //   /**
     //    * 如果是一个可以被缓存的接口，则返回可缓存的key的组合
@@ -414,18 +414,18 @@ function CreateMethodMetaData(file: { [key: number]: IMetaDataParams }, classNam
 }
 
 function CreateClassMetaData(file: { [key: number]: IMetaDataParams }, data: ClassData): IMetaData[] {
-  let result =  data.children
+  let result = data.children
     .filter(e => e.kindString == 'Method')
     .map(e => CreateMethodMetaData(file, data.name, e as MethodData))
   //@ts-ignore
-  return result.filter(e=> e!=null)
+  return result.filter(e => e != null)
 }
 
-function CreateIndexSignatureMeta(file: { [key: number]: IMetaDataParams }, data: IndexSignature):IMetaDataParams {
+function CreateIndexSignatureMeta(file: { [key: number]: IMetaDataParams }, data: IndexSignature): IMetaDataParams {
   let type = data.type
   return {
     indexSignature: {
-      key: data.parameters[0].type.name as 'string'|'number',
+      key: data.parameters[0].type.name as 'string' | 'number',
       value: GetTypeData(file, undefined, type)
     }
   }
@@ -435,8 +435,8 @@ function GetEnumerationMeta(data: EnumerationData) {
   return { types: data.children.map(e => { return { literal: e.defaultValue } }) };
 }
 
-function CreateInterfaceMetaData(file: { [key: number]: IMetaDataParams }, data: InterfaceData&EnumerationData&TypeAliasData) {
-  if(!file[data.id]){
+function CreateInterfaceMetaData(file: { [key: number]: IMetaDataParams }, data: InterfaceData & EnumerationData & TypeAliasData) {
+  if (!file[data.id]) {
     file[data.id] = {}
   }
   if (data.indexSignature) {
@@ -445,8 +445,8 @@ function CreateInterfaceMetaData(file: { [key: number]: IMetaDataParams }, data:
     Object.assign(file[data.id], GetTypeData(file, undefined, data.type))
   } else if (data.kindString === 'Enumeration') {
     Object.assign(file[data.id], GetEnumerationMeta(data))
-   } else {
-    let memberInfos = (data.children||[])
+  } else {
+    let memberInfos = (data.children || [])
       .filter(e => !(e as PropertyData).inheritedFrom)
     let members = memberInfos.map(e =>
       GetTypeData(file, e.name, (e as PropertyData).type)
@@ -487,9 +487,9 @@ export function CreateCloudMetaData(datas: TypedocData[]): IMetaData[] {
   for (let i = 0; i < datas.length; ++i) {
     let data = datas[i]
     if (data.children && !ExcludeFile.includes(data.name.replace(/"/g, ''))) {
-      let allInterface = data.children.filter(e => e.kindString == 'Interface' || e.kindString=='Type alias' || e.kindString=='Enumeration')
+      let allInterface = data.children.filter(e => e.kindString == 'Interface' || e.kindString == 'Type alias' || e.kindString == 'Enumeration')
       allInterface.map(e => file[e.id] = {})
-      allInterface.map(e => CreateInterfaceMetaData(file, e as (InterfaceData&EnumerationData&TypeAliasData) ))
+      allInterface.map(e => CreateInterfaceMetaData(file, e as (InterfaceData & EnumerationData & TypeAliasData)))
     }
   }
   for (let i = 0; i < datas.length; ++i) {
