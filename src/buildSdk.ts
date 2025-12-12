@@ -132,8 +132,21 @@ function IsInternalName(node: { name?: ts.Identifier }) {
   return node.name && node.name.escapedText.toString().startsWith('_')
 }
 
+function getDecorators(node: ts.Node): readonly ts.Decorator[] | undefined {
+  return ts.canHaveDecorators(node) ? ts.getDecorators(node) : undefined
+}
+
+function hasExportModifier(node: ts.Node): boolean {
+  const modifiers = ts.canHaveModifiers(node) ? ts.getModifiers(node) : undefined
+  return !!modifiers?.some(m => m.kind === ts.SyntaxKind.ExportKeyword)
+}
+
+function getModuleExportNameText(name: ts.ModuleExportName): string {
+  return ts.isIdentifier(name) ? name.escapedText.toString() : name.text
+}
+
 function GetImportName(importSpecifier: ts.ImportSpecifier) {
-  return ((importSpecifier.propertyName && (importSpecifier.propertyName.escapedText.toString() + ' as ')) || '')
+  return ((importSpecifier.propertyName && (getModuleExportNameText(importSpecifier.propertyName) + ' as ')) || '')
     + importSpecifier.name.escapedText.toString()
 }
 
@@ -211,8 +224,8 @@ function createSdkFile(sourceFile: ts.SourceFile) {
             skipAllNode(node)
             break
           }
-          let declaration = <ts.Node>node
-          if (declaration.modifiers && declaration.modifiers.find(e => e.kind == ts.SyntaxKind.ExportKeyword)) {
+          const declaration = node as ts.TypeAliasDeclaration | ts.VariableStatement
+          if (hasExportModifier(declaration)) {
 
           } else {
             skipAllNode(node)
@@ -359,7 +372,7 @@ function createSdkFile(sourceFile: ts.SourceFile) {
             break
           }
           let methodNode = <ts.MethodDeclaration>node
-          let decorators = methodNode.decorators
+          let decorators = getDecorators(methodNode)
           if (decorators) {
             let needSkip = true;
             for (let i = 0; i < decorators.length; ++i) {

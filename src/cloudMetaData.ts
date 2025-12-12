@@ -202,7 +202,7 @@ function GetTypeData(file: { [key: number]: IMetaDataParams }, name: string | un
     }
   }
   else if (data.type == 'reflection' && data.declaration) {
-    out = CreateInterfaceMetaData(file, data.declaration as InterfaceData & EnumerationData & TypeAliasData)
+    out = CreateInterfaceMetaData(file, data.declaration as InterfaceData | EnumerationData | TypeAliasData)
     if (out && name) {
       out.name = name
     }
@@ -435,13 +435,13 @@ function GetEnumerationMeta(data: EnumerationData) {
   return { types: data.children.map(e => { return { literal: e.defaultValue } }) };
 }
 
-function CreateInterfaceMetaData(file: { [key: number]: IMetaDataParams }, data: InterfaceData & EnumerationData & TypeAliasData) {
+function CreateInterfaceMetaData(file: { [key: number]: IMetaDataParams }, data: InterfaceData | EnumerationData | TypeAliasData) {
   if (!file[data.id]) {
     file[data.id] = {}
   }
   if (data.indexSignature) {
     Object.assign(file[data.id], Object.assign({ name: data.name }, CreateIndexSignatureMeta(file, data.indexSignature[0])))
-  } else if (data.type) {
+  } else if ('type' in data && data.type) {
     Object.assign(file[data.id], GetTypeData(file, undefined, data.type))
   } else if (data.kindString === 'Enumeration') {
     Object.assign(file[data.id], GetEnumerationMeta(data))
@@ -489,7 +489,7 @@ export function CreateCloudMetaData(datas: TypedocData[]): IMetaData[] {
     if (data.children && !ExcludeFile.includes(data.name.replace(/"/g, ''))) {
       let allInterface = data.children.filter(e => e.kindString == 'Interface' || e.kindString == 'Type alias' || e.kindString == 'Enumeration')
       allInterface.map(e => file[e.id] = {})
-      allInterface.map(e => CreateInterfaceMetaData(file, e as (InterfaceData & EnumerationData & TypeAliasData)))
+      allInterface.map(e => CreateInterfaceMetaData(file, e as (InterfaceData | EnumerationData | TypeAliasData)))
     }
   }
   for (let i = 0; i < datas.length; ++i) {

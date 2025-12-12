@@ -256,11 +256,11 @@ async function translateRequest(text: string[], target: EnumLocale): Promise<str
     count = _count
     return await AV.Cloud.run(Config.translate || ((Config.cloudPrefix || '') + 'Util.GetTranslate'), _params, { user, remote: true })
   }, {
-    onRetry: error => {
+    onRetry: (error: any) => {
       console.log('----------------------------------');
       // console.error(`${text.join('\n')}: 
       console.error(`翻译出错，正在进行第${count}次重试！`)
-      console.log(error.message)
+      console.log(error?.message || String(error))
     }
   })
   res = res.map(e => ProcessHtmlCode(e))

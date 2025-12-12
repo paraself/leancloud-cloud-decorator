@@ -5,6 +5,10 @@ import * as ts from "typescript";
 import * as path from 'path'
 import { CloudIdConfig, GetCloudInfo } from './buildIDCommon'
 
+function getDecorators(node: ts.Node): readonly ts.Decorator[] | undefined {
+  return ts.canHaveDecorators(node) ? ts.getDecorators(node) : undefined
+}
+
 class CloudClass {
   classNode: ts.ClassDeclaration
   constructor(params: { classNode: ts.ClassDeclaration }) {
@@ -15,7 +19,7 @@ class CloudClass {
   }
 
   cloudFunctions(): string[] {
-    return this.classNode.members.filter(e => ts.isMethodDeclaration(e) && e.decorators?.find(d => d.getText().substring(0, 6) == '@Cloud'))
+    return this.classNode.members.filter(e => ts.isMethodDeclaration(e) && getDecorators(e)?.find(d => d.getText().substring(0, 6) == '@Cloud'))
       .map(e => e.name?.getText()!)
   }
 }

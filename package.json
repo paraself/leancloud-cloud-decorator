@@ -2,10 +2,13 @@
   "name": "leancloud-cloud-decorator",
   "version": "1.54.0",
   "description": "",
+  "engines": {
+    "node": ">=24 <25"
+  },
   "main": "dist/index.js",
   "scripts": {
-    "build": "npx tsc -p . ",
-    "dev": "npx tsc -p . -w",
+    "build": "tsc -p .",
+    "dev": "tsc -p . -w",
     "release-minor": "npm run build && git add -A && git commit -m \"auto release\" && npm version minor -f && git push && npm publish",
     "release-patch": "npm run build && git add -A && git commit -m \"auto release\" && npm version patch -f && git push && npm publish"
   },
@@ -35,12 +38,12 @@
     "@types/ioredis": "^4.17.8",
     "@types/joi": "^14.3.3",
     "@types/lodash": "^4.14.129",
-    "@types/node": "^14.17.34",
+    "@types/node": "^24.10.3",
     "@types/semver": "^6.2.0",
     "leancloud-storage": "^4.1.0",
     "leanengine": "^3.4.0",
     "typedoc": "^0.14.2",
-    "typescript": "^3.7.4"
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "joi": "^14.3.1",

@@ -653,7 +653,7 @@ async function _CheckVerify(verify: VerifyOptions | null, params: CloudParams, u
       if (error instanceof Error) {
         throw new VerifyError(error.message)
       } else {
-        throw new VerifyError(error)
+        throw new VerifyError(String(error))
       }
     }
     if (afterVerify) {

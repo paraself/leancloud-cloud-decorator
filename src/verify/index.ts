@@ -13,7 +13,7 @@ export interface InitVerifyParams {
   geetest?: {
     geetest_id: string,
     geetest_key: string,
-    fallbackCachePrefix: string
+    fallbackCachePrefix?: string
   }
 }
 

@@ -335,6 +335,8 @@ class DartFile {
   }
   AddInterfaceDeclaration(typeNode: ts.InterfaceDeclaration) {
 
+    const interfaceName = typeNode.name.getText()
+
     let members0 = typeNode.members[0]
     if (typeNode.members.length == 1 && ts.isIndexSignatureDeclaration(members0)) {
       let indexSignature = members0
@@ -342,13 +344,13 @@ class DartFile {
       let valueType = indexSignature.type
       let dartValueType = dartTypeManager.GetType(valueType)
       if (!dartValueType) {
-        dartValueType = this.ScanType(name, valueType!)
+        dartValueType = this.ScanType(interfaceName, valueType!)
       }
       if (!dartValueType) {
         dartValueType = dartTypeManager.defaultType
       }
       let dartType = new DartMapDeclaration({ valueType: dartValueType, keyType: dartTypeManager.GetType(indexSignature.parameters[0].type) })
-      dartTypeManager.AddNodeType(typeNode, dartType, name)
+      dartTypeManager.AddNodeType(typeNode, dartType, interfaceName)
       return dartType
     }
     else {
@@ -837,7 +839,7 @@ function createSdkFile(file: DartFile) {
             break
           }
           let methodNode = <ts.MethodDeclaration>node
-          let decorators = methodNode.decorators
+          let decorators = ts.canHaveDecorators(methodNode) ? ts.getDecorators(methodNode) : undefined
           if (decorators) {
             let needSkip = true;
             for (let i = 0; i < decorators.length; ++i) {

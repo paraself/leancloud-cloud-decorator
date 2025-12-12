@@ -100,7 +100,7 @@ export interface CloudFunctionError {
   /**
    * 出错的(钩子函数)模块(class名)
    */
-  module: string,
+  module?: string,
   /**
    * 用户所运行的平台,需要结合前端sdk获取
    */
@@ -116,7 +116,7 @@ export interface CloudFunctionError {
   /**
    * 出错的(钩子函数)行为(function名)
    */
-  action: string
+  action?: string
   /**
    * 出错时客户端的请求参数
    */
@@ -124,11 +124,26 @@ export interface CloudFunctionError {
   /**
    * 出错时操作的目标数据
    */
-  target: AV.Object
+  target?: AV.Object
   /**
    * 出错时抛出的Error
    */
-  error: Error | any
+  error?: Error | any
+
+  /**
+   * Optional human-readable description for clients/logs
+   */
+  description?: string
+
+  /**
+   * Optional message for clients/logs
+   */
+  message?: string
+
+  /**
+   * Optional structured error message metadata (see errorMsg.ts)
+   */
+  errorMsg?: any
   /**
    * 记录抛出的错误中ikkMessage字段,用于存储额外信息
    */
@@ -264,15 +279,15 @@ AV.Cloud.define = function (
         lock.clearLock()
         return
       }
-      if (result.catch && result.then) {
-        result = await result
+      if (typeof (result as any)?.then === 'function') {
+        result = await (result as any)
         lock.clearLock()
         return result
       } else {
         lock.clearLock()
         return result
       }
-    } catch (error) {
+    } catch (error: any) {
       lock.clearLock()
       // console.error(error)
       // let ikkError
@@ -297,7 +312,7 @@ AV.Cloud.define = function (
         }
       }
 
-      let info = error
+      let info: any = error
       if (info) {
         // errorInfo.error = info
         if (typeof info === 'string') {
@@ -320,9 +335,7 @@ AV.Cloud.define = function (
               errorInfo.error = info
             }
 
-            //@ts-ignore
             if (info.description && !errorInfo.errorMsg) {
-              //@ts-ignore
               errorInfo.description = info.description
             }
             info.target && (errorInfo.target = info.target)
@@ -451,7 +464,7 @@ export async function DeleteCloudCache(params: DeleteCacheParams) {
       matches.push(...await redis.keys(`${prefix}:cloud:${env}:${functionName}:*`))
     }
     for (let i = 0; i < matches.length; ++i) {
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         let stream = redis.scanStream({
           match: matches[i]
         })
