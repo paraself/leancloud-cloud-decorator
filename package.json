@@ -1,6 +1,6 @@
 {
   "name": "leancloud-cloud-decorator",
-  "version": "1.54.0",
+  "version": "1.54.1",
   "description": "",
   "engines": {
     "node": ">=24 <25"
