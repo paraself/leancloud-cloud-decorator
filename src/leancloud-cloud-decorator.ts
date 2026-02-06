@@ -78,6 +78,19 @@ export function SetAfterVerify(params: { afterVerify: (params: VerifyParams & { 
   afterVerify = params.afterVerify
 }
 
+function toSafeNumber(value: unknown) {
+  if (typeof value === 'number') {
+    return value
+  }
+  if (typeof value === 'string') {
+    let parsed = Number.parseInt(value, 10)
+    if (!Number.isNaN(parsed)) {
+      return parsed
+    }
+  }
+  return 0
+}
+
 type Environment = 'production' | 'staging' | string
 
 interface CacheOptions<T> {
@@ -362,11 +375,14 @@ async function RateLimitCheck(params: { functionName: string, objectId: string, 
     pipeline.incr(cacheKey).expire(cacheKey, expires)
   }
   let result = await pipeline.exec()
+  if (!result) {
+    throw new Error('RateLimitCheck pipeline exec returned null')
+  }
 
   for (let i = 0; i < rateLimit.length; ++i) {
     let limit = rateLimit[i]
     let user = objectId || ip
-    let count = result[i * 2 + 0][1]
+    let count = toSafeNumber(result[i * 2 + 0]?.[1])
     if (count > limit.limit) {
       if (listener.onRateLimited) {
         listener.onRateLimited(cloudInvokeData)
@@ -684,8 +700,11 @@ async function CheckVerify(params: { verify: VerifyOptions, functionName: string
     let date = startTimestamp.valueOf()
     let cacheKey = `${prefix}:verify_count:${timeUnit}-${date}:${functionName}:${user}`
     let result = await redis.pipeline().incr(cacheKey).expire(cacheKey, expires).exec()
+    if (!result) {
+      throw new Error('CheckVerify pipeline exec returned null')
+    }
     const i = 0
-    let count = result[i * 2 + 0][1]
+    let count = toSafeNumber(result[i * 2 + 0]?.[1])
     if (count >= (verify.count || 1)) {
       let pipeline = redis.pipeline()
       pipeline.setex(cacheKey, expires, 0)
@@ -860,10 +879,15 @@ function CreateCloudCacheFunction<T extends CloudParams>(info: {
     //尝试获取缓存
     let redis2 = _redis || redis
     let cacheResults = await redis2.pipeline().get(cacheKey).get(cacheKey + ':timestamp').exec()
-    let textResult = cacheResults[0][1]
+    if (!cacheResults) {
+      cacheResults = []
+    }
+    let textResultValue = cacheResults[0]?.[1]
+    let textResult = typeof textResultValue === 'string' ? textResultValue : null
     // let textResult = await redis2.get(cacheKey)
     if (textResult) {
-      let timestamp = cacheResults[1][1] && parseInt(cacheResults[1][1])
+      let timestampRawValue = cacheResults[1]?.[1]
+      let timestamp = timestampRawValue ? toSafeNumber(timestampRawValue) : 0
       try {
         IncrCache({
           function: functionName,

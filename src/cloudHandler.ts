@@ -446,13 +446,29 @@ export async function DeleteCloudCache(params: DeleteCacheParams) {
         pipeline.del(cacheKey)
       }
     }
-    let result: [null | Error, number][] = await pipeline.exec()
+    let result = await pipeline.exec()
+    if (!result) {
+      throw new Error('DeleteCloudCache pipeline exec returned null')
+    }
+    const getDeletedCount = (index: number) => {
+      let value = result[index]?.[1]
+      if (typeof value === 'number') {
+        return value
+      }
+      if (typeof value === 'string') {
+        let parsed = Number.parseInt(value, 10)
+        if (!Number.isNaN(parsed)) {
+          return parsed
+        }
+      }
+      return 0
+    }
     return {
-      'day': result[0][1],
-      'hour': result[1][1],
-      'minute': result[2][1],
-      'second': result[3][1],
-      'month': result[4][1]
+      'day': getDeletedCount(0),
+      'hour': getDeletedCount(1),
+      'minute': getDeletedCount(2),
+      'second': getDeletedCount(3),
+      'month': getDeletedCount(4)
     }
   } else {
     let matches: string[] = []

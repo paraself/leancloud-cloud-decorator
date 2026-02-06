@@ -150,8 +150,10 @@ export interface GetStatsReturn {
   cacheCount: number
 }
 
+type StatsInfo = Omit<GetStatsReturn, 'callCount' | 'errorCount' | 'cacheCount'>
+
 function decodeParams(paramsString: string) {
-  let params = {}
+  let params: { [key: string]: string } = {}
   let paramsStringList = paramsString.split('&')
   for (let i = 0; i < paramsStringList.length; ++i) {
     let condition = paramsStringList[i]
@@ -176,7 +178,7 @@ const hookNames = {
   afterUpdate: true,
 }
 
-function getInfoFromKey(key: string) {
+function getInfoFromKey(key: string): StatsInfo | null {
   let infos = key.substring(_prefix.length).split(':')
   if (infos.length == 5 || infos.length == 4) {
     let group = infos[0]
@@ -184,7 +186,7 @@ function getInfoFromKey(key: string) {
     let func = infos[2]
     let date = infos[3]
 
-    let info: { group: string, env: string, date: string, module?: string, action?: string, function?: string } = {
+    let info: StatsInfo = {
       group,
       env,
       date
@@ -216,6 +218,19 @@ function getInfoFromKey(key: string) {
   }
 }
 
+function getCountValue(value: unknown): number {
+  if (typeof value === 'number') {
+    return value
+  }
+  if (typeof value === 'string') {
+    let parsed = Number.parseInt(value, 10)
+    if (!Number.isNaN(parsed)) {
+      return parsed
+    }
+  }
+  return 0
+}
+
 export async function GetStats(): Promise<GetStatsReturn[]> {
   let stats: GetStatsReturn[] = []
   let keys = await redis.keys(_prefix + '*')
@@ -224,25 +239,22 @@ export async function GetStats(): Promise<GetStatsReturn[]> {
     pipeline.hgetall(keys[i])
   }
   let results = await pipeline.exec();
+  if (!results) {
+    return stats
+  }
   for (let i = 0; i < keys.length; ++i) {
-    let result = results[i][1]
-    if (result) {
+    let result = results[i]?.[1]
+    if (result && typeof result === 'object') {
       try {
         let info = getInfoFromKey(keys[i])
         if (info) {
-          if (result.call) {
-            result.callCount = parseInt(result.call)
-            delete result.call
-          }
-          if (result.error) {
-            result.errorCount = parseInt(result.error)
-            delete result.error
-          }
-          if (result.cache) {
-            result.cacheCount = parseInt(result.cache)
-            delete result.cache
-          }
-          stats.push(Object.assign(info, result))
+          let row = result as { [key: string]: unknown }
+          stats.push({
+            ...info,
+            callCount: getCountValue(row.call),
+            errorCount: getCountValue(row.error),
+            cacheCount: getCountValue(row.cache),
+          })
         }
       } catch (error) {
         console.error('error in GetStats key:' + keys[i] + ' ' + JSON.stringify(error))
